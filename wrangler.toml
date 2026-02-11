@@ -1,0 +1,7 @@
+name = "trade-log-app"
+pages_build_output_dir = "." # HTMLファイルがある場所
+
+[[d1_databases]]
+binding = "trade_db" 
+database_name = "trade-db"
+database_id = "f4a91b38-1e47-413a-a00b-721d7c46ee8d"
