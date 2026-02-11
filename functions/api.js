@@ -34,10 +34,16 @@ export async function onRequest(context) {
           updates.push("final_pl = ?");
           params.push(data.final_pl);
         }
+        // 🔥 重要：applied_items の更新処理を追加
+        if (data.applied_items !== undefined) {
+          updates.push("applied_items = ?");
+          params.push(data.applied_items);
+        }
         
         if (updates.length > 0) {
           params.push(data.id);
-          await env.trade_db.prepare(`UPDATE trades SET ${updates.join(", ")} WHERE trade_id = ?`).bind(...params).run();
+          const sql = `UPDATE trades SET ${updates.join(", ")} WHERE trade_id = ?`;
+          await env.trade_db.prepare(sql).bind(...params).run();
         }
       } else {
         await env.trade_db.prepare("INSERT INTO trades (trade_id, date, name, price, applied_items, memo) VALUES (?, ?, ?, ?, ?, ?)")
