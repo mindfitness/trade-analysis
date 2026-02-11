@@ -39,6 +39,11 @@ export async function onRequest(context) {
           updates.push("applied_items = ?");
           params.push(data.applied_items);
         }
+        // 🔥 negative_items の更新処理を追加
+        if (data.negative_items !== undefined) {
+          updates.push("negative_items = ?");
+          params.push(data.negative_items);
+        }
         
         if (updates.length > 0) {
           params.push(data.id);
@@ -46,8 +51,8 @@ export async function onRequest(context) {
           await env.trade_db.prepare(sql).bind(...params).run();
         }
       } else {
-        await env.trade_db.prepare("INSERT INTO trades (trade_id, date, name, price, applied_items, memo) VALUES (?, ?, ?, ?, ?, ?)")
-          .bind(data.id, data.date, data.name, data.price, JSON.stringify(data.appliedItems), data.memo).run();
+        await env.trade_db.prepare("INSERT INTO trades (trade_id, date, name, price, applied_items, negative_items, memo) VALUES (?, ?, ?, ?, ?, ?, ?)")
+          .bind(data.id, data.date, data.name, data.price, JSON.stringify(data.appliedItems), JSON.stringify(data.negativeItems), data.memo).run();
       }
       return new Response("OK");
     } catch (err) {
