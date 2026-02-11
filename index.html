@@ -36,23 +36,19 @@
 
         section { background: var(--card); padding: 16px; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 16px; }
         .input-group { margin-bottom: 12px; }
-        input, textarea { 
-            width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem;
-        }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; }
+
         /* 新規エントリー項目：3つずつ横に並べる */
         .check-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 8px 0; }
         .check-box { 
             background: #f1f5f9; padding: 6px 4px; border-radius: 8px; font-size: 0.65rem; font-weight: bold;
             display: flex; align-items: center; justify-content: center; text-align: center; border: 1px solid transparent;
-            min-height: 40px;
+            min-height: 42px; line-height: 1.1;
         }
         .check-box.checked { background: #dbeafe; border-color: var(--primary); color: var(--primary); }
         .check-box input { display: none; }
 
-        .submit-btn { 
-            width: 100%; padding: 12px; background: var(--primary); color: white; 
-            border: none; border-radius: 8px; font-weight: 800;
-        }
+        .submit-btn { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 800; }
 
         .history-summary { display: flex; gap: 10px; margin-bottom: 16px; }
         .summary-box {
@@ -65,10 +61,7 @@
         .summary-label { font-size: 0.7rem; font-weight: 800; margin-bottom: 4px; }
         .summary-count { font-size: 1.4rem; font-weight: 900; }
 
-        .trade-card { 
-            background: white; border-radius: 12px; padding: 12px; margin-bottom: 10px; 
-            border: 1px solid #e2e8f0; position: relative;
-        }
+        .trade-card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; position: relative; }
         .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
         .stock-info { display: flex; align-items: baseline; gap: 8px; }
         .stock-name { font-size: 1rem; font-weight: 800; }
@@ -76,10 +69,7 @@
         .tag-container { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
         .tag { font-size: 0.65rem; background: #f8fafc; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; color: #64748b; }
 
-        .memo-area { 
-            font-size: 0.8rem; background: #fffbeb; padding: 8px 10px; border-radius: 6px; 
-            border-left: 3px solid #f59e0b; margin-top: 6px; min-height: 20px;
-        }
+        .memo-area { font-size: 0.8rem; background: #fffbeb; padding: 8px 10px; border-radius: 6px; border-left: 3px solid #f59e0b; margin-top: 6px; min-height: 20px; }
         .memo-area[contenteditable="true"] { background: white; border: 2px solid #f59e0b; outline: none; }
 
         .edit-btn {
@@ -99,7 +89,11 @@
         .lose-badge { background: var(--lose-deep); }
         .del-btn { color: #cbd5e1; border: none; background: none; }
 
-        .settings-btn { font-size: 0.7rem; color: var(--text-sub); border: 1px solid #e2e8f0; background: white; padding: 4px 8px; border-radius: 4px; margin-bottom: 8px; }
+        /* 編集用モーダル/インライングリッド */
+        .edit-grid-container { 
+            display: none; background: #f8fafc; border: 1px solid #e2e8f0; 
+            border-radius: 8px; padding: 10px; margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -107,10 +101,7 @@
 <header>
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <h1 style="margin:0; font-size:1.2rem; font-weight:900;">Trade Log</h1>
-        <div>
-            <button onclick="switchPage('settings')" style="border:none; background:none; color:var(--text-sub); font-size:0.8rem; margin-right:10px;">設定</button>
-            <button onclick="switchPage('entry')" style="border:none; background:none; color:var(--primary); font-weight:bold;">+ 新規</button>
-        </div>
+        <button onclick="switchPage('entry')" style="border:none; background:none; color:var(--primary); font-weight:bold;">+ 新規</button>
     </div>
     <div class="nav-tabs">
         <button class="tab active" id="tab-active" onclick="switchPage('active')">取引中</button>
@@ -152,18 +143,9 @@
     <div id="history-container"></div>
 </div>
 
-<div id="page-settings" class="page">
-    <section>
-        <h3 style="margin-top:0">項目設定</h3>
-        <p style="font-size:0.7rem; color:var(--text-sub)">カンマ区切りで項目を入力してください</p>
-        <textarea id="settings-master-items" rows="10" style="font-size:0.8rem; line-height:1.5;"></textarea>
-        <button onclick="saveSettings()" class="submit-btn" style="margin-top:12px">設定を保存</button>
-    </section>
-</div>
-
 <script>
 const TWELVE_DATA_API_KEY = "4745e87ea2404681a5c9fa6376aac35a"; 
-let masterItems = ["LL-HL", "RS21>63緑", "RS10>21緑", "テーマ1&5=緑", "AT", "W", "CUP", "GC", "21screen", "pivot-breakout", "pivot反発", "雲反発", "平均線サポート", "雲サポート", "雲上抜け",  "ATR=all緑", "出来高", "no-Box", "21>50>200", "RS=all緑", "セクタ=緑", "VCS>60"];
+const masterItems = ["LL-HL", "RS21>63緑", "RS10>21緑", "テーマ1&5=緑", "AT", "W", "CUP", "GC", "21screen", "pivot-breakout", "pivot反発", "雲反発", "平均線サポート", "雲サポート", "雲上抜け",  "ATR=all緑", "出来高", "no-Box", "21>50>200", "RS=all緑", "セクタ=緑", "VCS>60"];
 let trades = [];
 let currentHistoryFilter = 'win';
 const API_URL = "/api";
@@ -171,7 +153,7 @@ const API_URL = "/api";
 async function refreshPrice(id, symbol, entryPrice) {
     const btn = document.querySelector(`#refresh-btn-${id}`);
     const display = document.querySelector(`#pl-display-${id}`);
-    if (!TWELVE_DATA_API_KEY) return alert("APIキーを設定してください");
+    if (!TWELVE_DATA_API_KEY) return;
     try {
         btn.disabled = true; btn.innerText = "...";
         const res = await fetch(`https://api.twelvedata.com/price?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`);
@@ -187,35 +169,6 @@ async function refreshPrice(id, symbol, entryPrice) {
         btn.disabled = false; btn.innerHTML = '<i data-lucide="refresh-cw" style="width:12px;"></i> 更新';
         lucide.createIcons();
     }
-}
-
-async function loadSettings() {
-    try {
-        const res = await fetch(`${API_URL}?type=settings`);
-        const data = await res.json();
-        if (data && data.masterItems) {
-            masterItems = data.masterItems;
-        }
-        document.getElementById('settings-master-items').value = masterItems.join(', ');
-        renderEntryChecks();
-    } catch (err) { console.error(err); }
-}
-
-async function saveSettings() {
-    const input = document.getElementById('settings-master-items').value;
-    const newItems = input.split(',').map(s => s.trim()).filter(s => s !== "");
-    try {
-        await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: "save_settings", masterItems: newItems })
-        });
-        masterItems = newItems;
-        renderEntryChecks();
-        renderTrades();
-        alert("設定を保存しました");
-        switchPage('entry');
-    } catch (err) { console.error(err); }
 }
 
 async function loadTrades() {
@@ -290,7 +243,7 @@ function toggleEdit(id) {
         btnEl.innerHTML = '<i data-lucide="check" style="width:12px;"></i> 保存';
         btnEl.classList.add('save-btn');
     } else {
-        updateMemo(id, textEl.innerText);
+        updateTradeData(id, { memo: textEl.innerText });
         textEl.contentEditable = "false";
         btnEl.innerHTML = '<i data-lucide="edit-2" style="width:12px;"></i> 編集';
         btnEl.classList.remove('save-btn');
@@ -298,12 +251,25 @@ function toggleEdit(id) {
     if(window.lucide) lucide.createIcons();
 }
 
-async function updateMemo(id, newMemo) {
+function toggleItemEdit(id) {
+    const grid = document.getElementById(`edit-grid-${id}`);
+    const isVisible = grid.style.display === 'block';
+    grid.style.display = isVisible ? 'none' : 'block';
+}
+
+async function saveItemEdit(id) {
+    const checkboxes = document.querySelectorAll(`.edit-item-check-${id}:checked`);
+    const newItems = Array.from(checkboxes).map(cb => cb.value);
+    await updateTradeData(id, { applied_items: JSON.stringify(newItems) });
+    document.getElementById(`edit-grid-${id}`).style.display = 'none';
+}
+
+async function updateTradeData(id, data) {
     try {
         await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: "update", id: id, memo: newMemo })
+            body: JSON.stringify({ action: "update", id: id, ...data })
         });
         await loadTrades();
     } catch (err) { console.error(err); }
@@ -315,15 +281,10 @@ function setHistoryFilter(type) {
 }
 
 async function setTradeResult(id, result) {
-    if (!confirm(`${result.toUpperCase()}で確定して履歴に移動しますか？`)) return;
+    if (!confirm(`${result.toUpperCase()}で確定しますか？`)) return;
     const plDisplay = document.querySelector(`#pl-display-${id}`);
     const finalPL = plDisplay ? plDisplay.innerText.replace(/[()]/g, '') : "";
-    await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: "update", id: id, result: result, final_pl: finalPL })
-    });
-    await loadTrades();
+    await updateTradeData(id, { result: result, final_pl: finalPL });
 }
 
 async function deleteTrade(id) {
@@ -366,7 +327,6 @@ function renderWinAnalysis(winTrades) {
     }
     analysisSection.style.display = 'block';
     const itemCounts = {};
-    // masterItemsに含まれる項目のみカウント対象
     masterItems.forEach(item => itemCounts[item] = 0);
     winTrades.forEach(trade => {
         trade.appliedItems.forEach(item => {
@@ -378,8 +338,7 @@ function renderWinAnalysis(winTrades) {
         .map(([item, count]) => ({
             item, count, percentage: parseFloat(((count / totalWins) * 100).toFixed(1))
         }))
-        // 40%以下の項目は除外
-        .filter(stat => stat.percentage > 40)
+        .filter(stat => stat.percentage > 40) // 40%超のみ表示
         .sort((a, b) => b.percentage - a.percentage);
     
     analysisContent.innerHTML = itemStats.map(stat => {
@@ -400,6 +359,20 @@ function renderWinAnalysis(winTrades) {
 }
 
 function renderCard(t) {
+    const itemEditHtml = `
+        <div id="edit-grid-${t.id}" class="edit-grid-container">
+            <div class="check-grid">
+                ${masterItems.map(item => `
+                    <label class="check-box ${t.appliedItems.includes(item) ? 'checked' : ''}">
+                        <input type="checkbox" class="edit-item-check-${t.id}" value="${item}" ${t.appliedItems.includes(item) ? 'checked' : ''} onchange="this.parentElement.classList.toggle('checked', this.checked)">
+                        ${item}
+                    </label>
+                `).join('')}
+            </div>
+            <button onclick="saveItemEdit('${t.id}')" class="submit-btn" style="padding: 8px; margin-top: 10px; font-size: 0.8rem;">項目を保存</button>
+        </div>
+    `;
+
     return `
         <div class="trade-card">
             <div class="card-top">
@@ -413,14 +386,21 @@ function renderCard(t) {
                     <button class="del-btn" onclick="deleteTrade('${t.id}')"><i data-lucide="x" style="width:14px;"></i></button>
                 </div>
             </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <div class="tag-container" style="margin:0">${t.appliedItems.map(item => `<span class="tag">${item}</span>`).join('')}</div>
-                ${!t.result ? `<button id="refresh-btn-${t.id}" class="edit-btn" onclick="refreshPrice('${t.id}', '${t.name}', ${t.price})"><i data-lucide="refresh-cw" style="width:12px;"></i> 更新</button>` : ''}
+            
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                <div class="tag-container" style="margin:0; flex:1;">${t.appliedItems.map(item => `<span class="tag">${item}</span>`).join('')}</div>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    ${!t.result ? `<button id="refresh-btn-${t.id}" class="edit-btn" onclick="refreshPrice('${t.id}', '${t.name}', ${t.price})"><i data-lucide="refresh-cw" style="width:12px;"></i> 更新</button>` : ''}
+                    <button class="edit-btn" onclick="toggleItemEdit('${t.id}')"><i data-lucide="settings-2" style="width:12px;"></i> 項目編集</button>
+                </div>
             </div>
+
+            ${itemEditHtml}
+
             <div style="margin-top: 8px;">
                 <div id="memo-text-${t.id}" class="memo-area" contenteditable="false">${t.memo || 'メモを追加'}</div>
                 <div style="text-align: right; margin-top: 6px;">
-                    <button id="edit-btn-${t.id}" class="edit-btn" onclick="toggleEdit('${t.id}')"><i data-lucide="edit-2" style="width:12px;"></i> 編集</button>
+                    <button id="edit-btn-${t.id}" class="edit-btn" onclick="toggleEdit('${t.id}')"><i data-lucide="edit-2" style="width:12px;"></i> メモ編集</button>
                 </div>
             </div>
             ${!t.result ? `<div class="res-actions"><button class="btn-win" onclick="setTradeResult('${t.id}', 'win')">WIN</button><button class="btn-lose" onclick="setTradeResult('${t.id}', 'lose')">LOSE</button></div>` : `<div style="font-size:10px; color:#94a3b8; margin-top:8px;">${t.date}</div>`}
@@ -428,7 +408,7 @@ function renderCard(t) {
     `;
 }
 
-window.onload = () => { loadSettings(); loadTrades(); };
+window.onload = () => { renderEntryChecks(); loadTrades(); };
 </script>
 </body>
 </html>
