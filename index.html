@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Trade Log Pro</title>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        :root { 
+            --primary: #2563eb; 
+            --win-deep: #059669; 
+            --lose-deep: #dc2626; 
+            --bg: #f8fafc; 
+            --card: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+        }
+        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: -apple-system, sans-serif; 
+            background: var(--bg); margin: 0; padding-bottom: env(safe-area-inset-bottom);
+            color: var(--text-main); font-size: 14px;
+        }
+
+        header { background: white; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 100; }
+        .nav-tabs { display: flex; gap: 8px; margin-top: 12px; }
+        .tab { 
+            flex: 1; padding: 8px; border: none; background: #f1f5f9; border-radius: 8px; 
+            font-weight: bold; color: var(--text-sub); font-size: 0.8rem;
+        }
+        .tab.active { background: var(--text-main); color: white; }
+
+        .page { padding: 12px; display: none; }
+        .page.active { display: block; }
+
+        section { background: var(--card); padding: 16px; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 16px; }
+        .input-group { margin-bottom: 12px; }
+        input, textarea { 
+            width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem;
+        }
+        .check-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 8px 0; }
+        .check-box { 
+            background: #f1f5f9; padding: 8px; border-radius: 8px; font-size: 0.7rem; font-weight: bold;
+            display: flex; align-items: center; gap: 4px; border: 1px solid transparent;
+        }
+        .check-box.checked { background: #dbeafe; border-color: var(--primary); color: var(--primary); }
+        .check-box input { display: none; }
+
+        .submit-btn { 
+            width: 100%; padding: 12px; background: var(--primary); color: white; 
+            border: none; border-radius: 8px; font-weight: 800;
+        }
+
+        .history-summary { display: flex; gap: 10px; margin-bottom: 16px; }
+        .summary-box {
+            flex: 1; padding: 12px; border-radius: 12px; text-align: center; 
+            cursor: pointer; border: 2px solid transparent; transition: all 0.2s;
+            background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .summary-box.active-win { border-color: var(--win-deep); background: #ecfdf5; }
+        .summary-box.active-lose { border-color: var(--lose-deep); background: #fef2f2; }
+        .summary-label { font-size: 0.7rem; font-weight: 800; margin-bottom: 4px; }
+        .summary-count { font-size: 1.4rem; font-weight: 900; }
+
+        .trade-card { 
+            background: white; border-radius: 12px; padding: 12px; margin-bottom: 10px; 
+            border: 1px solid #e2e8f0; position: relative;
+        }
+        .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .stock-info { display: flex; align-items: baseline; gap: 8px; }
+        .stock-name { font-size: 1rem; font-weight: 800; }
+        
+        .tag-container { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+        .tag { font-size: 0.65rem; background: #f8fafc; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; color: #64748b; }
+
+        .memo-area { 
+            font-size: 0.8rem; background: #fffbeb; padding: 8px 10px; border-radius: 6px; 
+            border-left: 3px solid #f59e0b; margin-top: 6px; min-height: 20px;
+        }
+        .memo-area[contenteditable="true"] { background: white; border: 2px solid #f59e0b; outline: none; }
+
+        .edit-btn {
+            background: #f1f5f9; border: none; color: var(--text-main); font-size: 0.7rem; 
+            font-weight: bold; cursor: pointer; padding: 6px 12px; border-radius: 6px;
+            display: inline-flex; align-items: center; gap: 4px;
+        }
+        .save-btn { background: var(--primary); color: white; }
+
+        .res-actions { display: flex; gap: 8px; margin-top: 10px; }
+        .res-actions button { flex: 1; padding: 8px; border: none; border-radius: 6px; color: white; font-weight: 800; }
+        .btn-win { background: var(--win-deep); }
+        .btn-lose { background: var(--lose-deep); }
+
+        .result-badge { padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 900; color: white; }
+        .win-badge { background: var(--win-deep); }
+        .lose-badge { background: var(--lose-deep); }
+        .del-btn { color: #cbd5e1; border: none; background: none; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h1 style="margin:0; font-size:1.2rem; font-weight:900;">Trade Log</h1>
+        <button onclick="switchPage('entry')" style="border:none; background:none; color:var(--primary); font-weight:bold;">+ 新規</button>
+    </div>
+    <div class="nav-tabs">
+        <button class="tab active" id="tab-active" onclick="switchPage('active')">取引中</button>
+        <button class="tab" id="tab-history" onclick="switchPage('history')">分析</button>
+    </div>
+</header>
+
+<div id="page-entry" class="page">
+    <section>
+        <div class="input-group"><input type="text" id="stock-name" placeholder="銘柄コード (例: NVDA)"></div>
+        <div class="input-group"><input type="number" id="entry-price" placeholder="価格"></div>
+        <div id="entry-check-grid" class="check-grid"></div>
+        <div class="input-group">
+            <textarea id="trade-memo" placeholder="週足,月足,強いbreakout,21→雲反発,二重反発,News,Grok,ADR%, 21EMAlow" rows="2"></textarea>
+        </div>
+        <button onclick="registerTrade()" class="submit-btn">エントリーを記録</button>
+    </section>
+</div>
+
+<div id="page-active" class="page active">
+    <div id="active-container"></div>
+</div>
+
+<div id="page-history" class="page">
+    <div class="history-summary">
+        <div id="box-win" class="summary-box active-win" onclick="setHistoryFilter('win')">
+            <div class="summary-label" style="color: var(--win-deep);">WIN</div>
+            <div id="count-win" class="summary-count" style="color: var(--win-deep);">0</div>
+        </div>
+        <div id="box-lose" class="summary-box" onclick="setHistoryFilter('lose')">
+            <div class="summary-label" style="color: var(--lose-deep);">LOSE</div>
+            <div id="count-lose" class="summary-count" style="color: var(--lose-deep);">0</div>
+        </div>
+    </div>
+     <section id="win-analysis" style="display:none; margin-bottom: 16px;">
+        <h3 style="margin: 0 0 12px 0; font-size: 0.9rem; font-weight: 800;">WIN項目分析</h3>
+        <div id="analysis-content"></div>
+    </section>
+    <div id="history-container"></div>
+</div>
+
+<script>
+// ★★★ APIキー設定 ★★★
+const TWELVE_DATA_API_KEY = "4745e87ea2404681a5c9fa6376aac35a"; 
+
+const masterItems = ["LL-HL", "RS21>63緑", "RS10>21緑", "テーマ1&5=緑", "AT", "W", "CUP", "GC", "21screen", "pivot-breakout", "pivot反発", "雲反発", "平均線サポート", "雲サポート", "雲上抜け",  "ATR=all緑", "出来高", "no-Box", "21>50>200", "RS=all緑", "セクタ=緑", "VCS>60"];
+let trades = [];
+let currentHistoryFilter = 'win';
+const API_URL = "/api";
+
+// ★★★ 株価更新機能 ★★★
+async function refreshPrice(id, symbol, entryPrice) {
+    const btn = document.querySelector(`#refresh-btn-${id}`);
+    const display = document.querySelector(`#pl-display-${id}`);
+    
+    if (!TWELVE_DATA_API_KEY || TWELVE_DATA_API_KEY === "YOUR_API_KEY") {
+        return alert("APIキーを設定してください");
+    }
+
+    try {
+        btn.disabled = true;
+        btn.innerText = "...";
+        
+        const res = await fetch(`https://api.twelvedata.com/price?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`);
+        const data = await res.json();
+
+        if (data.price) {
+            const current = parseFloat(data.price);
+            const entry = parseFloat(entryPrice);
+            const diff = ((current - entry) / entry * 100).toFixed(2);
+            const color = diff >= 0 ? 'var(--win-deep)' : 'var(--lose-deep)';
+            display.innerHTML = `<span style="font-size:0.7rem;color:var(--text-sub)">$${current}</span><span style="color:${color};font-weight:800;margin-left:5px">(${diff >= 0 ? '+' : ''}${diff}%)</span>`;
+        } else {
+            alert("取得失敗");
+        }
+    } catch (e) {
+        console.error(e);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="refresh-cw" style="width:12px;"></i> 更新';
+        lucide.createIcons();
+    }
+}
+
+async function loadTrades() {
+    try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        trades = data.map(t => ({
+    id: String(t.trade_id),
+    name: t.name,
+    price: t.price,
+    date: t.date,
+    appliedItems: JSON.parse(t.applied_items || "[]"),
+    memo: t.memo || "",
+    result: t.result || null,
+    final_pl: t.final_pl || "",
+    current_price: t.current_price,
+    pl_percent: t.pl_percent
+}));
+        renderTrades();
+    } catch (err) { console.error(err); }
+}
+
+function renderEntryChecks() {
+    const container = document.getElementById('entry-check-grid');
+    container.innerHTML = masterItems.map((item, i) => `
+        <label class="check-box" id="label-${i}">
+            <input type="checkbox" class="entry-check" value="${item}" onchange="this.parentElement.classList.toggle('checked', this.checked)">
+            ${item}
+        </label>
+    `).join('');
+}
+
+async function registerTrade() {
+    const nameEl = document.getElementById('stock-name');
+    const priceEl = document.getElementById('entry-price');
+    const memoEl = document.getElementById('trade-memo');
+    const checkEls = document.querySelectorAll('.entry-check:checked');
+
+    if (!nameEl.value || !priceEl.value) return alert('銘柄名と価格を入力してください');
+    if (!confirm("QQQE&RSP>21?：OK?")) return;
+
+    // 日本時間の取得
+    const now = new Date();
+    const jstDate = new Intl.DateTimeFormat('ja-JP', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        timeZone: 'Asia/Tokyo'
+    }).format(now);
+
+    const newTrade = {
+    id: Date.now().toString(),  // ← これが必要！
+    name: nameEl.value.toUpperCase(),
+    price: priceEl.value,
+    appliedItems: Array.from(checkEls).map(el => el.value),
+    memo: memoEl.value.trim(),
+    date: jstDate
+};
+
+    try {
+        await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newTrade)
+        });
+        nameEl.value = ''; priceEl.value = ''; memoEl.value = '';
+        renderEntryChecks();
+        await loadTrades();
+        switchPage('active');
+    } catch (err) { console.error(err); }
+}
+
+function toggleEdit(id) {
+    const textEl = document.getElementById(`memo-text-${id}`);
+    const btnEl = document.getElementById(`edit-btn-${id}`);
+    const isEditing = textEl.contentEditable === "true";
+
+    if (!isEditing) {
+        textEl.contentEditable = "true";
+        textEl.focus();
+        btnEl.innerHTML = '<i data-lucide="check" style="width:12px;"></i> 保存';
+        btnEl.classList.add('save-btn');
+    } else {
+        const newMemo = textEl.innerText;
+        updateMemo(id, newMemo); // 保存処理
+        textEl.contentEditable = "false";
+        btnEl.innerHTML = '<i data-lucide="edit-2" style="width:12px;"></i> 編集';
+        btnEl.classList.remove('save-btn');
+    }
+    if(window.lucide) lucide.createIcons();
+}
+
+async function updateMemo(id, newMemo) {
+    try {
+        const trade = trades.find(t => t.id === id);
+        await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                action: "update", 
+                id: id, 
+                memo: newMemo
+            })
+        });
+        if(trade) trade.memo = newMemo;
+        await loadTrades(); // サーバーから最新データを再取得
+    } catch (err) { console.error("Update failed", err); }
+}
+function setHistoryFilter(type) {
+    currentHistoryFilter = type;
+    renderTrades();
+}
+
+async function setTradeResult(id, result) {
+    const label = result === 'win' ? 'WIN' : 'LOSE';
+    if (!confirm(`${label}で確定して履歴に移動しますか？`)) return;
+
+    const plDisplay = document.querySelector(`#pl-display-${id}`);
+    const finalPL = plDisplay ? plDisplay.innerText.replace(/[()]/g, '') : "";
+
+    await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            action: "update", 
+            id: id, 
+            result: result,
+            final_pl: finalPL
+        })
+    });
+    await loadTrades();
+}
+
+async function deleteTrade(id) {
+    if (!confirm('削除しますか？')) return;
+    await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' });
+    await loadTrades();
+}
+
+function switchPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(`page-${pageId}`).classList.add('active');
+    if(pageId !== 'entry') {
+        const tab = document.getElementById(`tab-${pageId}`);
+        if(tab) tab.classList.add('active');
+    }
+}
+
+function renderTrades() {
+    const activeCont = document.getElementById('active-container');
+    const historyCont = document.getElementById('history-container');
+    
+    const winTrades = trades.filter(t => t.result === 'win');
+    const loseTrades = trades.filter(t => t.result === 'lose');
+    
+    if(document.getElementById('count-win')) document.getElementById('count-win').innerText = winTrades.length;
+    if(document.getElementById('count-lose')) document.getElementById('count-lose').innerText = loseTrades.length;
+    
+    const boxWin = document.getElementById('box-win');
+    const boxLose = document.getElementById('box-lose');
+    if(boxWin) boxWin.className = `summary-box ${currentHistoryFilter === 'win' ? 'active-win' : ''}`;
+    if(boxLose) boxLose.className = `summary-box ${currentHistoryFilter === 'lose' ? 'active-lose' : ''}`;
+
+    activeCont.innerHTML = trades.filter(t => !t.result).map(t => renderCard(t)).join('') || '<p style="text-align:center; color:#94a3b8;">取引中の銘柄はありません</p>';
+    
+    const filteredHistory = currentHistoryFilter === 'win' ? winTrades : loseTrades;
+    historyCont.innerHTML = filteredHistory.map(t => renderCard(t)).join('') || `<p style="text-align:center; color:#94a3b8;">${currentHistoryFilter.toUpperCase()}の履歴はありません</p>`;
+    
+    renderWinAnalysis(winTrades);
+
+    if(window.lucide) lucide.createIcons();
+}
+
+function renderWinAnalysis(winTrades) {
+    const analysisSection = document.getElementById('win-analysis');
+    const analysisContent = document.getElementById('analysis-content');
+    
+    if (currentHistoryFilter !== 'win' || winTrades.length === 0) {
+        analysisSection.style.display = 'none';
+        return;
+    }
+    
+    analysisSection.style.display = 'block';
+    
+    // 各項目の出現回数をカウント
+    const itemCounts = {};
+    masterItems.forEach(item => itemCounts[item] = 0);
+    
+    winTrades.forEach(trade => {
+        trade.appliedItems.forEach(item => {
+            if (itemCounts[item] !== undefined) {
+                itemCounts[item]++;
+            }
+        });
+    });
+    
+    // パーセンテージを計算してソート
+    const totalWins = winTrades.length;
+    const itemStats = Object.entries(itemCounts)
+        .map(([item, count]) => ({
+            item,
+            count,
+            percentage: ((count / totalWins) * 100).toFixed(1)
+        }))
+        .sort((a, b) => b.percentage - a.percentage);
+    
+    // 表示
+    analysisContent.innerHTML = itemStats
+        .filter(stat => stat.count > 0)
+        .map(stat => {
+            const barWidth = stat.percentage;
+            const color = stat.percentage >= 80 ? 'var(--win-deep)' : 
+                         stat.percentage >= 50 ? '#f59e0b' : 
+                         'var(--text-sub)';
+            
+            return `
+                <div style="margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="font-size: 0.75rem; font-weight: 700;">${stat.item}</span>
+                        <span style="font-size: 0.75rem; font-weight: 800; color: ${color};">${stat.percentage}%</span>
+                    </div>
+                    <div style="background: #f1f5f9; height: 6px; border-radius: 3px; overflow: hidden;">
+                        <div style="background: ${color}; height: 100%; width: ${barWidth}%; transition: width 0.3s;"></div>
+                    </div>
+                    <div style="font-size: 0.65rem; color: var(--text-sub); margin-top: 2px;">${stat.count}/${totalWins} トレード</div>
+                </div>
+            `;
+        })
+        .join('') || '<p style="font-size: 0.8rem; color: var(--text-sub);">データなし</p>';
+}
+
+function renderCard(t) {
+    return `
+        <div class="trade-card">
+            <div class="card-top">
+                <div class="stock-info">
+                    <span class="stock-name">${t.name}</span>
+                    <span class="stock-price">$${Number(t.price).toLocaleString()}</span>
+                    <div id="pl-display-${t.id}" style="display:inline-block; margin-left:5px;"></div>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    ${t.result ? `
+                        <span style="font-size: 0.8rem; font-weight: 800; color: ${t.result === 'win' ? 'var(--win-deep)' : 'var(--lose-deep)'}; margin-right: 8px;">
+                            ${t.final_pl || ''}
+                        </span>
+                        <span class="result-badge ${t.result}-badge">${t.result.toUpperCase()}</span>
+                    ` : ''}
+                    <button class="del-btn" onclick="deleteTrade('${t.id}')"><i data-lucide="x" style="width:14px;"></i></button>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div class="tag-container" style="margin:0">${t.appliedItems.map(item => `<span class="tag">${item}</span>`).join('')}</div>
+                ${!t.result ? `<button id="refresh-btn-${t.id}" class="edit-btn" onclick="refreshPrice('${t.id}', '${t.name}', ${t.price})"><i data-lucide="refresh-cw" style="width:12px;"></i> 更新</button>` : ''}
+            </div>
+            
+            <div style="margin-top: 8px;">
+                <div id="memo-text-${t.id}" class="memo-area" contenteditable="false">${t.memo || 'メモを追加'}</div>
+                <div style="text-align: right; margin-top: 6px;">
+                    <button id="edit-btn-${t.id}" class="edit-btn" onclick="toggleEdit('${t.id}')">
+                        <i data-lucide="edit-2" style="width:12px;"></i> 編集
+                    </button>
+                </div>
+            </div>
+
+            ${!t.result ? `
+                <div class="res-actions">
+                    <button class="btn-win" onclick="setTradeResult('${t.id}', 'win')">WIN</button>
+                    <button class="btn-lose" onclick="setTradeResult('${t.id}', 'lose')">LOSE</button>
+                </div>
+            ` : `<div style="font-size:10px; color:#94a3b8; margin-top:8px;">${t.date}</div>`}
+        </div>
+    `;
+}
+
+window.onload = () => { renderEntryChecks(); loadTrades(); };
+</script>
+</body>
+</html>
