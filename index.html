@@ -137,7 +137,7 @@
         </div>
     </div>
      <section id="win-analysis" style="display:none; margin-bottom: 16px;">
-        <h3 style="margin: 0 0 12px 0; font-size: 0.9rem; font-weight: 800;">強み分析 (40%超のみ)</h3>
+        <h3 style="margin: 0 0 12px 0; font-size: 0.9rem; font-weight: 800;">項目分析</h3>
         <div id="analysis-content"></div>
     </section>
     <div id="history-container"></div>
@@ -145,7 +145,7 @@
 
 <script>
 const TWELVE_DATA_API_KEY = "4745e87ea2404681a5c9fa6376aac35a"; 
-const masterItems = ["LL-HL", "RS21>63緑", "RS10>21緑", "テーマ1&5=緑", "AT", "W", "CUP", "GC", "21screen", "pivot-breakout", "pivot反発", "雲反発", "平均線サポート", "雲サポート", "雲上抜け",  "ATR=all緑", "出来高", "no-Box", "21>50>200", "RS=all緑", "セクタ=緑", "VCS>60"];
+const masterItems = ["LL-HL", "RS=100%", "RS21>63緑", "RS10>21緑", "テーマ1&5=緑", "Break-Out", "21>50>200", "GC", "AT", "W", "CUP", "21screen", "pivot反発", "雲反発", "平均線サポート", "雲サポート", "雲上抜け",  "ATR=all緑", "出来高", "no-Box", "RS=all緑", "セクタ=緑", "VCS>60"];
 let trades = [];
 let currentHistoryFilter = 'win';
 const API_URL = "/api";
