@@ -168,7 +168,7 @@ const positiveItems = [
 
 // マイナス懸念事項
 const negativeItems = [
-    "RS", "出来高", "ATR", "3α", "抵抗", "三角", "セクタ", "ATR%50", "Chandelier", "P<MA", "2α"
+    "RS", "出来高", "ATR", "3α", "抵抗", "三角", "セクタ", "ATR%50", "2α"
 ];
 
 let trades = [];
@@ -244,7 +244,7 @@ async function registerTrade() {
     const negativeCheckEls = document.querySelectorAll('.entry-check-negative:checked');
     
     if (!nameEl.value || !priceEl.value) return alert('銘柄名と価格を入力してください');
-    if (!confirm("RSP>21, LL-HL：OK?")) return;
+    if (!confirm("RSP>21, LL-HL, Chandelier, Vol, MA：OK?")) return;
     
     const now = new Date();
     const jstDate = new Intl.DateTimeFormat('ja-JP', {
