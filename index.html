@@ -6,17 +6,20 @@
     <link rel="apple-touch-icon" href="https://github.com/user-attachments/assets/25246467-96eb-4a5c-8277-69febbe0b86a">
     <link rel="shortcut icon" href="https://github.com/user-attachments/assets/25246467-96eb-4a5c-8277-69febbe0b86a">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Trade Analysis</title>
+    <title>Trade Analysis (Dark)</title>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
         :root { 
-            --primary: #2563eb; 
-            --win-deep: #059669; 
-            --lose-deep: #dc2626; 
-            --bg: #f8fafc; 
-            --card: #ffffff;
-            --text-main: #1e293b;
-            --text-sub: #64748b;
+            --primary: #3b82f6; 
+            --win-deep: #10b981; 
+            --lose-deep: #ef4444; 
+            --bg: #0f172a; 
+            --card: #1e293b;
+            --header: #1e293b;
+            --text-main: #f1f5f9;
+            --text-sub: #94a3b8;
+            --border: #334155;
+            --input-bg: #0f172a;
         }
         
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -26,88 +29,93 @@
             color: var(--text-main); font-size: 14px;
         }
 
-        header { background: white; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 100; }
+        header { background: var(--header); padding: 12px 16px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
         .nav-tabs { display: flex; gap: 8px; margin-top: 12px; }
         .tab { 
-            flex: 1; padding: 8px; border: none; background: #f1f5f9; border-radius: 8px; 
-            font-weight: bold; color: var(--text-sub); font-size: 0.8rem;
+            flex: 1; padding: 8px; border: none; background: #334155; border-radius: 8px; 
+            font-weight: bold; color: var(--text-sub); font-size: 0.8rem; cursor: pointer;
         }
-        .tab.active { background: var(--text-main); color: white; }
+        .tab.active { background: var(--primary); color: white; }
 
         .page { padding: 12px; display: none; }
         .page.active { display: block; }
 
-        section { background: var(--card); padding: 16px; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 16px; }
+        section { background: var(--card); padding: 16px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 16px; }
         .section-title { font-size: 0.85rem; font-weight: 800; margin-bottom: 8px; color: var(--text-main); }
         .input-group { margin-bottom: 12px; }
-        input, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; }
+        input, textarea { 
+            width: 100%; padding: 10px; background: var(--input-bg); border: 1px solid var(--border); 
+            border-radius: 8px; font-size: 1rem; color: white;
+        }
+        input::placeholder, textarea::placeholder { color: #475569; }
 
-        /* 新規エントリー項目：3つずつ横に並べる */
         .check-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 8px 0; }
         .check-box { 
-            background: #f1f5f9; padding: 6px 4px; border-radius: 8px; font-size: 0.65rem; font-weight: bold;
+            background: #334155; padding: 6px 4px; border-radius: 8px; font-size: 0.65rem; font-weight: bold;
             display: flex; align-items: center; justify-content: center; text-align: center; border: 1px solid transparent;
-            min-height: 42px; line-height: 1.1;
+            min-height: 42px; line-height: 1.1; color: var(--text-sub);
         }
-        .check-box.checked { background: #dbeafe; border-color: var(--primary); color: var(--primary); }
-        .check-box.negative.checked { background: #fee2e2; border-color: var(--lose-deep); color: var(--lose-deep); }
+        .check-box.checked { background: #1e40af; border-color: var(--primary); color: white; }
+        .check-box.negative.checked { background: #7f1d1d; border-color: var(--lose-deep); color: white; }
         .check-box input { display: none; }
 
-        .submit-btn { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 800; }
+        .submit-btn { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; }
 
         .history-summary { display: flex; gap: 10px; margin-bottom: 16px; }
         .summary-box {
             flex: 1; padding: 12px; border-radius: 12px; text-align: center; 
-            cursor: pointer; border: 2px solid transparent; transition: all 0.2s;
-            background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            cursor: pointer; border: 2px solid var(--border); transition: all 0.2s;
+            background: var(--card);
         }
-        .summary-box.active-win { border-color: var(--win-deep); background: #ecfdf5; }
-        .summary-box.active-lose { border-color: var(--lose-deep); background: #fef2f2; }
+        .summary-box.active-win { border-color: var(--win-deep); background: #064e3b; }
+        .summary-box.active-lose { border-color: var(--lose-deep); background: #7f1d1d; }
         .summary-label { font-size: 0.7rem; font-weight: 800; margin-bottom: 4px; }
         .summary-count { font-size: 1.4rem; font-weight: 900; }
 
-        .trade-card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; position: relative; }
+        .trade-card { background: var(--card); border-radius: 12px; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border); position: relative; }
         .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
         .stock-info { display: flex; align-items: baseline; gap: 8px; }
-        .stock-name { font-size: 1rem; font-weight: 800; }
+        .stock-name { font-size: 1rem; font-weight: 800; color: #fff; }
         
         .tag-container { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
-        .tag { font-size: 0.65rem; background: #f8fafc; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; color: #64748b; }
-        .tag.negative { background: #fef2f2; border-color: #fecaca; color: var(--lose-deep); }
+        .tag { font-size: 0.65rem; background: #334155; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); color: var(--text-sub); }
+        .tag.negative { background: #450a0a; border-color: #991b1b; color: #f87171; }
 
-        .memo-area { font-size: 0.8rem; background: #fffbeb; padding: 8px 10px; border-radius: 6px; border-left: 3px solid #f59e0b; margin-top: 6px; min-height: 20px; }
-        .memo-area[contenteditable="true"] { background: white; border: 2px solid #f59e0b; outline: none; }
+        .memo-area { font-size: 0.8rem; background: #451a03; padding: 8px 10px; border-radius: 6px; border-left: 3px solid #f59e0b; margin-top: 6px; min-height: 20px; color: #fed7aa; }
+        .memo-area[contenteditable="true"] { background: var(--input-bg); border: 2px solid #f59e0b; outline: none; color: white; }
 
         .edit-btn {
-            background: #f1f5f9; border: none; color: var(--text-main); font-size: 0.7rem; 
+            background: #334155; border: none; color: var(--text-main); font-size: 0.7rem; 
             font-weight: bold; cursor: pointer; padding: 6px 12px; border-radius: 6px;
             display: inline-flex; align-items: center; gap: 4px;
         }
         .save-btn { background: var(--primary); color: white; }
 
         .res-actions { display: flex; gap: 8px; margin-top: 10px; }
-        .res-actions button { flex: 1; padding: 8px; border: none; border-radius: 6px; color: white; font-weight: 800; }
+        .res-actions button { flex: 1; padding: 8px; border: none; border-radius: 6px; color: white; font-weight: 800; cursor: pointer; }
         .btn-win { background: var(--win-deep); }
         .btn-lose { background: var(--lose-deep); }
 
         .result-badge { padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 900; color: white; }
         .win-badge { background: var(--win-deep); }
         .lose-badge { background: var(--lose-deep); }
-        .del-btn { color: #cbd5e1; border: none; background: none; }
+        .del-btn { color: #475569; border: none; background: none; cursor: pointer; }
 
-        /* 編集用モーダル/インライングリッド */
         .edit-grid-container { 
-            display: none; background: #f8fafc; border: 1px solid #e2e8f0; 
+            display: none; background: var(--input-bg); border: 1px solid var(--border); 
             border-radius: 8px; padding: 10px; margin-top: 10px;
         }
+
+        /* 分析セクションのバー背景 */
+        .progress-bg { background: #334155; height: 6px; border-radius: 3px; overflow: hidden; }
     </style>
 </head>
 <body>
 
 <header>
     <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h1 style="margin:0; font-size:1.2rem; font-weight:900;">Trade Analysis</h1>
-        <button onclick="switchPage('entry')" style="border:none; background:none; color:var(--primary); font-weight:bold;">+ 新規</button>
+        <h1 style="margin:0; font-size:1.2rem; font-weight:900; color:white;">Trade Analysis</h1>
+        <button onclick="switchPage('entry')" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer;">+ 新規</button>
     </div>
     <div class="nav-tabs">
         <button class="tab active" id="tab-active" onclick="switchPage('active')">取引中</button>
@@ -156,17 +164,16 @@
 </div>
 
 <script>
+// --- Script 部分は変更なし（UI色のみ変更のためロジック維持） ---
 const TWELVE_DATA_API_KEY = "4745e87ea2404681a5c9fa6376aac35a"; 
 
-// ポジティブ要因
 const positiveItems = [
-    "RS=100%", "RS21>63緑", "RS10>21緑", "RS(XL)緑", "RS=all緑", "テーマ1&5=緑", "テーマ5&10=緑",　"テーマ=all緑", "1M>25", "Break-Out", 
+    "RS=100%", "RS21>63緑", "RS10>21緑", "RS(XL)緑", "RS=all緑", "テーマ1&5=緑", "テーマ5&10=緑", "テーマ=all緑", "1M>25", "Break-Out", 
     "21>50>200", "出来高", "GC", "21screen", "AT", "W", "CUP", "pivot反発", 
     "平均線サポート", "雲サポート", "雲上抜け", "ATR=all緑", 
     "セクタ=緑", "ATH", "VCS>60"
 ];
 
-// マイナス懸念事項
 const negativeItems = [
     "RS", "出来高", "ATR", "3α", "抵抗", "三角", "セクタ", "ATR%50", "2α"
 ];
@@ -362,9 +369,9 @@ function renderTrades() {
     if(boxWin) boxWin.className = `summary-box ${currentHistoryFilter === 'win' ? 'active-win' : ''}`;
     if(boxLose) boxLose.className = `summary-box ${currentHistoryFilter === 'lose' ? 'active-lose' : ''}`;
     
-    activeCont.innerHTML = trades.filter(t => !t.result).map(t => renderCard(t)).join('') || '<p style="text-align:center; color:#94a3b8;">取引中の銘柄はありません</p>';
+    activeCont.innerHTML = trades.filter(t => !t.result).map(t => renderCard(t)).join('') || '<p style="text-align:center; color:#475569;">取引中の銘柄はありません</p>';
     const filteredHistory = currentHistoryFilter === 'win' ? winTrades : loseTrades;
-    historyCont.innerHTML = filteredHistory.map(t => renderCard(t)).join('') || `<p style="text-align:center; color:#94a3b8;">${currentHistoryFilter.toUpperCase()}の履歴はありません</p>`;
+    historyCont.innerHTML = filteredHistory.map(t => renderCard(t)).join('') || `<p style="text-align:center; color:#475569;">${currentHistoryFilter.toUpperCase()}の履歴はありません</p>`;
     
     if (currentHistoryFilter === 'win') {
         renderAnalysis(winTrades, positiveItems, 'WIN項目分析', 'var(--win-deep)');
@@ -412,10 +419,10 @@ function renderAnalysis(filteredTrades, itemsList, title, baseColor) {
         return `
             <div style="margin-bottom: 8px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <span style="font-size: 0.75rem; font-weight: 700;">${stat.item}</span>
+                    <span style="font-size: 0.75rem; font-weight: 700; color: white;">${stat.item}</span>
                     <span style="font-size: 0.75rem; font-weight: 800; color: ${color};">${stat.percentage}%</span>
                 </div>
-                <div style="background: #f1f5f9; height: 6px; border-radius: 3px; overflow: hidden;">
+                <div class="progress-bg">
                     <div style="background: ${color}; height: 100%; width: ${stat.percentage}%; transition: width 0.3s;"></div>
                 </div>
                 <div style="font-size: 0.65rem; color: var(--text-sub); margin-top: 2px;">${stat.count}/${total} トレード</div>
@@ -454,7 +461,7 @@ function renderCard(t) {
             <div class="card-top">
                 <div class="stock-info">
                     <span class="stock-name">${t.name}</span>
-                    <span class="stock-price">$${Number(t.price).toLocaleString()}</span>
+                    <span class="stock-price" style="color:#94a3b8;">$${Number(t.price).toLocaleString()}</span>
                     <div id="pl-display-${t.id}" style="display:inline-block; margin-left:5px;"></div>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px;">
@@ -482,7 +489,7 @@ function renderCard(t) {
                     <button id="edit-btn-${t.id}" class="edit-btn" onclick="toggleEdit('${t.id}')"><i data-lucide="edit-2" style="width:12px;"></i> メモ編集</button>
                 </div>
             </div>
-            ${!t.result ? `<div class="res-actions"><button class="btn-win" onclick="setTradeResult('${t.id}', 'win')">WIN</button><button class="btn-lose" onclick="setTradeResult('${t.id}', 'lose')">LOSE</button></div>` : `<div style="font-size:10px; color:#94a3b8; margin-top:8px;">${t.date}</div>`}
+            ${!t.result ? `<div class="res-actions"><button class="btn-win" onclick="setTradeResult('${t.id}', 'win')">WIN</button><button class="btn-lose" onclick="setTradeResult('${t.id}', 'lose')">LOSE</button></div>` : `<div style="font-size:10px; color:#475569; margin-top:8px;">${t.date}</div>`}
         </div>
     `;
 }
