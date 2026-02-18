@@ -21,6 +21,9 @@
             --border: #334155;
             --input-bg: #0f172a;
             --ai-accent: #8b5cf6;
+            --theme-accent: #f59e0b;
+            --tag-bg: #1e3a8a;
+            --tag-text: #bfdbfe;
         }
         
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -34,11 +37,12 @@
         .nav-tabs { display: flex; gap: 4px; margin-top: 12px; }
         .tab { 
             flex: 1; padding: 8px 4px; border: none; background: #334155; border-radius: 8px; 
-            font-weight: bold; color: var(--text-sub); font-size: 0.7rem; cursor: pointer;
+            font-weight: bold; color: var(--text-sub); font-size: 0.65rem; cursor: pointer;
             white-space: nowrap;
         }
         .tab.active { background: var(--primary); color: white; }
         .tab.ai-tab.active { background: var(--ai-accent); color: white; }
+        .tab.theme-tab.active { background: var(--theme-accent); color: white; }
 
         .page { padding: 12px; display: none; }
         .page.active { display: block; }
@@ -51,6 +55,7 @@
             border-radius: 8px; font-size: 1rem; color: white;
         }
         input::placeholder, textarea::placeholder { color: #475569; }
+        input:focus, textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
 
         .check-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 8px 0; }
         .check-box { 
@@ -109,14 +114,53 @@
             border-radius: 8px; padding: 10px; margin-top: 10px;
         }
 
-        /* 分析セクションのバー背景 */
         .progress-bg { background: #334155; height: 6px; border-radius: 3px; overflow: hidden; }
 
-        /* プロンプトページ専用スタイル */
+        /* プロンプトページ */
         .prompt-container-static { background: #000; padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
         .prompt-container-static pre { font-family: monospace; font-size: 0.8rem; color: #a7f3d0; white-space: pre-wrap; margin: 0; line-height: 1.4; word-break: break-all; }
         .copy-btn-static { background: #334155; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; font-weight: bold; }
         .copy-btn-static.copied { background: var(--win-deep); }
+
+        /* テーマトラッカー */
+        .theme-section-card { 
+            background: var(--card); 
+            padding: 16px; 
+            border-radius: 16px; 
+            border: 1px solid var(--border); 
+            margin-bottom: 16px; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2); 
+        }
+        .theme-header { border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 12px; }
+        .theme-title-row { display: flex; justify-content: space-between; align-items: flex-start; }
+        .theme-title { font-size: 1.1rem; font-weight: 900; color: var(--text-main); margin: 0; }
+        .theme-date { font-size: 0.65rem; color: var(--text-sub); margin-top: 2px; }
+        .theme-tag { font-size: 0.65rem; background: var(--tag-bg); padding: 2px 8px; border-radius: 4px; border: 1px solid #1e40af; color: var(--tag-text); font-weight: bold; }
+        .stock-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+        .stock-badge { 
+            background: #334155; padding: 4px 10px; border-radius: 20px; font-weight: 800; font-size: 0.8rem;
+            display: flex; align-items: center; gap: 4px; border: 1px solid var(--border); color: #f1f5f9;
+        }
+        .btn-ghost { background: none; border: none; color: var(--text-sub); padding: 4px; cursor: pointer; }
+        #loading-toast { 
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: #3b82f6; color: white; padding: 8px 24px; border-radius: 20px;
+            font-size: 0.8rem; display: none; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        /* テーマモーダル */
+        #theme-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; }
+        .theme-modal { background: var(--card); width: 90%; max-width: 400px; padding: 20px; border-radius: 16px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border); }
+        .theme-check-box { 
+            background: #334155; padding: 6px 4px; border-radius: 8px; font-size: 0.65rem; font-weight: bold;
+            display: flex; align-items: center; justify-content: center; text-align: center; border: 1px solid transparent;
+            min-height: 40px; cursor: pointer; color: var(--text-sub);
+        }
+        .theme-check-box.checked { background: var(--primary); border-color: var(--primary); color: white; }
+        .theme-check-box input { display: none; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -124,15 +168,17 @@
 <header>
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <h1 style="margin:0; font-size:1.2rem; font-weight:900; color:white;">Trade Analysis</h1>
-        <button onclick="switchPage('entry')" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer;">+ 新規</button>
+        <button id="header-action-btn" onclick="headerAction()" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer;">+ 新規</button>
     </div>
     <div class="nav-tabs">
         <button class="tab active" id="tab-active" onclick="switchPage('active')">取引中</button>
         <button class="tab" id="tab-history" onclick="switchPage('history')">分析</button>
+        <button class="tab theme-tab" id="tab-theme" onclick="switchPage('theme')">テーマ</button>
         <button class="tab ai-tab" id="tab-ai" onclick="switchPage('ai')">プロンプト</button>
     </div>
 </header>
 
+<!-- エントリーページ -->
 <div id="page-entry" class="page">
     <section>
         <div class="input-group"><input type="text" id="stock-name" placeholder="銘柄コード (例: NVDA)"></div>
@@ -151,10 +197,12 @@
     </section>
 </div>
 
+<!-- 取引中ページ -->
 <div id="page-active" class="page active">
     <div id="active-container"></div>
 </div>
 
+<!-- 分析ページ -->
 <div id="page-history" class="page">
     <div class="history-summary">
         <div id="box-win" class="summary-box active-win" onclick="setHistoryFilter('win')">
@@ -173,7 +221,12 @@
     <div id="history-container"></div>
 </div>
 
-<!-- ★ 移植: プロンプトページ -->
+<!-- テーマトラッカーページ -->
+<div id="page-theme" class="page">
+    <div id="theme-list"></div>
+</div>
+
+<!-- プロンプトページ -->
 <div id="page-ai" class="page">
     <div class="section-title" style="color: var(--ai-accent); display: flex; align-items: center; gap: 6px; margin-bottom: 16px;">
         <i data-lucide="bot" style="width:16px;"></i> プロンプトストック
@@ -210,8 +263,30 @@
     </section>
 </div>
 
+<!-- テーマ作成モーダル -->
+<div id="theme-overlay">
+    <div class="theme-modal">
+        <h3 id="theme-modal-title" style="margin-top:0; color: var(--text-main);">新規テーマ作成</h3>
+        <input type="hidden" id="edit-theme-id">
+        <div style="margin-bottom: 12px;">
+            <input type="text" id="theme-name-input" placeholder="テーマ名 (例: AI半導体)">
+        </div>
+        <div style="font-size: 0.75rem; font-weight: 800; color: var(--text-sub); margin-bottom: 4px;">テーマの属性項目</div>
+        <div id="theme-check-grid" class="check-grid"></div>
+        <div style="display: flex; gap: 8px; margin-top: 20px;">
+            <button onclick="closeThemeModal()" class="btn-ghost" style="flex:1; padding: 10px; border-radius: 8px; background: #334155; color: var(--text-sub); font-weight: bold;">戻る</button>
+            <button onclick="handleThemeSave()" style="flex:2; padding: 12px; background: var(--theme-accent); color: white; border: none; border-radius: 8px; font-weight: 800; cursor: pointer;">保存</button>
+        </div>
+    </div>
+</div>
+
+<div id="loading-toast">保存中...</div>
+
 <script>
+// ======== 共通設定 ========
 const TWELVE_DATA_API_KEY = "4745e87ea2404681a5c9fa6376aac35a"; 
+const TRADE_API_URL = "/api";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw8bphx9s_QhCLbgKbhkI1iAMu22EBIfsR0YVeEE4MoF0qYWcxyE9AKhm3yCzafO40_2g/exec";
 
 const positiveItems = [
     "RS=100%", "RS21>63緑", "RS10>21緑", "RS(XL)緑", "RS=all緑", "テーマ1&5=緑", "テーマ5&10=緑", "テーマ=all緑", "1M>25", "Break-Out", 
@@ -224,10 +299,44 @@ const negativeItems = [
     "RS", "出来高", "ATR", "3α", "抵抗", "三角", "セクタ", "ATR%50", "2α"
 ];
 
-let trades = [];
-let currentHistoryFilter = 'win';
-const API_URL = "/api";
+const themeItems = ["1M>30", "10D>1M", "1M>2M", "2M>3M", "1M>2M>3M", "ALL緑", "1D=赤", "5D=赤", "成長"];
 
+let trades = [];
+let themes = [];
+let currentHistoryFilter = 'win';
+let currentPage = 'active';
+
+// ======== ページ切替 ========
+function switchPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(`page-${pageId}`).classList.add('active');
+    const tab = document.getElementById(`tab-${pageId}`);
+    if(tab) tab.classList.add('active');
+    currentPage = pageId;
+
+    // ヘッダーアクションボタン
+    const btn = document.getElementById('header-action-btn');
+    if (pageId === 'theme') {
+        btn.textContent = '+ テーマ';
+        btn.style.color = 'var(--theme-accent)';
+    } else {
+        btn.textContent = '+ 新規';
+        btn.style.color = 'var(--primary)';
+    }
+
+    if(window.lucide) lucide.createIcons();
+}
+
+function headerAction() {
+    if (currentPage === 'theme') {
+        openThemeModal();
+    } else {
+        switchPage('entry');
+    }
+}
+
+// ======== トレード機能 ========
 async function refreshPrice(id, symbol, entryPrice) {
     const btn = document.querySelector(`#refresh-btn-${id}`);
     const display = document.querySelector(`#pl-display-${id}`);
@@ -251,7 +360,7 @@ async function refreshPrice(id, symbol, entryPrice) {
 
 async function loadTrades() {
     try {
-        const res = await fetch(API_URL);
+        const res = await fetch(TRADE_API_URL);
         const data = await res.json();
         trades = data.map(t => ({
             id: String(t.trade_id),
@@ -317,7 +426,7 @@ async function registerTrade() {
     };
     
     try {
-        await fetch(API_URL, {
+        await fetch(TRADE_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newTrade)
@@ -366,7 +475,7 @@ async function saveItemEdit(id) {
 
 async function updateTradeData(id, data) {
     try {
-        await fetch(API_URL, {
+        await fetch(TRADE_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: "update", id: id, ...data })
@@ -389,31 +498,8 @@ async function setTradeResult(id, result) {
 
 async function deleteTrade(id) {
     if (!confirm('削除しますか？')) return;
-    await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' });
+    await fetch(`${TRADE_API_URL}?id=${id}`, { method: 'DELETE' });
     await loadTrades();
-}
-
-function switchPage(pageId) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById(`page-${pageId}`).classList.add('active');
-    const tab = document.getElementById(`tab-${pageId}`);
-    if(tab) tab.classList.add('active');
-    if(window.lucide) lucide.createIcons();
-}
-
-// ★ 移植: プロンプトコピー関数
-function copyStaticPrompt(elementId, btn) {
-    const text = document.getElementById(elementId).innerText;
-    navigator.clipboard.writeText(text).then(() => {
-        const originalText = btn.innerText;
-        btn.innerText = "完了！";
-        btn.classList.add('copied');
-        setTimeout(() => {
-            btn.innerText = originalText;
-            btn.classList.remove('copied');
-        }, 2000);
-    });
 }
 
 function renderTrades() {
@@ -557,7 +643,182 @@ function renderCard(t) {
     `;
 }
 
-window.onload = () => { renderEntryChecks(); loadTrades(); };
+// ======== テーマトラッカー機能 ========
+async function loadThemes() {
+    const list = document.getElementById('theme-list');
+    list.innerHTML = '<p style="text-align:center; color:var(--text-sub); margin-top:40px;">データを同期中...</p>';
+    try {
+        const response = await fetch(GAS_URL);
+        themes = await response.json();
+        renderThemes();
+    } catch (e) {
+        console.error("読み込み失敗:", e);
+        list.innerHTML = '<p style="text-align:center; color:#ef4444; margin-top:40px;">読み込みに失敗しました。</p>';
+    }
+}
+
+async function saveThemes() {
+    const toast = document.getElementById('loading-toast');
+    toast.style.display = 'block';
+    renderThemes();
+    try {
+        await fetch(GAS_URL, {
+            method: "POST",
+            body: JSON.stringify(themes)
+        });
+        toast.style.display = 'none';
+    } catch (e) {
+        console.error("保存失敗:", e);
+        alert("データの保存に失敗しました。");
+        toast.style.display = 'none';
+    }
+}
+
+function openThemeModal(themeId = null) {
+    const grid = document.getElementById('theme-check-grid');
+    const modalTitle = document.getElementById('theme-modal-title');
+    const nameInput = document.getElementById('theme-name-input');
+    const editIdInput = document.getElementById('edit-theme-id');
+    
+    let selectedTags = [];
+    
+    if (themeId) {
+        const theme = themes.find(t => t.id === themeId);
+        modalTitle.innerText = "テーマの編集";
+        nameInput.value = theme.name;
+        editIdInput.value = themeId;
+        selectedTags = theme.tags;
+    } else {
+        modalTitle.innerText = "新規テーマ作成";
+        nameInput.value = '';
+        editIdInput.value = '';
+    }
+
+    grid.innerHTML = themeItems.map(item => {
+        const isChecked = selectedTags.includes(item);
+        return `
+            <label class="theme-check-box check-box ${isChecked ? 'checked' : ''}">
+                <input type="checkbox" value="${item}" ${isChecked ? 'checked' : ''} onchange="this.parentElement.classList.toggle('checked', this.checked)">
+                ${item}
+            </label>
+        `;
+    }).join('');
+    
+    document.getElementById('theme-overlay').style.display = 'flex';
+}
+
+function closeThemeModal() {
+    document.getElementById('theme-overlay').style.display = 'none';
+}
+
+function handleThemeSave() {
+    const name = document.getElementById('theme-name-input').value;
+    const editId = document.getElementById('edit-theme-id').value;
+    const checks = Array.from(document.querySelectorAll('#theme-check-grid input:checked')).map(el => el.value);
+    
+    if (!name) return alert("テーマ名を入力してください");
+
+    if (editId) {
+        const theme = themes.find(t => t.id == editId);
+        theme.name = name;
+        theme.tags = checks;
+    } else {
+        const now = new Date();
+        const timestamp = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
+        themes.push({
+            id: Date.now(),
+            name: name,
+            date: timestamp,
+            tags: checks,
+            stocks: []
+        });
+    }
+    
+    saveThemes();
+    closeThemeModal();
+}
+
+function addThemeStock(themeId) {
+    const symbol = prompt("追加するティッカーシンボルを入力:");
+    if (symbol) {
+        const theme = themes.find(t => t.id === themeId);
+        theme.stocks.push(symbol.toUpperCase());
+        saveThemes();
+    }
+}
+
+function removeThemeStock(themeId, index) {
+    if (confirm("銘柄を削除しますか？")) {
+        themes.find(t => t.id === themeId).stocks.splice(index, 1);
+        saveThemes();
+    }
+}
+
+function deleteTheme(id) {
+    if (confirm("このテーマ（箱）を削除しますか？")) {
+        themes = themes.filter(t => t.id !== id);
+        saveThemes();
+    }
+}
+
+function renderThemes() {
+    const list = document.getElementById('theme-list');
+    list.innerHTML = themes.map(theme => `
+        <div class="theme-section-card">
+            <div class="theme-header">
+                <div class="theme-title-row">
+                    <div>
+                        <h2 class="theme-title">${theme.name}</h2>
+                        <div class="theme-date">作成日: ${theme.date}</div>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn-ghost" onclick="openThemeModal(${theme.id})"><i data-lucide="edit-3" style="width:14px;"></i></button>
+                        <button class="btn-ghost" onclick="deleteTheme(${theme.id})"><i data-lucide="trash-2" style="width:14px;"></i></button>
+                    </div>
+                </div>
+                <div class="tag-container">
+                    ${theme.tags.map(tag => `<span class="theme-tag"># ${tag}</span>`).join('')}
+                </div>
+            </div>
+            
+            <div class="stock-list">
+                ${theme.stocks.map((s, i) => `
+                    <div class="stock-badge">
+                        ${s}
+                        <span onclick="removeThemeStock(${theme.id}, ${i})" style="cursor:pointer; color:#64748b; margin-left:4px;">✕</span>
+                    </div>
+                `).join('')}
+                <button onclick="addThemeStock(${theme.id})" style="border:1px dashed #475569; background:none; border-radius:20px; padding:4px 12px; color:#94a3b8; font-size:0.8rem; font-weight:bold; cursor:pointer;">+ 追加</button>
+            </div>
+        </div>
+    `).join('');
+    
+    if (themes.length === 0) {
+        list.innerHTML = '<p style="text-align:center; color:var(--text-sub); margin-top:40px;">テーマが登録されていません。</p>';
+    }
+    if(window.lucide) lucide.createIcons();
+}
+
+// ======== プロンプトコピー ========
+function copyStaticPrompt(elementId, btn) {
+    const text = document.getElementById(elementId).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        const originalText = btn.innerText;
+        btn.innerText = "完了！";
+        btn.classList.add('copied');
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.classList.remove('copied');
+        }, 2000);
+    });
+}
+
+// ======== 初期化 ========
+window.onload = () => { 
+    renderEntryChecks(); 
+    loadTrades(); 
+    loadThemes();
+};
 </script>
 </body>
 </html>
