@@ -22,6 +22,7 @@
             --input-bg: #0f172a;
             --ai-accent: #8b5cf6;
             --theme-accent: #f59e0b;
+            --sector-accent: #06b6d4;
             --tag-bg: #1e3a8a;
             --tag-text: #bfdbfe;
         }
@@ -37,12 +38,13 @@
         .nav-tabs { display: flex; gap: 4px; margin-top: 12px; }
         .tab { 
             flex: 1; padding: 8px 4px; border: none; background: #334155; border-radius: 8px; 
-            font-weight: bold; color: var(--text-sub); font-size: 0.65rem; cursor: pointer;
+            font-weight: bold; color: var(--text-sub); font-size: 0.6rem; cursor: pointer;
             white-space: nowrap;
         }
         .tab.active { background: var(--primary); color: white; }
         .tab.ai-tab.active { background: var(--ai-accent); color: white; }
         .tab.theme-tab.active { background: var(--theme-accent); color: white; }
+        .tab.sector-tab.active { background: var(--sector-accent); color: white; }
 
         .page { padding: 12px; display: none; }
         .page.active { display: block; }
@@ -159,6 +161,31 @@
         .theme-check-box.checked { background: var(--primary); border-color: var(--primary); color: white; }
         .theme-check-box input { display: none; }
 
+        /* セクタ検索ページ */
+        .sector-search-row {
+            display: flex; gap: 8px; margin-bottom: 16px;
+        }
+        .sector-search-row input {
+            flex: 1; font-size: 0.95rem;
+        }
+        .sector-search-btn {
+            padding: 10px 18px; background: var(--sector-accent); color: white;
+            border: none; border-radius: 8px; font-weight: 800; cursor: pointer; white-space: nowrap;
+            font-size: 0.9rem;
+        }
+        .sector-result-table { width: 100%; border-collapse: collapse; }
+        .sector-result-table tr { border-bottom: 1px solid var(--border); }
+        .sector-result-table th {
+            padding: 12px 8px; text-align: left; color: var(--text-sub);
+            font-size: 0.75rem; font-weight: 700; width: 40%;
+        }
+        .sector-result-table td {
+            padding: 12px 8px; font-weight: 800; color: var(--text-main); font-size: 0.9rem;
+        }
+        .sector-loading {
+            text-align: center; color: var(--text-sub); padding: 20px; font-size: 0.85rem;
+        }
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
     </style>
@@ -174,6 +201,7 @@
         <button class="tab active" id="tab-active" onclick="switchPage('active')">取引中</button>
         <button class="tab" id="tab-history" onclick="switchPage('history')">分析</button>
         <button class="tab theme-tab" id="tab-theme" onclick="switchPage('theme')">テーマ</button>
+        <button class="tab sector-tab" id="tab-sector" onclick="switchPage('sector')">セクタ</button>
         <button class="tab ai-tab" id="tab-ai" onclick="switchPage('ai')">プロンプト</button>
     </div>
 </header>
@@ -224,6 +252,31 @@
 <!-- テーマトラッカーページ -->
 <div id="page-theme" class="page">
     <div id="theme-list"></div>
+</div>
+
+<!-- セクタ検索ページ -->
+<div id="page-sector" class="page">
+    <section>
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 16px;">
+            <i data-lucide="search" style="width:16px; color:var(--sector-accent);"></i>
+            <span style="font-size: 0.85rem; font-weight: 800; color: var(--sector-accent);">セクタ検索</span>
+        </div>
+        <div class="sector-search-row">
+            <input type="text" id="sector-ticker" placeholder="ティッカー (例: TSLA, AAPL)" 
+                onkeydown="if(event.key==='Enter') fetchSectorData()">
+            <button class="sector-search-btn" onclick="fetchSectorData()">検索</button>
+        </div>
+        <div id="sector-loading" class="sector-loading" style="display:none;">データ取得中...</div>
+        <div id="sector-result" style="display:none;">
+            <table class="sector-result-table">
+                <tr><th>Ticker</th><td id="sec-ticker"></td></tr>
+                <tr><th>企業名</th><td id="sec-name"></td></tr>
+                <tr><th>業界</th><td id="sec-industry"></td></tr>
+                <tr><th>セクター</th><td id="sec-sector"></td></tr>
+                <tr><th>関連ETF</th><td id="sec-etf"></td></tr>
+            </table>
+        </div>
+    </section>
 </div>
 
 <!-- プロンプトページ -->
@@ -287,6 +340,7 @@
 const TWELVE_DATA_API_KEY = "4745e87ea2404681a5c9fa6376aac35a"; 
 const TRADE_API_URL = "/api";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbw8bphx9s_QhCLbgKbhkI1iAMu22EBIfsR0YVeEE4MoF0qYWcxyE9AKhm3yCzafO40_2g/exec";
+const SECTOR_GAS_URL = "https://script.google.com/macros/s/AKfycbyGon8w7cT4ZXgkczscpyp5nAo6dM26aToprB_1Hc5mYEiAU7sYF4lxpAQ77nPyzSm4/exec";
 
 const positiveItems = [
     "RS=100%", "RS21>63緑", "RS10>21緑", "RS(XL)緑", "RS=all緑", "テーマ1&5=緑", "テーマ5&10=緑", "テーマ=all緑", "1M>25", "Break-Out", 
@@ -799,6 +853,33 @@ function renderThemes() {
     if(window.lucide) lucide.createIcons();
 }
 
+// ======== セクタ検索機能 ========
+async function fetchSectorData() {
+    const ticker = document.getElementById('sector-ticker').value.trim();
+    if (!ticker) return;
+
+    const loading = document.getElementById('sector-loading');
+    const result = document.getElementById('sector-result');
+
+    loading.style.display = 'block';
+    result.style.display = 'none';
+
+    try {
+        const response = await fetch(`${SECTOR_GAS_URL}?ticker=${encodeURIComponent(ticker)}`);
+        const data = await response.json();
+        document.getElementById('sec-ticker').innerText = data.ticker || '-';
+        document.getElementById('sec-name').innerText = data.name || '-';
+        document.getElementById('sec-industry').innerText = data.industry || '-';
+        document.getElementById('sec-sector').innerText = data.sector || '-';
+        document.getElementById('sec-etf').innerText = data.etf || '-';
+        result.style.display = 'block';
+    } catch (e) {
+        alert("エラーが発生しました。URLのデプロイ設定を確認してください。");
+    } finally {
+        loading.style.display = 'none';
+    }
+}
+
 // ======== プロンプトコピー ========
 function copyStaticPrompt(elementId, btn) {
     const text = document.getElementById(elementId).innerText;
@@ -818,6 +899,7 @@ window.onload = () => {
     renderEntryChecks(); 
     loadTrades(); 
     loadThemes();
+    if(window.lucide) lucide.createIcons();
 };
 </script>
 </body>
