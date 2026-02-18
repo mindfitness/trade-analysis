@@ -44,12 +44,13 @@
         .page.active { display: block; }
 
         section { background: var(--card); padding: 16px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 16px; }
-        .section-title { font-size: 0.85rem; font-weight: 800; margin-bottom: 12px; color: var(--text-main); }
+        .section-title { font-size: 0.85rem; font-weight: 800; margin-bottom: 8px; color: var(--text-main); }
         .input-group { margin-bottom: 12px; }
         input, textarea { 
             width: 100%; padding: 10px; background: var(--input-bg); border: 1px solid var(--border); 
             border-radius: 8px; font-size: 1rem; color: white;
         }
+        input::placeholder, textarea::placeholder { color: #475569; }
 
         .check-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 8px 0; }
         .check-box { 
@@ -62,27 +63,60 @@
         .check-box input { display: none; }
 
         .submit-btn { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; }
+
+        .history-summary { display: flex; gap: 10px; margin-bottom: 16px; }
+        .summary-box {
+            flex: 1; padding: 12px; border-radius: 12px; text-align: center; 
+            cursor: pointer; border: 2px solid var(--border); transition: all 0.2s;
+            background: var(--card);
+        }
+        .summary-box.active-win { border-color: var(--win-deep); background: #064e3b; }
+        .summary-box.active-lose { border-color: var(--lose-deep); background: #7f1d1d; }
+        .summary-label { font-size: 0.7rem; font-weight: 800; margin-bottom: 4px; }
+        .summary-count { font-size: 1.4rem; font-weight: 900; }
+
+        .trade-card { background: var(--card); border-radius: 12px; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border); position: relative; }
+        .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .stock-info { display: flex; align-items: baseline; gap: 8px; }
+        .stock-name { font-size: 1rem; font-weight: 800; color: #fff; }
         
+        .tag-container { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+        .tag { font-size: 0.65rem; background: #334155; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); color: var(--text-sub); }
+        .tag.negative { background: #450a0a; border-color: #991b1b; color: #f87171; }
+
+        .memo-area { font-size: 0.8rem; background: #451a03; padding: 8px 10px; border-radius: 6px; border-left: 3px solid #f59e0b; margin-top: 6px; min-height: 20px; color: #fed7aa; }
+        .memo-area[contenteditable="true"] { background: var(--input-bg); border: 2px solid #f59e0b; outline: none; color: white; }
+
+        .edit-btn {
+            background: #334155; border: none; color: var(--text-main); font-size: 0.7rem; 
+            font-weight: bold; cursor: pointer; padding: 6px 12px; border-radius: 6px;
+            display: inline-flex; align-items: center; gap: 4px;
+        }
+        .save-btn { background: var(--primary); color: white; }
+
+        .res-actions { display: flex; gap: 8px; margin-top: 10px; }
+        .res-actions button { flex: 1; padding: 8px; border: none; border-radius: 6px; color: white; font-weight: 800; cursor: pointer; }
+        .btn-win { background: var(--win-deep); }
+        .btn-lose { background: var(--lose-deep); }
+
+        .result-badge { padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 900; color: white; }
+        .win-badge { background: var(--win-deep); }
+        .lose-badge { background: var(--lose-deep); }
+        .del-btn { color: #475569; border: none; background: none; cursor: pointer; }
+
+        .edit-grid-container { 
+            display: none; background: var(--input-bg); border: 1px solid var(--border); 
+            border-radius: 8px; padding: 10px; margin-top: 10px;
+        }
+
+        /* 分析セクションのバー背景 */
+        .progress-bg { background: #334155; height: 6px; border-radius: 3px; overflow: hidden; }
+
         /* プロンプトページ専用スタイル */
         .prompt-container-static { background: #000; padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
         .prompt-container-static pre { font-family: monospace; font-size: 0.8rem; color: #a7f3d0; white-space: pre-wrap; margin: 0; line-height: 1.4; word-break: break-all; }
         .copy-btn-static { background: #334155; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; font-weight: bold; }
         .copy-btn-static.copied { background: var(--win-deep); }
-
-        .history-summary { display: flex; gap: 10px; margin-bottom: 16px; }
-        .summary-box { flex: 1; padding: 12px; border-radius: 12px; text-align: center; cursor: pointer; border: 2px solid var(--border); background: var(--card); }
-        .summary-box.active-win { border-color: var(--win-deep); background: #064e3b; }
-        .summary-box.active-lose { border-color: var(--lose-deep); background: #7f1d1d; }
-
-        .trade-card { background: var(--card); border-radius: 12px; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border); }
-        .tag-container { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
-        .tag { font-size: 0.65rem; background: #334155; padding: 2px 6px; border-radius: 4px; color: var(--text-sub); }
-        .tag.negative { background: #450a0a; border-color: #991b1b; color: #f87171; }
-        .memo-area { font-size: 0.8rem; background: #451a03; padding: 8px 10px; border-radius: 6px; border-left: 3px solid #f59e0b; margin-top: 6px; color: #fed7aa; }
-        .res-actions { display: flex; gap: 8px; margin-top: 10px; }
-        .res-actions button { flex: 1; padding: 8px; border: none; border-radius: 6px; color: white; font-weight: 800; }
-        .btn-win { background: var(--win-deep); }
-        .btn-lose { background: var(--lose-deep); }
     </style>
 </head>
 <body>
@@ -103,12 +137,15 @@
     <section>
         <div class="input-group"><input type="text" id="stock-name" placeholder="銘柄コード (例: NVDA)"></div>
         <div class="input-group"><input type="number" id="entry-price" placeholder="価格"></div>
+        
         <div class="section-title" style="color: var(--win-deep);">✓ +項目</div>
         <div id="entry-check-grid-positive" class="check-grid"></div>
+        
         <div class="section-title" style="color: var(--lose-deep); margin-top: 16px;">⚠ -項目</div>
         <div id="entry-check-grid-negative" class="check-grid"></div>
+        
         <div class="input-group" style="margin-top: 16px;">
-            <textarea id="trade-memo" placeholder="備考など" rows="2"></textarea>
+            <textarea id="trade-memo" placeholder="週足,月足,強いbreakout,21→雲反発,二重反発,News,Grok" rows="2"></textarea>
         </div>
         <button onclick="registerTrade()" class="submit-btn">エントリーを記録</button>
     </section>
@@ -121,19 +158,24 @@
 <div id="page-history" class="page">
     <div class="history-summary">
         <div id="box-win" class="summary-box active-win" onclick="setHistoryFilter('win')">
-            <div style="font-size:0.7rem; font-weight:800; color: var(--win-deep);">WIN</div>
-            <div id="count-win" style="font-size: 1.4rem; font-weight: 900; color: var(--win-deep);">0</div>
+            <div class="summary-label" style="color: var(--win-deep);">WIN</div>
+            <div id="count-win" class="summary-count" style="color: var(--win-deep);">0</div>
         </div>
         <div id="box-lose" class="summary-box" onclick="setHistoryFilter('lose')">
-            <div style="font-size:0.7rem; font-weight:800; color: var(--lose-deep);">LOSE</div>
-            <div id="count-lose" style="font-size: 1.4rem; font-weight: 900; color: var(--lose-deep);">0</div>
+            <div class="summary-label" style="color: var(--lose-deep);">LOSE</div>
+            <div id="count-lose" class="summary-count" style="color: var(--lose-deep);">0</div>
         </div>
     </div>
+    <section id="analysis-section" style="display:none; margin-bottom: 16px;">
+        <h3 id="analysis-title" style="margin: 0 0 12px 0; font-size: 0.9rem; font-weight: 800;"></h3>
+        <div id="analysis-content"></div>
+    </section>
     <div id="history-container"></div>
 </div>
 
+<!-- ★ 移植: プロンプトページ -->
 <div id="page-ai" class="page">
-    <div class="section-title" style="color: var(--ai-accent); display: flex; align-items: center; gap: 6px;">
+    <div class="section-title" style="color: var(--ai-accent); display: flex; align-items: center; gap: 6px; margin-bottom: 16px;">
         <i data-lucide="bot" style="width:16px;"></i> プロンプトストック
     </div>
 
@@ -169,26 +211,198 @@
 </div>
 
 <script>
-const positiveItems = ["RS=100%", "RS21>63緑", "RS10>21緑", "RS(XL)緑", "RS=all緑", "テーマ1&5=緑", "テーマ5&10=緑", "テーマ=all緑", "1M>25", "Break-Out", "21>50>200", "出来高", "GC", "21screen", "AT", "W", "CUP", "pivot反発", "平均線サポート", "雲サポート", "雲上抜け", "ATR=all緑", "セクタ=緑", "ATH", "VCS>60"];
-const negativeItems = ["RS", "出来高", "ATR", "3α", "抵抗", "三角", "セクタ", "ATR%50", "2α"];
+const TWELVE_DATA_API_KEY = "4745e87ea2404681a5c9fa6376aac35a"; 
+
+const positiveItems = [
+    "RS=100%", "RS21>63緑", "RS10>21緑", "RS(XL)緑", "RS=all緑", "テーマ1&5=緑", "テーマ5&10=緑", "テーマ=all緑", "1M>25", "Break-Out", 
+    "21>50>200", "出来高", "GC", "21screen", "AT", "W", "CUP", "pivot反発", 
+    "平均線サポート", "雲サポート", "雲上抜け", "ATR=all緑", 
+    "セクタ=緑", "ATH", "VCS>60"
+];
+
+const negativeItems = [
+    "RS", "出来高", "ATR", "3α", "抵抗", "三角", "セクタ", "ATR%50", "2α"
+];
 
 let trades = [];
+let currentHistoryFilter = 'win';
 const API_URL = "/api";
+
+async function refreshPrice(id, symbol, entryPrice) {
+    const btn = document.querySelector(`#refresh-btn-${id}`);
+    const display = document.querySelector(`#pl-display-${id}`);
+    if (!TWELVE_DATA_API_KEY) return;
+    try {
+        btn.disabled = true; btn.innerText = "...";
+        const res = await fetch(`https://api.twelvedata.com/price?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`);
+        const data = await res.json();
+        if (data.price) {
+            const current = parseFloat(data.price);
+            const entry = parseFloat(entryPrice);
+            const diff = ((current - entry) / entry * 100).toFixed(2);
+            const color = diff >= 0 ? 'var(--win-deep)' : 'var(--lose-deep)';
+            display.innerHTML = `<span style="font-size:0.7rem;color:var(--text-sub)">$${current}</span><span style="color:${color};font-weight:800;margin-left:5px">(${diff >= 0 ? '+' : ''}${diff}%)</span>`;
+        }
+    } catch (e) { console.error(e); } finally {
+        btn.disabled = false; btn.innerHTML = '<i data-lucide="refresh-cw" style="width:12px;"></i> 更新';
+        lucide.createIcons();
+    }
+}
+
+async function loadTrades() {
+    try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        trades = data.map(t => ({
+            id: String(t.trade_id),
+            name: t.name,
+            price: t.price,
+            date: t.date,
+            appliedItems: JSON.parse(t.applied_items || "[]"),
+            negativeItems: JSON.parse(t.negative_items || "[]"),
+            memo: t.memo || "",
+            result: t.result || null,
+            final_pl: t.final_pl || "",
+            current_price: t.current_price,
+            pl_percent: t.pl_percent
+        }));
+        renderTrades();
+    } catch (err) { console.error(err); }
+}
+
+function renderEntryChecks() {
+    const positiveContainer = document.getElementById('entry-check-grid-positive');
+    const negativeContainer = document.getElementById('entry-check-grid-negative');
+    
+    positiveContainer.innerHTML = positiveItems.map((item, i) => `
+        <label class="check-box" id="label-pos-${i}">
+            <input type="checkbox" class="entry-check-positive" value="${item}" onchange="this.parentElement.classList.toggle('checked', this.checked)">
+            ${item}
+        </label>
+    `).join('');
+    
+    negativeContainer.innerHTML = negativeItems.map((item, i) => `
+        <label class="check-box negative" id="label-neg-${i}">
+            <input type="checkbox" class="entry-check-negative" value="${item}" onchange="this.parentElement.classList.toggle('checked', this.checked)">
+            ${item}
+        </label>
+    `).join('');
+}
+
+async function registerTrade() {
+    const nameEl = document.getElementById('stock-name');
+    const priceEl = document.getElementById('entry-price');
+    const memoEl = document.getElementById('trade-memo');
+    const positiveCheckEls = document.querySelectorAll('.entry-check-positive:checked');
+    const negativeCheckEls = document.querySelectorAll('.entry-check-negative:checked');
+    
+    if (!nameEl.value || !priceEl.value) return alert('銘柄名と価格を入力してください');
+    if (!confirm("RSP>21, LL-HL, Chandelier, Vol, MA：OK?")) return;
+    
+    const now = new Date();
+    const jstDate = new Intl.DateTimeFormat('ja-JP', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        timeZone: 'Asia/Tokyo'
+    }).format(now);
+    
+    const newTrade = {
+        id: Date.now().toString(),
+        name: nameEl.value.toUpperCase(),
+        price: priceEl.value,
+        appliedItems: Array.from(positiveCheckEls).map(el => el.value),
+        negativeItems: Array.from(negativeCheckEls).map(el => el.value),
+        memo: memoEl.value.trim(),
+        date: jstDate
+    };
+    
+    try {
+        await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newTrade)
+        });
+        nameEl.value = ''; priceEl.value = ''; memoEl.value = '';
+        renderEntryChecks();
+        await loadTrades();
+        switchPage('active');
+    } catch (err) { console.error(err); }
+}
+
+function toggleEdit(id) {
+    const textEl = document.getElementById(`memo-text-${id}`);
+    const btnEl = document.getElementById(`edit-btn-${id}`);
+    if (textEl.contentEditable !== "true") {
+        textEl.contentEditable = "true"; textEl.focus();
+        btnEl.innerHTML = '<i data-lucide="check" style="width:12px;"></i> 保存';
+        btnEl.classList.add('save-btn');
+    } else {
+        updateTradeData(id, { memo: textEl.innerText });
+        textEl.contentEditable = "false";
+        btnEl.innerHTML = '<i data-lucide="edit-2" style="width:12px;"></i> 編集';
+        btnEl.classList.remove('save-btn');
+    }
+    if(window.lucide) lucide.createIcons();
+}
+
+function toggleItemEdit(id) {
+    const grid = document.getElementById(`edit-grid-${id}`);
+    const isVisible = grid.style.display === 'block';
+    grid.style.display = isVisible ? 'none' : 'block';
+}
+
+async function saveItemEdit(id) {
+    const positiveCheckboxes = document.querySelectorAll(`.edit-item-check-positive-${id}:checked`);
+    const negativeCheckboxes = document.querySelectorAll(`.edit-item-check-negative-${id}:checked`);
+    const newPositiveItems = Array.from(positiveCheckboxes).map(cb => cb.value);
+    const newNegativeItems = Array.from(negativeCheckboxes).map(cb => cb.value);
+    
+    await updateTradeData(id, { 
+        applied_items: JSON.stringify(newPositiveItems),
+        negative_items: JSON.stringify(newNegativeItems)
+    });
+    document.getElementById(`edit-grid-${id}`).style.display = 'none';
+}
+
+async function updateTradeData(id, data) {
+    try {
+        await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: "update", id: id, ...data })
+        });
+        await loadTrades();
+    } catch (err) { console.error(err); }
+}
+
+function setHistoryFilter(type) {
+    currentHistoryFilter = type;
+    renderTrades();
+}
+
+async function setTradeResult(id, result) {
+    if (!confirm(`${result.toUpperCase()}で確定しますか？`)) return;
+    const plDisplay = document.querySelector(`#pl-display-${id}`);
+    const finalPL = plDisplay ? plDisplay.innerText.replace(/[()]/g, '') : "";
+    await updateTradeData(id, { result: result, final_pl: finalPL });
+}
+
+async function deleteTrade(id) {
+    if (!confirm('削除しますか？')) return;
+    await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' });
+    await loadTrades();
+}
 
 function switchPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    
-    const targetPage = document.getElementById(`page-${pageId}`);
-    const targetTab = document.getElementById(`tab-${pageId}`);
-    
-    if (targetPage) targetPage.classList.add('active');
-    if (targetTab) targetTab.classList.add('active');
-    
+    document.getElementById(`page-${pageId}`).classList.add('active');
+    const tab = document.getElementById(`tab-${pageId}`);
+    if(tab) tab.classList.add('active');
     if(window.lucide) lucide.createIcons();
 }
 
-// プロンプトコピー関数
+// ★ 移植: プロンプトコピー関数
 function copyStaticPrompt(elementId, btn) {
     const text = document.getElementById(elementId).innerText;
     navigator.clipboard.writeText(text).then(() => {
@@ -202,92 +416,148 @@ function copyStaticPrompt(elementId, btn) {
     });
 }
 
-function renderEntryChecks() {
-    document.getElementById('entry-check-grid-positive').innerHTML = positiveItems.map(item => `
-        <label class="check-box">
-            <input type="checkbox" class="entry-check-positive" value="${item}" onchange="this.parentElement.classList.toggle('checked', this.checked)">
-            ${item}
-        </label>
-    `).join('');
-    document.getElementById('entry-check-grid-negative').innerHTML = negativeItems.map(item => `
-        <label class="check-box negative">
-            <input type="checkbox" class="entry-check-negative" value="${item}" onchange="this.parentElement.classList.toggle('checked', this.checked)">
-            ${item}
-        </label>
-    `).join('');
-}
-
-async function loadTrades() {
-    try {
-        const res = await fetch(API_URL);
-        const data = await res.json();
-        trades = data.map(t => ({
-            id: String(t.trade_id),
-            name: t.name,
-            price: t.price,
-            appliedItems: JSON.parse(t.applied_items || "[]"),
-            negativeItems: JSON.parse(t.negative_items || "[]"),
-            memo: t.memo || "",
-            result: t.result || null
-        }));
-        renderTrades();
-    } catch (err) { console.error(err); }
-}
-
 function renderTrades() {
     const activeCont = document.getElementById('active-container');
-    const winCount = trades.filter(t => t.result === 'win').length;
-    const loseCount = trades.filter(t => t.result === 'lose').length;
+    const historyCont = document.getElementById('history-container');
+    const winTrades = trades.filter(t => t.result === 'win');
+    const loseTrades = trades.filter(t => t.result === 'lose');
     
-    if(document.getElementById('count-win')) document.getElementById('count-win').innerText = winCount;
-    if(document.getElementById('count-lose')) document.getElementById('count-lose').innerText = loseCount;
-
-    activeCont.innerHTML = trades.filter(t => !t.result).map(t => `
-        <div class="trade-card">
-            <div style="font-weight:800;">${t.name} <span style="color:var(--text-sub); font-size:0.8rem;">$${t.price}</span></div>
-            <div class="tag-container">
-                ${t.appliedItems.map(i => `<span class="tag">${i}</span>`).join('')}
-                ${t.negativeItems.map(i => `<span class="tag negative">${i}</span>`).join('')}
-            </div>
-            <div class="memo-area">${t.memo}</div>
-            <div class="res-actions">
-                <button class="btn-win" onclick="setTradeResult('${t.id}', 'win')">WIN</button>
-                <button class="btn-lose" onclick="setTradeResult('${t.id}', 'lose')">LOSE</button>
-            </div>
-        </div>
-    `).join('') || '<p style="text-align:center;color:#475569;">取引なし</p>';
+    if(document.getElementById('count-win')) document.getElementById('count-win').innerText = winTrades.length;
+    if(document.getElementById('count-lose')) document.getElementById('count-lose').innerText = loseTrades.length;
+    
+    const boxWin = document.getElementById('box-win');
+    const boxLose = document.getElementById('box-lose');
+    if(boxWin) boxWin.className = `summary-box ${currentHistoryFilter === 'win' ? 'active-win' : ''}`;
+    if(boxLose) boxLose.className = `summary-box ${currentHistoryFilter === 'lose' ? 'active-lose' : ''}`;
+    
+    activeCont.innerHTML = trades.filter(t => !t.result).map(t => renderCard(t)).join('') || '<p style="text-align:center; color:#475569;">取引中の銘柄はありません</p>';
+    const filteredHistory = currentHistoryFilter === 'win' ? winTrades : loseTrades;
+    historyCont.innerHTML = filteredHistory.map(t => renderCard(t)).join('') || `<p style="text-align:center; color:#475569;">${currentHistoryFilter.toUpperCase()}の履歴はありません</p>`;
+    
+    if (currentHistoryFilter === 'win') {
+        renderAnalysis(winTrades, positiveItems, 'WIN項目分析', 'var(--win-deep)');
+    } else {
+        renderAnalysis(loseTrades, negativeItems, 'LOSE項目分析', 'var(--lose-deep)');
+    }
+    
     if(window.lucide) lucide.createIcons();
 }
 
-async function registerTrade() {
-    const name = document.getElementById('stock-name').value;
-    const price = document.getElementById('entry-price').value;
-    if (!name || !price) return alert('入力してください');
+function renderAnalysis(filteredTrades, itemsList, title, baseColor) {
+    const analysisSection = document.getElementById('analysis-section');
+    const analysisTitle = document.getElementById('analysis-title');
+    const analysisContent = document.getElementById('analysis-content');
     
-    const newTrade = {
-        name: name.toUpperCase(),
-        price: price,
-        appliedItems: Array.from(document.querySelectorAll('.entry-check-positive:checked')).map(el => el.value),
-        negativeItems: Array.from(document.querySelectorAll('.entry-check-negative:checked')).map(el => el.value),
-        memo: document.getElementById('trade-memo').value
-    };
-    await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newTrade) });
-    location.reload();
-}
-
-async function setTradeResult(id, result) {
-    await fetch(`${API_URL}/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ result })
+    if (filteredTrades.length === 0) {
+        analysisSection.style.display = 'none';
+        return;
+    }
+    
+    analysisSection.style.display = 'block';
+    analysisTitle.innerText = title;
+    analysisTitle.style.color = baseColor;
+    
+    const itemCounts = {};
+    itemsList.forEach(item => itemCounts[item] = 0);
+    
+    filteredTrades.forEach(trade => {
+        const itemsToCount = currentHistoryFilter === 'win' ? trade.appliedItems : trade.negativeItems;
+        itemsToCount.forEach(item => {
+            if (itemCounts[item] !== undefined) itemCounts[item]++;
+        });
     });
-    location.reload();
+    
+    const total = filteredTrades.length;
+    const itemStats = Object.entries(itemCounts)
+        .map(([item, count]) => ({
+            item, count, percentage: parseFloat(((count / total) * 100).toFixed(1))
+        }))
+        .filter(stat => stat.percentage > 40)
+        .sort((a, b) => b.percentage - a.percentage);
+    
+    analysisContent.innerHTML = itemStats.map(stat => {
+        const color = stat.percentage >= 80 ? baseColor : stat.percentage >= 50 ? '#f59e0b' : 'var(--text-sub)';
+        return `
+            <div style="margin-bottom: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="font-size: 0.75rem; font-weight: 700; color: white;">${stat.item}</span>
+                    <span style="font-size: 0.75rem; font-weight: 800; color: ${color};">${stat.percentage}%</span>
+                </div>
+                <div class="progress-bg">
+                    <div style="background: ${color}; height: 100%; width: ${stat.percentage}%; transition: width 0.3s;"></div>
+                </div>
+                <div style="font-size: 0.65rem; color: var(--text-sub); margin-top: 2px;">${stat.count}/${total} トレード</div>
+            </div>
+        `;
+    }).join('') || '<p style="font-size: 0.8rem; color: var(--text-sub);">40%を超える項目はありません</p>';
 }
 
-window.onload = () => { 
-    renderEntryChecks(); 
-    loadTrades(); 
-};
+function renderCard(t) {
+    const itemEditHtml = `
+        <div id="edit-grid-${t.id}" class="edit-grid-container">
+            <div class="section-title" style="color: var(--win-deep); margin-bottom: 8px;">✓ ポジティブ要因</div>
+            <div class="check-grid">
+                ${positiveItems.map(item => `
+                    <label class="check-box ${t.appliedItems.includes(item) ? 'checked' : ''}">
+                        <input type="checkbox" class="edit-item-check-positive-${t.id}" value="${item}" ${t.appliedItems.includes(item) ? 'checked' : ''} onchange="this.parentElement.classList.toggle('checked', this.checked)">
+                        ${item}
+                    </label>
+                `).join('')}
+            </div>
+            <div class="section-title" style="color: var(--lose-deep); margin: 12px 0 8px 0;">⚠ 懸念項目</div>
+            <div class="check-grid">
+                ${negativeItems.map(item => `
+                    <label class="check-box negative ${t.negativeItems.includes(item) ? 'checked' : ''}">
+                        <input type="checkbox" class="edit-item-check-negative-${t.id}" value="${item}" ${t.negativeItems.includes(item) ? 'checked' : ''} onchange="this.parentElement.classList.toggle('checked', this.checked)">
+                        ${item}
+                    </label>
+                `).join('')}
+            </div>
+            <button onclick="saveItemEdit('${t.id}')" class="submit-btn" style="padding: 8px; margin-top: 10px; font-size: 0.8rem;">項目を保存</button>
+        </div>
+    `;
+
+    return `
+        <div class="trade-card">
+            <div class="card-top">
+                <div class="stock-info">
+                    <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${t.name}" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+                        <span class="stock-name" style="color: var(--primary); text-decoration: underline;">${t.name}</span>
+                    </a>
+                    <span class="stock-price" style="color:#94a3b8;">$${Number(t.price).toLocaleString()}</span>
+                    <div id="pl-display-${t.id}" style="display:inline-block; margin-left:5px;"></div>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    ${t.result ? `<span style="font-size:0.8rem; font-weight:800; color:${t.result==='win'?'var(--win-deep)':'var(--lose-deep)'};">${t.final_pl||''}</span><span class="result-badge ${t.result}-badge">${t.result.toUpperCase()}</span>` : ''}
+                    <button class="del-btn" onclick="deleteTrade('${t.id}')"><i data-lucide="x" style="width:14px;"></i></button>
+                </div>
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                <div style="flex:1;">
+                    ${t.appliedItems.length > 0 ? `<div class="tag-container" style="margin:0 0 4px 0;">${t.appliedItems.map(item => `<span class="tag">${item}</span>`).join('')}</div>` : ''}
+                    ${t.negativeItems.length > 0 ? `<div class="tag-container" style="margin:0;">${t.negativeItems.map(item => `<span class="tag negative">${item}</span>`).join('')}</div>` : ''}
+                </div>
+                <div style="display:flex; flex-direction:column; gap:4px; margin-left:8px;">
+                    ${!t.result ? `<button id="refresh-btn-${t.id}" class="edit-btn" onclick="refreshPrice('${t.id}', '${t.name}', ${t.price})"><i data-lucide="refresh-cw" style="width:12px;"></i> 更新</button>` : ''}
+                    <button class="edit-btn" onclick="toggleItemEdit('${t.id}')"><i data-lucide="settings-2" style="width:12px;"></i> 項目編集</button>
+                </div>
+            </div>
+
+            ${itemEditHtml}
+
+            <div style="margin-top: 8px;">
+                <div id="memo-text-${t.id}" class="memo-area" contenteditable="false">${t.memo || 'メモを追加'}</div>
+                <div style="text-align: right; margin-top: 6px;">
+                    <button id="edit-btn-${t.id}" class="edit-btn" onclick="toggleEdit('${t.id}')"><i data-lucide="edit-2" style="width:12px;"></i> メモ編集</button>
+                </div>
+            </div>
+            ${!t.result ? `<div class="res-actions"><button class="btn-win" onclick="setTradeResult('${t.id}', 'win')">WIN</button><button class="btn-lose" onclick="setTradeResult('${t.id}', 'lose')">LOSE</button></div>` : `<div style="font-size:10px; color:#475569; margin-top:8px;">${t.date}</div>`}
+        </div>
+    `;
+}
+
+window.onload = () => { renderEntryChecks(); loadTrades(); };
 </script>
 </body>
 </html>
