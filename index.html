@@ -460,7 +460,9 @@ function renderCard(t) {
         <div class="trade-card">
             <div class="card-top">
                 <div class="stock-info">
-                    <span class="stock-name">${t.name}</span>
+                    <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${t.name}" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+                        <span class="stock-name" style="color: var(--primary); text-decoration: underline;">${t.name}</span>
+                    </a>
                     <span class="stock-price" style="color:#94a3b8;">$${Number(t.price).toLocaleString()}</span>
                     <div id="pl-display-${t.id}" style="display:inline-block; margin-left:5px;"></div>
                 </div>
