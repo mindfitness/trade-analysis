@@ -95,9 +95,8 @@
         /* メモ: 折りたたみ */
         .memo-area { 
             font-size: 0.73rem; background: #451a03; padding: 5px 8px; border-radius: 5px; 
-            border-left: 2px solid #f59e0b; margin-top: 4px; color: #fed7aa; display: none;
+            border-left: 2px solid #f59e0b; margin-top: 4px; color: #fed7aa; display: block;
         }
-        .memo-area.open { display: block; }
         .memo-area[contenteditable="true"] { background: var(--input-bg); border: 2px solid #f59e0b; outline: none; color: white; display: block; }
 
         .edit-grid-container { 
@@ -369,7 +368,7 @@
 const TWELVE_DATA_API_KEY = "4745e87ea2404681a5c9fa6376aac35a"; 
 const PERF_API_KEY = 'f550f672515b4cd6b4c2966f1e2cc0fb';
 const TRADE_API_URL = "/api";
-const GAS_URL = "https://script.google.com/macros/s/AKfycbw8bphx9s_QhCLbgKbhkE1iAMu22EBIfsR0YVeEE4MoF0qYWcxyE9AKhm3yCzafO40_2g/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw8bphx9s_QhCLbgKbhkI1iAMu22EBIfsR0YVeEE4MoF0qYWcxyE9AKhm3yCzafO40_2g/exec";
 const SECTOR_GAS_URL = "https://script.google.com/macros/s/AKfycbyGon8w7cT4ZXgkczscpyp5nAo6dM26aToprB_1Hc5mYEiAU7sYF4lxpAQ77nPyzSm4/exec";
 
 const positiveItems = [
@@ -485,7 +484,7 @@ function toggleEdit(id) {
     const textEl = document.getElementById(`memo-text-${id}`);
     const btnEl = document.getElementById(`edit-btn-${id}`);
     if (textEl.contentEditable !== "true") {
-        textEl.contentEditable = "true"; textEl.classList.add('open'); textEl.focus();
+        textEl.contentEditable = "true"; textEl.focus();
         btnEl.innerHTML = '<i data-lucide="check" style="width:10px;"></i> 保存'; btnEl.classList.add('save-btn');
     } else {
         updateTradeData(id, { memo: textEl.innerText });
