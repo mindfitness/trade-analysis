@@ -23,6 +23,7 @@
             --ai-accent: #8b5cf6;
             --theme-accent: #f59e0b;
             --sector-accent: #06b6d4;
+            --perf-accent: #22d3ee;
             --tag-bg: #1e3a8a;
             --tag-text: #bfdbfe;
         }
@@ -45,6 +46,7 @@
         .tab.ai-tab.active { background: var(--ai-accent); color: white; }
         .tab.theme-tab.active { background: var(--theme-accent); color: white; }
         .tab.sector-tab.active { background: var(--sector-accent); color: white; }
+        .tab.perf-tab.active { background: var(--perf-accent); color: #0f172a; }
 
         .page { padding: 12px; display: none; }
         .page.active { display: block; }
@@ -186,6 +188,23 @@
             text-align: center; color: var(--text-sub); padding: 20px; font-size: 0.85rem;
         }
 
+        /* Perfページ */
+        .perf-input-row { display: flex; gap: 8px; margin-bottom: 16px; }
+        .perf-input-row input { flex: 1; font-size: 0.95rem; text-transform: uppercase; }
+        .perf-search-btn {
+            padding: 10px 18px; background: var(--perf-accent); color: #0f172a;
+            border: none; border-radius: 8px; font-weight: 800; cursor: pointer; white-space: nowrap;
+            font-size: 0.9rem;
+        }
+        .perf-status { font-size: 0.85rem; color: var(--text-sub); margin-bottom: 12px; }
+        .perf-symbol-title { font-size: 1.1rem; font-weight: 900; margin-bottom: 12px; color: white; }
+        .perf-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--input-bg); border-radius: 10px; border: 1px solid var(--border); margin-bottom: 8px; }
+        .perf-label { font-size: 0.85rem; color: var(--text-sub); font-weight: 600; }
+        .perf-value { font-size: 1rem; font-weight: 900; }
+        .perf-pos { color: var(--win-deep); }
+        .perf-neg { color: var(--lose-deep); }
+        .perf-na { color: #475569; font-size: 0.8rem; }
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
     </style>
@@ -200,8 +219,9 @@
     <div class="nav-tabs">
         <button class="tab active" id="tab-active" onclick="switchPage('active')">取引中</button>
         <button class="tab" id="tab-history" onclick="switchPage('history')">分析</button>
-        <button class="tab theme-tab" id="tab-theme" onclick="switchPage('theme')">テーマ</button>
+        <button class="tab perf-tab" id="tab-perf" onclick="switchPage('perf')">Perf</button>
         <button class="tab sector-tab" id="tab-sector" onclick="switchPage('sector')">セクタ</button>
+        <button class="tab theme-tab" id="tab-theme" onclick="switchPage('theme')">テーマ</button>
         <button class="tab ai-tab" id="tab-ai" onclick="switchPage('ai')">プロンプト</button>
     </div>
 </header>
@@ -249,9 +269,43 @@
     <div id="history-container"></div>
 </div>
 
-<!-- テーマトラッカーページ -->
-<div id="page-theme" class="page">
-    <div id="theme-list"></div>
+<!-- Perfページ -->
+<div id="page-perf" class="page">
+    <section>
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 16px;">
+            <i data-lucide="trending-up" style="width:16px; color:var(--perf-accent);"></i>
+            <span style="font-size: 0.85rem; font-weight: 800; color: var(--perf-accent);">米国株パフォーマンス</span>
+        </div>
+        <div class="perf-input-row">
+            <input type="text" id="perf-ticker" placeholder="ティッカー (例: NVDA)" 
+                onkeydown="if(event.key==='Enter') fetchPerfData()">
+            <button class="perf-search-btn" onclick="fetchPerfData()">取得</button>
+        </div>
+        <div id="perf-status" class="perf-status" style="display:none;"></div>
+        <div id="perf-result" style="display:none;">
+            <div id="perf-symbol-display" class="perf-symbol-title"></div>
+            <div class="perf-row">
+                <span class="perf-label">1日</span>
+                <span id="perf-today" class="perf-value">--</span>
+            </div>
+            <div class="perf-row">
+                <span class="perf-label">5日</span>
+                <span id="perf-5d" class="perf-value">--</span>
+            </div>
+            <div class="perf-row">
+                <span class="perf-label">10日</span>
+                <span id="perf-10d" class="perf-value">--</span>
+            </div>
+            <div class="perf-row">
+                <span class="perf-label">1ヶ月</span>
+                <span id="perf-1m" class="perf-value">--</span>
+            </div>
+            <div class="perf-row">
+                <span class="perf-label">2ヶ月</span>
+                <span id="perf-2m" class="perf-value">--</span>
+            </div>
+        </div>
+    </section>
 </div>
 
 <!-- セクタ検索ページ -->
@@ -277,6 +331,11 @@
             </table>
         </div>
     </section>
+</div>
+
+<!-- テーマトラッカーページ -->
+<div id="page-theme" class="page">
+    <div id="theme-list"></div>
 </div>
 
 <!-- プロンプトページ -->
@@ -338,6 +397,7 @@
 <script>
 // ======== 共通設定 ========
 const TWELVE_DATA_API_KEY = "4745e87ea2404681a5c9fa6376aac35a"; 
+const PERF_API_KEY = 'f550f672515b4cd6b4c2966f1e2cc0fb';
 const TRADE_API_URL = "/api";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbw8bphx9s_QhCLbgKbhkI1iAMu22EBIfsR0YVeEE4MoF0qYWcxyE9AKhm3yCzafO40_2g/exec";
 const SECTOR_GAS_URL = "https://script.google.com/macros/s/AKfycbyGon8w7cT4ZXgkczscpyp5nAo6dM26aToprB_1Hc5mYEiAU7sYF4lxpAQ77nPyzSm4/exec";
@@ -369,7 +429,6 @@ function switchPage(pageId) {
     if(tab) tab.classList.add('active');
     currentPage = pageId;
 
-    // ヘッダーアクションボタン
     const btn = document.getElementById('header-action-btn');
     if (pageId === 'theme') {
         btn.textContent = '+ テーマ';
@@ -695,6 +754,68 @@ function renderCard(t) {
             ${!t.result ? `<div class="res-actions"><button class="btn-win" onclick="setTradeResult('${t.id}', 'win')">WIN</button><button class="btn-lose" onclick="setTradeResult('${t.id}', 'lose')">LOSE</button></div>` : `<div style="font-size:10px; color:#475569; margin-top:8px;">${t.date}</div>`}
         </div>
     `;
+}
+
+// ======== Perf機能 ========
+async function fetchPerfData() {
+    const ticker = document.getElementById('perf-ticker').value.trim().toUpperCase();
+    const statusEl = document.getElementById('perf-status');
+    const resultDiv = document.getElementById('perf-result');
+
+    if (!ticker) return;
+
+    statusEl.innerText = "データ取得中...";
+    statusEl.style.display = 'block';
+    statusEl.style.color = 'var(--text-sub)';
+    resultDiv.style.display = 'none';
+
+    try {
+        const response = await fetch(`https://api.twelvedata.com/time_series?symbol=${ticker}&interval=1day&outputsize=50&apikey=${PERF_API_KEY}`);
+        const data = await response.json();
+
+        if (data.status === "error") throw new Error(data.message);
+
+        const values = data.values;
+        const currentPrice = parseFloat(values[0].close);
+
+        const getPrice = (index) => values[index] ? parseFloat(values[index].close) : null;
+        const calc = (curr, prev) => prev ? (((curr - prev) / prev) * 100).toFixed(2) : null;
+
+        const prices = {
+            today: getPrice(1),
+            fiveDays: getPrice(5),
+            tenDays: getPrice(10),
+            oneMonth: getPrice(21),
+            twoMonths: getPrice(42)
+        };
+
+        document.getElementById('perf-symbol-display').innerText = `${data.meta.symbol}  $${currentPrice.toFixed(2)}`;
+
+        updatePerfUI('perf-today', calc(currentPrice, prices.today));
+        updatePerfUI('perf-5d', calc(currentPrice, prices.fiveDays));
+        updatePerfUI('perf-10d', calc(currentPrice, prices.tenDays));
+        updatePerfUI('perf-1m', calc(currentPrice, prices.oneMonth));
+        updatePerfUI('perf-2m', calc(currentPrice, prices.twoMonths));
+
+        statusEl.style.display = 'none';
+        resultDiv.style.display = 'block';
+
+    } catch (error) {
+        statusEl.innerText = "エラー: " + error.message;
+        statusEl.style.color = 'var(--lose-deep)';
+    }
+}
+
+function updatePerfUI(id, value) {
+    const el = document.getElementById(id);
+    if (value === null) {
+        el.innerText = "データ不足";
+        el.className = "perf-value perf-na";
+        return;
+    }
+    const num = parseFloat(value);
+    el.innerText = (num > 0 ? '+' : '') + value + '%';
+    el.className = 'perf-value ' + (num >= 0 ? 'perf-pos' : 'perf-neg');
 }
 
 // ======== テーマトラッカー機能 ========
