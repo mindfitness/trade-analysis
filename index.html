@@ -264,8 +264,12 @@
 <div id="page-entry" class="page">
     <section>
         <div style="display:flex; gap:8px; margin-bottom:8px;">
-            <input type="text" id="stock-name" placeholder="銘柄コード (例: NVDA)" style="flex:1;">
-            <input type="number" id="entry-price" placeholder="価格" style="flex:1;">
+            <input type="text" id="stock-name" placeholder="銘柄コード (例: NVDA)" style="flex:1;"
+                oninput="clearAutoPrice()" onblur="autoFetchPrice()">
+            <div style="flex:1; position:relative;">
+                <input type="number" id="entry-price" placeholder="取得中..." style="width:100%;" readonly>
+                <span id="price-status" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:0.6rem; color:var(--text-sub);"></span>
+            </div>
         </div>
         <div class="section-title" style="color: var(--win-deep);">✓ +項目</div>
         <div id="entry-check-grid-positive" class="check-grid"></div>
@@ -1046,6 +1050,38 @@ function copyStaticPrompt(elementId, btn) {
         btn.innerText="完了！"; btn.classList.add('copied');
         setTimeout(()=>{ btn.innerText=orig; btn.classList.remove('copied'); },2000);
     });
+}
+
+// ======== 価格自動取得 ========
+async function autoFetchPrice() {
+    const ticker = document.getElementById('stock-name').value.trim().toUpperCase();
+    const priceEl = document.getElementById('entry-price');
+    const statusEl = document.getElementById('price-status');
+    if (!ticker) return;
+    statusEl.innerText = '取得中...';
+    priceEl.value = '';
+    try {
+        const res = await fetch(`https://api.twelvedata.com/time_series?symbol=${ticker}&interval=1day&outputsize=2&apikey=${PERF_API_KEY}`);
+        const data = await res.json();
+        if (data.status === 'error') throw new Error(data.message);
+        const price = parseFloat(data.values[0].close);
+        priceEl.value = price.toFixed(2);
+        statusEl.innerText = '✓';
+        statusEl.style.color = 'var(--win-deep)';
+    } catch(e) {
+        statusEl.innerText = '✗';
+        statusEl.style.color = 'var(--lose-deep)';
+        priceEl.removeAttribute('readonly');
+        priceEl.placeholder = '手動入力';
+    }
+}
+
+function clearAutoPrice() {
+    const priceEl = document.getElementById('entry-price');
+    priceEl.value = '';
+    priceEl.setAttribute('readonly', true);
+    priceEl.placeholder = '取得中...';
+    document.getElementById('price-status').innerText = '';
 }
 
 // ======== カリキュレーター ========
