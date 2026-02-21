@@ -345,7 +345,8 @@
                 <tr><th>企業名</th><td id="sec-name"></td></tr>
                 <tr><th>業界</th><td id="sec-industry"></td></tr>
                 <tr><th>セクター</th><td id="sec-sector"></td></tr>
-                <tr><th>関連ETF</th><td id="sec-etf"></td></tr>
+               <tr><th>XL ETF</th><td id="sec-etf"></td></tr>
+       　　　　 <tr><th>RANK ETF</th><td id="sec-rank-etf"></td></tr>
             </table>
         </div>
     </section>
@@ -472,7 +473,7 @@ const TWELVE_DATA_API_KEY = "4745e87ea2404681a5c9fa6376aac35a";
 const PERF_API_KEY = 'f550f672515b4cd6b4c2966f1e2cc0fb';
 const TRADE_API_URL = "/api";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbw8bphx9s_QhCLbgKbhkI1iAMu22EBIfsR0YVeEE4MoF0qYWcxyE9AKhm3yCzafO40_2g/exec";
-const SECTOR_GAS_URL = "https://script.google.com/macros/s/AKfycbyGon8w7cT4ZXgkczscpyp5nAo6dM26aToprB_1Hc5mYEiAU7sYF4lxpAQ77nPyzSm4/exec";
+const SECTOR_GAS_URL = "https://script.google.com/macros/s/AKfycby1lo_XSLpA6OIFvX9MbyEqO6RzCWaSzSJuFtrKy6tuTZPEOjzBWfKxQ_7Fczd_fbV0/exec";
 
 // Market Ranker 設定
 const RANK_API_KEY = "10f03734e47d4c5fb02dd591d7928e8c";
@@ -829,6 +830,7 @@ async function fetchSectorDataByTicker(ticker) {
         document.getElementById('sec-industry').innerText = data.industry||'-';
         document.getElementById('sec-sector').innerText = data.sector||'-';
         document.getElementById('sec-etf').innerText = data.etf||'-';
+        document.getElementById('sec-rank-etf').innerText = data.rank_etf||'-';
         result.style.display='block';
     } catch(e) {
         console.error('セクタ取得エラー:', e);
