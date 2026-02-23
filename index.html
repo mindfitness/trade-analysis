@@ -893,34 +893,84 @@ async function startRankUpdate() {
     btn.disabled = false;
 }
 
+let rankPinnedSymbol = null; // 固定銘柄
+
 function renderRankTable() {
     const tbody = document.getElementById('rank-table-body');
     tbody.innerHTML = '';
-    const rsp = rankMarketData.find(d => d.symbol === 'RSP');
-    const rest = rankMarketData.filter(d => d.symbol !== 'RSP');
-    const sorted = rsp ? [rsp, ...rest] : rest;
-    sorted.forEach(item => {
+
+    // 順位計算（全データを各軸でソートして順位付け）
+    const calcRanks = (key) => {
+        const sorted = [...rankMarketData].sort((a, b) => b[key] - a[key]);
+        const ranks = {};
+        sorted.forEach((item, i) => ranks[item.symbol] = i + 1);
+        return ranks;
+    };
+    const dayRanks = calcRanks('day_change');
+    const weekRanks = calcRanks('week_change');
+    const monthRanks = calcRanks('month_change');
+
+    // 表示順：固定銘柄を先頭、次にピン以外を現在のソート順
+    let displayData = [...rankMarketData];
+    if (rankCurrentSort.key) {
+        displayData.sort((a, b) => {
+            if (rankCurrentSort.key === 'symbol') {
+                return rankCurrentSort.asc ? a.symbol.localeCompare(b.symbol) : b.symbol.localeCompare(a.symbol);
+            }
+            return rankCurrentSort.asc ? a[rankCurrentSort.key] - b[rankCurrentSort.key] : b[rankCurrentSort.key] - a[rankCurrentSort.key];
+        });
+    }
+
+    // 固定銘柄を先頭に
+    if (rankPinnedSymbol) {
+        const pinned = displayData.find(d => d.symbol === rankPinnedSymbol);
+        const rest = displayData.filter(d => d.symbol !== rankPinnedSymbol);
+        displayData = pinned ? [pinned, ...rest] : rest;
+    }
+
+    displayData.forEach(item => {
+        const isPinned = item.symbol === rankPinnedSymbol;
         const row = document.createElement('tr');
+        if (isPinned) row.style.cssText = 'background:#1a1a2e; border-top:2px solid var(--rank-accent); border-bottom:2px solid var(--rank-accent);';
+
+        const rankBadge = (rank, total) => {
+            const pct = rank / total;
+            const color = pct <= 0.2 ? 'var(--win-deep)' : pct <= 0.5 ? '#f59e0b' : 'var(--lose-deep)';
+            return `<span style="font-size:0.6rem;color:${color};font-weight:900;margin-left:3px;">#${rank}</span>`;
+        };
+        const total = rankMarketData.length;
+
         row.innerHTML = `
-            <td><span class="rank-ticker-cell" onclick="showRankInfo('${item.symbol}')">${item.symbol}</span></td>
-            <td class="${item.day_change >= 0 ? 'rank-pos' : 'rank-neg'}">${item.day_change >= 0 ? '+' : ''}${item.day_change.toFixed(2)}%</td>
-            <td class="${item.week_change >= 0 ? 'rank-pos' : 'rank-neg'}">${item.week_change >= 0 ? '+' : ''}${item.week_change.toFixed(2)}%</td>
-            <td class="${item.month_change >= 0 ? 'rank-pos' : 'rank-neg'}">${item.month_change >= 0 ? '+' : ''}${item.month_change.toFixed(2)}%</td>
+            <td>
+                <span class="rank-ticker-cell" onclick="showRankInfo('${item.symbol}')">${item.symbol}</span>
+                <span onclick="toggleRankPin('${item.symbol}')" title="固定" style="cursor:pointer;margin-left:4px;font-size:0.75rem;opacity:${isPinned?1:0.3};">📌</span>
+            </td>
+            <td class="${item.day_change >= 0 ? 'rank-pos' : 'rank-neg'}">
+                ${item.day_change >= 0 ? '+' : ''}${item.day_change.toFixed(2)}%
+                ${rankBadge(dayRanks[item.symbol], total)}
+            </td>
+            <td class="${item.week_change >= 0 ? 'rank-pos' : 'rank-neg'}">
+                ${item.week_change >= 0 ? '+' : ''}${item.week_change.toFixed(2)}%
+                ${rankBadge(weekRanks[item.symbol], total)}
+            </td>
+            <td class="${item.month_change >= 0 ? 'rank-pos' : 'rank-neg'}">
+                ${item.month_change >= 0 ? '+' : ''}${item.month_change.toFixed(2)}%
+                ${rankBadge(monthRanks[item.symbol], total)}
+            </td>
         `;
         tbody.appendChild(row);
     });
 }
 
+function toggleRankPin(symbol) {
+    rankPinnedSymbol = (rankPinnedSymbol === symbol) ? null : symbol;
+    renderRankTable();
+}
+
 function sortRankTable(key) {
     rankCurrentSort.asc = (rankCurrentSort.key === key) ? !rankCurrentSort.asc : false;
     rankCurrentSort.key = key;
-    rankMarketData.sort((a, b) => {
-        let valA = key === 'symbol' ? a[key] : a[key];
-        let valB = key === 'symbol' ? b[key] : b[key];
-        if (key === 'symbol') return rankCurrentSort.asc ? valA.localeCompare(valB) : valB.localeCompare(valA);
-        return rankCurrentSort.asc ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
-    });
-    renderRankTable();
+    renderRankTable(); // ソートはrenderRankTable内で処理
 }
 
 function showRankInfo(symbol) {
