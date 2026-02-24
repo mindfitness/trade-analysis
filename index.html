@@ -715,7 +715,10 @@ activeCont.innerHTML = activeCards
     ? `<div class="active-grid">${activeCards}</div>`
     : '<p style="text-align:center;color:#475569;padding:20px 0;font-size:0.8rem;">取引中の銘柄はありません</p>';
     const filtered = currentHistoryFilter==='win' ? winTrades : loseTrades;
-    historyCont.innerHTML = filtered.map(t=>renderCard(t)).join('') || `<p style="text-align:center;color:#475569;padding:20px 0;font-size:0.8rem;">${currentHistoryFilter.toUpperCase()}の履歴はありません</p>`;
+    const historyCards = filtered.map(t=>renderCard(t)).join('');
+    historyCont.innerHTML = historyCards
+        ? `<div class="active-grid">${historyCards}</div>`
+        : `<p style="text-align:center;color:#475569;padding:20px 0;font-size:0.8rem;">${currentHistoryFilter.toUpperCase()}の履歴はありません</p>`;
 
     if(currentHistoryFilter==='win') renderAnalysis(winTrades,positiveItems,'WIN項目分析','var(--win-deep)');
     else renderAnalysis(loseTrades,negativeItems,'LOSE項目分析','var(--lose-deep)');
