@@ -660,7 +660,7 @@ function toggleEdit(id) {
     } else {
         updateTradeData(id, { memo: textEl.innerText });
         textEl.contentEditable = "false";
-        btnEl.innerHTML = '<i data-lucide="edit-2" style="width:10px;"></i> メモ'; btnEl.classList.remove('save-btn');
+        btnEl.innerHTML = 'メモ'; btnEl.classList.remove('save-btn');
     }
     if(window.lucide) lucide.createIcons();
 }
