@@ -793,7 +793,7 @@ function renderCard(t) {
                 <div class="card-actions">
                     ${!t.result ? `<button id="refresh-btn-${t.id}" class="edit-btn" onclick="refreshPrice('${t.id}','${t.name}',${t.price})" title="価格更新"><i data-lucide="refresh-cw" style="width:10px;"></i></button>` : ''}
                     <button class="edit-btn" onclick="toggleItemEdit('${t.id}')" title="項目編集"><i data-lucide="settings-2" style="width:10px;"></i></button>
-                    <button class="edit-btn" id="edit-btn-${t.id}" onclick="toggleEdit('${t.id}')"><i data-lucide="edit-2" style="width:10px;"></i> メモ</button>
+                    <button class="edit-btn" id="edit-btn-${t.id}" onclick="toggleEdit('${t.id}')">メモ</button>
                     <button class="del-btn" onclick="deleteTrade('${t.id}')"><i data-lucide="x" style="width:12px;"></i></button>
                 </div>
             </div>
