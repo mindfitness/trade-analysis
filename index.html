@@ -276,9 +276,9 @@
         <div class="section-title" style="color: var(--lose-deep); margin-top: 10px;">⚠ -項目</div>
         <div id="entry-check-grid-negative" class="check-grid"></div>
         <div style="margin-top: 8px;">
-            <textarea id="trade-memo" placeholder="週足,月足,強いbreakout,21→雲反発,News" rows="2"></textarea>
+            <textarea id="trade-memo" placeholder="週足,月足,21→雲反発" rows="2"></textarea>
         </div>
-        <button onclick="registerTrade()" class="submit-btn" style="margin-top:8px;">エントリーを記録</button>
+        <button onclick="registerTrade()" class="submit-btn" style="margin-top:8px;">Entry</button>
     </section>
 </div>
 
@@ -610,7 +610,7 @@ async function registerTrade() {
     const posChecked = document.querySelectorAll('.entry-check-positive:checked');
     const negChecked = document.querySelectorAll('.entry-check-negative:checked');
     if (!nameEl.value || !priceEl.value) return alert('銘柄名と価格を入力してください');
-    if (!confirm("RSP>21, LL-HL, Chandelier, Vol, MA：OK?")) return;
+    if (!confirm("RSP>21, LL-HL, Chandelier：OK?")) return;
     const now = new Date();
     const jstDate = new Intl.DateTimeFormat('ja-JP', {
         year:'numeric',month:'2-digit',day:'2-digit',
