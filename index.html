@@ -477,9 +477,10 @@ const SECTOR_GAS_URL = "https://script.google.com/macros/s/AKfycby1lo_XSLpA6OIFv
 
 // Market Ranker 設定
 const RANK_API_KEY = "10f03734e47d4c5fb02dd591d7928e8c";
-const RANK_TICKERS = ["RSP","ITA","BOAT","XOP","MOO","PEJ","TAN","FAN","ICLN","SMH","XBI","SOXX","IYT","SLX","LIT","WOOD","ITB","IHI","SIL","XRT","QTUM","BATT","KARS","GDX","KRE","URA","REMX","JETS","COPX","DRIV","WGMI"];
+const RANK_TICKERS = ["RSP","POWR","ITA","BOAT","XOP","MOO","PEJ","TAN","FAN","ICLN","SMH","XBI","SOXX","IYT","SLX","LIT","WOOD","ITB","IHI","SIL","XRT","QTUM","BATT","KARS","GDX","KRE","URA","REMX","JETS","COPX","DRIV","WGMI","CIBR"];
 const TICKER_INFO = {
     "RSP": { desc: "S&P500等ウェイト。", stocks: "S&P500全構成銘柄を均等保有" },
+    "POWR": { desc: "米国電力インフラ産業。送電網の近代化、変圧器、電力設備、グリッド管理技術を扱う企業で構成。", stocks: "ETN (イートン), VRT (バーティブ), HUBB (ハベル)" },
     "ITA": { desc: "米国防衛・宇宙産業。軍用機、武器、防衛技術を扱う企業で構成。", stocks: "RTX (レイセオン), LMT (ロッキード・マーチン), BA (ボーイング)" },
     "BOAT": { desc: "世界の海運・船舶産業。コンテナ船やタンカー、貨物輸送を含む。", stocks: "Maersk, Hapag-Lloyd, ZIM" },
     "XOP": { desc: "米国の石油・ガス探査・生産。エネルギー上流部門に特化。", stocks: "OXY (オキシデンタル), EOG, DVN" },
@@ -513,6 +514,7 @@ const TICKER_INFO = {
     "COPX": { desc: "銅採掘。インフラや電気に不可欠な銅の生産企業。", stocks: "FCX (フリーポート・マクモラン), Southern Copper" },
     "DRIV": { desc: "自動運転・電気自動車。ハードウェアからソフトウェアまで。", stocks: "TSLA, NVDA, AAPL" },
     "WGMI": { desc: "ビットコインマイニング。仮想通貨の採掘業者と関連機器。", stocks: "MARA (マラソン), RIOT" }
+    "CIBR": { desc: "サイバーセキュリティ関連産業。ネットワーク保護、脅威検知、クラウド・エンドポイント防御の主要企業で構成。", stocks: "PANW, FTNT, CRWD" }
 };
 
 let rankMarketData = JSON.parse(localStorage.getItem('market_perf_info')) || [];
