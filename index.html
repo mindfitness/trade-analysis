@@ -241,6 +241,17 @@
         .rank-modal-title { font-size: 1.2rem; font-weight: 900; color: var(--rank-accent); margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
         .rank-modal-label { font-weight: 800; color: var(--text-sub); font-size: 0.72rem; margin-top: 12px; display: block; text-transform: uppercase; letter-spacing: 0.05em; }
         .rank-modal-body { font-size: 0.88rem; color: var(--text-main); margin-top: 4px; }
+        /* PF画面 PC2列レイアウト */
+@media (min-width: 600px) {
+    .active-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+    .active-grid .trade-card {
+        margin-bottom: 0;
+    }
+}
     </style>
 </head>
 <body>
@@ -688,7 +699,10 @@ function renderTrades() {
     document.getElementById('box-win').className = `summary-box ${currentHistoryFilter==='win'?'active-win':''}`;
     document.getElementById('box-lose').className = `summary-box ${currentHistoryFilter==='lose'?'active-lose':''}`;
 
-    activeCont.innerHTML = trades.filter(t=>!t.result).map(t=>renderCard(t)).join('') || '<p style="text-align:center;color:#475569;padding:20px 0;font-size:0.8rem;">取引中の銘柄はありません</p>';
+    const activeCards = trades.filter(t=>!t.result).map(t=>renderCard(t)).join('');
+activeCont.innerHTML = activeCards
+    ? `<div class="active-grid">${activeCards}</div>`
+    : '<p style="text-align:center;color:#475569;padding:20px 0;font-size:0.8rem;">取引中の銘柄はありません</p>';
     const filtered = currentHistoryFilter==='win' ? winTrades : loseTrades;
     historyCont.innerHTML = filtered.map(t=>renderCard(t)).join('') || `<p style="text-align:center;color:#475569;padding:20px 0;font-size:0.8rem;">${currentHistoryFilter.toUpperCase()}の履歴はありません</p>`;
 
