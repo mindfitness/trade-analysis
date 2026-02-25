@@ -378,13 +378,23 @@
 <div id="page-rank" class="page">
     <section style="padding: 10px 12px;">
         <div class="rank-header-row">
-            <div style="display:flex; align-items:center; gap:6px;">
-                <i data-lucide="bar-chart-2" style="width:14px; color:var(--rank-accent);"></i>
-                <span style="font-size:0.8rem; font-weight:800; color:var(--rank-accent);">セクターETF ランキング</span>
-            </div>
-            <button id="rank-update-btn" class="rank-update-btn" onclick="startRankUpdate()">更新</button>
-        </div>
-        <div id="rank-status" class="rank-status">Ready</div>
+    <div style="display:flex; align-items:center; gap:6px;">
+        <i data-lucide="bar-chart-2" style="width:14px; color:var(--rank-accent);"></i>
+        <span style="font-size:0.8rem; font-weight:800; color:var(--rank-accent);">セクターETF ランキング</span>
+    </div>
+    <button id="rank-update-btn" class="rank-update-btn" onclick="startRankUpdate()">更新</button>
+</div>
+<div style="display:flex; gap:6px; margin-bottom:8px;">
+    <input type="text" id="rank-search-input" placeholder="ETF検索 (例: SMH)" 
+        style="flex:1; font-size:0.85rem; text-transform:uppercase;"
+        oninput="this.value=this.value.toUpperCase()" 
+        onkeydown="if(event.key==='Enter') jumpToRankSymbol()">
+    <button onclick="jumpToRankSymbol()" 
+        style="padding:6px 12px; background:var(--rank-accent); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.8rem; white-space:nowrap;">
+        検索
+    </button>
+</div>
+<div id="rank-status" class="rank-status">Ready</div>
         <table class="rank-table">
             <thead>
                 <tr>
@@ -1012,6 +1022,46 @@ function showRankInfo(symbol) {
 }
 
 function closeRankModal() { document.getElementById('rank-modal').style.display = "none"; }
+
+function jumpToRankSymbol() {
+    const query = document.getElementById('rank-search-input').value.trim().toUpperCase();
+    if (!query) return;
+
+    // rankMarketDataにデータがあるか確認
+    const found = rankMarketData.find(d => d.symbol === query);
+    if (!found) {
+        // データ未取得のETFでもTICKER_INFOにあれば案内
+        const inList = RANK_TICKERS.includes(query);
+        document.getElementById('rank-status').innerText = inList
+            ? `"${query}" はリストにありますが未取得です。まず「更新」してください。`
+            : `"${query}" はリストにありません。`;
+        return;
+    }
+
+    // 一度ソートをリセットして対象行を探す
+    renderRankTable();
+
+    // 該当行をハイライトしてスクロール
+    const rows = document.querySelectorAll('#rank-table-body tr');
+    let targetRow = null;
+    rows.forEach(row => {
+        const cell = row.querySelector('.rank-ticker-cell');
+        if (cell && cell.innerText === query) {
+            targetRow = row;
+        }
+    });
+
+    if (targetRow) {
+        // 既存ハイライトをリセット
+        rows.forEach(r => r.style.outline = '');
+        targetRow.style.outline = '2px solid var(--rank-accent)';
+        targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // 3秒後にハイライト解除
+        setTimeout(() => { targetRow.style.outline = ''; }, 3000);
+        document.getElementById('rank-status').innerText = `"${query}" を表示中`;
+    }
+}
 window.addEventListener('click', (event) => {
     const modal = document.getElementById('rank-modal');
     if (event.target === modal) closeRankModal();
