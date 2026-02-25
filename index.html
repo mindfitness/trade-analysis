@@ -263,6 +263,19 @@
         flex-wrap: wrap;
     }
 }
+
+    /* ===== 項目編集モーダル ===== */
+    #item-edit-modal {
+        display: none; position: fixed; top: 0; left: 0;
+        width: 100%; height: 100%; background: rgba(0,0,0,0.8);
+        z-index: 250; align-items: center; justify-content: center;
+    }
+    #item-edit-modal.open { display: flex; }
+    .item-edit-modal-inner {
+        background: var(--card); width: 92%; max-width: 480px;
+        border-radius: 14px; padding: 16px; max-height: 88vh;
+        overflow-y: auto; border: 1px solid var(--border);
+    }
     </style>
 </head>
 <body>
@@ -482,6 +495,21 @@
             <button onclick="closeThemeModal()" style="flex:1; padding:8px; border-radius:8px; background:#334155; color:var(--text-sub); font-weight:bold; border:none; cursor:pointer;">戻る</button>
             <button onclick="handleThemeSave()" style="flex:2; padding:10px; background:var(--theme-accent); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer;">保存</button>
         </div>
+    </div>
+</div>
+
+<!-- 項目編集モーダル -->
+<div id="item-edit-modal">
+    <div class="item-edit-modal-inner">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <span id="item-edit-modal-title" style="font-size:0.9rem;font-weight:900;color:var(--text-main);"></span>
+            <button onclick="closeItemEditModal()" style="background:none;border:none;color:var(--text-sub);font-size:1.2rem;cursor:pointer;">×</button>
+        </div>
+        <div style="font-size:0.68rem;font-weight:800;color:var(--win-deep);margin-bottom:4px;">✓ ポジティブ</div>
+        <div id="item-edit-modal-pos" class="check-grid"></div>
+        <div style="font-size:0.68rem;font-weight:800;color:var(--lose-deep);margin:10px 0 4px;">⚠ 懸念</div>
+        <div id="item-edit-modal-neg" class="check-grid"></div>
+        <button onclick="saveItemEditModal()" class="submit-btn" style="padding:8px;margin-top:12px;font-size:0.8rem;">保存</button>
     </div>
 </div>
 
@@ -770,24 +798,7 @@ function renderCard(t) {
         ...t.negativeItems.map(item=>`<span class="tag negative">${item}</span>`)
     ].join('');
 
-    const itemEditHtml = `
-        <div id="edit-grid-${t.id}" class="edit-grid-container">
-            <div style="font-size:0.68rem;font-weight:800;color:var(--win-deep);margin-bottom:4px;">✓ ポジティブ</div>
-            <div class="check-grid">
-                ${positiveItems.map(item=>`
-                    <label class="check-box ${t.appliedItems.includes(item)?'checked':''}">
-                        <input type="checkbox" class="edit-item-check-positive-${t.id}" value="${item}" ${t.appliedItems.includes(item)?'checked':''} onchange="this.parentElement.classList.toggle('checked',this.checked)">
-                        ${item}</label>`).join('')}
-            </div>
-            <div style="font-size:0.68rem;font-weight:800;color:var(--lose-deep);margin:7px 0 4px;">⚠ 懸念</div>
-            <div class="check-grid">
-                ${negativeItems.map(item=>`
-                    <label class="check-box negative ${t.negativeItems.includes(item)?'checked':''}">
-                        <input type="checkbox" class="edit-item-check-negative-${t.id}" value="${item}" ${t.negativeItems.includes(item)?'checked':''} onchange="this.parentElement.classList.toggle('checked',this.checked)">
-                        ${item}</label>`).join('')}
-            </div>
-            <button onclick="saveItemEdit('${t.id}')" class="submit-btn" style="padding:6px;margin-top:7px;font-size:0.72rem;">保存</button>
-        </div>`;
+    const itemEditHtml = ''; // モーダルに移行したため不要
 
     return `
         <div class="trade-card">
@@ -1068,6 +1079,50 @@ window.addEventListener('click', (event) => {
     const themeOverlay = document.getElementById('theme-overlay');
     if (event.target === themeOverlay) closeThemeModal();
 });
+
+// ======== 項目編集モーダル ========
+let itemEditTargetId = null;
+
+function toggleItemEdit(id) {
+    itemEditTargetId = id;
+    const trade = trades.find(t => t.id === id);
+    if (!trade) return;
+
+    document.getElementById('item-edit-modal-title').innerText = `${trade.name} ― 項目編集`;
+
+    document.getElementById('item-edit-modal-pos').innerHTML = positiveItems.map(item => `
+        <label class="check-box ${trade.appliedItems.includes(item) ? 'checked' : ''}">
+            <input type="checkbox" class="modal-item-pos" value="${item}"
+                ${trade.appliedItems.includes(item) ? 'checked' : ''}
+                onchange="this.parentElement.classList.toggle('checked',this.checked)">
+            ${item}</label>`).join('');
+
+    document.getElementById('item-edit-modal-neg').innerHTML = negativeItems.map(item => `
+        <label class="check-box negative ${trade.negativeItems.includes(item) ? 'checked' : ''}">
+            <input type="checkbox" class="modal-item-neg" value="${item}"
+                ${trade.negativeItems.includes(item) ? 'checked' : ''}
+                onchange="this.parentElement.classList.toggle('checked',this.checked)">
+            ${item}</label>`).join('');
+
+    document.getElementById('item-edit-modal').classList.add('open');
+    if (window.lucide) lucide.createIcons();
+}
+
+function closeItemEditModal() {
+    document.getElementById('item-edit-modal').classList.remove('open');
+    itemEditTargetId = null;
+}
+
+async function saveItemEditModal() {
+    if (!itemEditTargetId) return;
+    const pos = Array.from(document.querySelectorAll('.modal-item-pos:checked')).map(cb => cb.value);
+    const neg = Array.from(document.querySelectorAll('.modal-item-neg:checked')).map(cb => cb.value);
+    await updateTradeData(itemEditTargetId, {
+        applied_items: JSON.stringify(pos),
+        negative_items: JSON.stringify(neg)
+    });
+    closeItemEditModal();
+}
 
 // ======== テーマ機能 ========
 async function loadThemes() {
