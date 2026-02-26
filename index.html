@@ -537,7 +537,7 @@ const SECTOR_GAS_URL = "https://script.google.com/macros/s/AKfycby1lo_XSLpA6OIFv
 
 // Market Ranker 設定
 const RANK_API_KEY = "10f03734e47d4c5fb02dd591d7928e8c";
-const RANK_TICKERS = ["RSP","POWR","ITA","BOAT","XOP","MOO","PEJ","TAN","FAN","ICLN","SMH","XBI","SOXX","IYT","SLX","LIT","WOOD","ITB","IHI","SIL","XRT","QTUM","BATT","KARS","GDX","KRE","URA","REMX","JETS","COPX","DRIV","WGMI","CIBR","AIRR","BOTZ","PAVE"];
+const RANK_TICKERS = ["RSP","POWR","ITA","BOAT","XOP","MOO","PEJ","TAN","FAN","ICLN","SMH","XBI","SOXX","IYT","SLX","LIT","WOOD","ITB","IHI","SIL","XRT","QTUM","BATT","KARS","GDX","KRE","URA","REMX","JETS","COPX","DRIV","WGMI","CIBR","AIRR","BOTZ","PAVE","FINX"];
 const TICKER_INFO = {
     "RSP": { desc: "S&P500等ウェイト。", stocks: "S&P500全構成銘柄を均等保有" },
     "POWR": { desc: "米国電力インフラ産業。送電網の近代化、変圧器、電力設備、グリッド管理技術を扱う企業で構成。", stocks: "ETN (イートン), VRT (バーティブ), HUBB (ハベル)" },
@@ -578,6 +578,7 @@ const TICKER_INFO = {
     "AIRR": { desc: "米国産業ルネサンス（再工業化）関連。 AIデータセンターや半導体工場の用地開発、高度な空調・電力設備、通信網整備を担う建設・エンジニアリングの中核企業で構成。", stocks: "FIX, STRL, MTZ" },
     "PAVE": { desc: "米国インフラ関連。道路、橋、鉄道、原材料、建設機器など、米国の物理的なインフラ整備に従事する企業で構成。", stocks: "URI (ユナイテッド・レンタルズ), ETN (イートン), NUE (ニューコア)" },
     "BOTZ": { desc: "ロボット工学とAI。産業用ロボット、自動化、医療用ロボット、自律走行関連の技術を持つ企業に投資。", stocks: "NVDA (エヌビディア), ISRG (インテュイティブ・サージカル), ABB" },
+    "FINX": { desc: "フィンテック（金融テクノロジー）関連。モバイル決済、デジタル資産、金融ソフトウェア、P2Pレンディングなど、金融サービスのデジタル化を推進する企業で構成。", stocks: "PYPL (ペイパル), SQ (ブロック), COIN (コインベース)" },
 };
 
 let rankMarketData = JSON.parse(localStorage.getItem('market_perf_info')) || [];
