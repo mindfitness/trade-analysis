@@ -413,7 +413,8 @@
                 <tr>
                     <th onclick="sortRankTable('symbol')" style="text-align:left;">Ticker</th>
                     <th onclick="sortRankTable('day_change')">Day %</th>
-                    <th onclick="sortRankTable('week_change')">Week %</th>
+                    <th onclick="sortRankTable('five_day_change')">5Day %</th>
+                    <th onclick="sortRankTable('ten_day_change')">10Day %</th>
                     <th onclick="sortRankTable('month_change')">Month %</th>
                 </tr>
             </thead>
@@ -931,14 +932,16 @@ async function startRankUpdate() {
             const v = resData.values;
             const now = parseFloat(v[0].close);
             const d1 = parseFloat(v[1].close);
-            const d5 = parseFloat(v[5]?.close || v[v.length-1].close);
+            const d5  = parseFloat(v[5]?.close  || v[v.length-1].close);
+            const d10 = parseFloat(v[10]?.close || v[v.length-1].close);
             const d21 = parseFloat(v[21]?.close || v[v.length-1].close);
-            rankMarketData.push({
-                symbol,
-                day_change: ((now-d1)/d1)*100,
-                week_change: ((now-d5)/d5)*100,
-                month_change: ((now-d21)/d21)*100
-            });
+rankMarketData.push({
+    symbol,
+    day_change:      ((now-d1)/d1)*100,
+    five_day_change: ((now-d5)/d5)*100,
+    ten_day_change:  ((now-d10)/d10)*100,
+    month_change:    ((now-d21)/d21)*100
+});
             localStorage.setItem('market_perf_info', JSON.stringify(rankMarketData));
             renderRankTable();
         } catch (e) { console.error(e); }
@@ -961,9 +964,10 @@ function renderRankTable() {
         sorted.forEach((item, i) => ranks[item.symbol] = i + 1);
         return ranks;
     };
-    const dayRanks = calcRanks('day_change');
-    const weekRanks = calcRanks('week_change');
-    const monthRanks = calcRanks('month_change');
+    const dayRanks     = calcRanks('day_change');
+    const fiveDayRanks = calcRanks('five_day_change');
+    const tenDayRanks  = calcRanks('ten_day_change');
+    const monthRanks   = calcRanks('month_change');
 
     // 表示順：固定銘柄を先頭、次にピン以外を現在のソート順
     let displayData = [...rankMarketData];
@@ -996,23 +1000,27 @@ function renderRankTable() {
         const total = rankMarketData.length;
 
         row.innerHTML = `
-            <td>
-                <span class="rank-ticker-cell" onclick="showRankInfo('${item.symbol}')">${item.symbol}</span>
-                <span onclick="toggleRankPin('${item.symbol}')" title="固定" style="cursor:pointer;margin-left:4px;font-size:0.75rem;opacity:${isPinned?1:0.3};">📌</span>
-            </td>
-            <td class="${item.day_change >= 0 ? 'rank-pos' : 'rank-neg'}">
-                ${item.day_change >= 0 ? '+' : ''}${item.day_change.toFixed(2)}%
-                ${rankBadge(dayRanks[item.symbol], total)}
-            </td>
-            <td class="${item.week_change >= 0 ? 'rank-pos' : 'rank-neg'}">
-                ${item.week_change >= 0 ? '+' : ''}${item.week_change.toFixed(2)}%
-                ${rankBadge(weekRanks[item.symbol], total)}
-            </td>
-            <td class="${item.month_change >= 0 ? 'rank-pos' : 'rank-neg'}">
-                ${item.month_change >= 0 ? '+' : ''}${item.month_change.toFixed(2)}%
-                ${rankBadge(monthRanks[item.symbol], total)}
-            </td>
-        `;
+    <td>
+        <span class="rank-ticker-cell" onclick="showRankInfo('${item.symbol}')">${item.symbol}</span>
+        <span onclick="toggleRankPin('${item.symbol}')" title="固定" style="cursor:pointer;margin-left:4px;font-size:0.75rem;opacity:${isPinned?1:0.3};">📌</span>
+    </td>
+    <td class="${item.day_change >= 0 ? 'rank-pos' : 'rank-neg'}">
+        ${item.day_change >= 0 ? '+' : ''}${item.day_change.toFixed(2)}%
+        ${rankBadge(dayRanks[item.symbol], total)}
+    </td>
+    <td class="${item.five_day_change >= 0 ? 'rank-pos' : 'rank-neg'}">
+        ${item.five_day_change >= 0 ? '+' : ''}${item.five_day_change.toFixed(2)}%
+        ${rankBadge(fiveDayRanks[item.symbol], total)}
+    </td>
+    <td class="${item.ten_day_change >= 0 ? 'rank-pos' : 'rank-neg'}">
+        ${item.ten_day_change >= 0 ? '+' : ''}${item.ten_day_change.toFixed(2)}%
+        ${rankBadge(tenDayRanks[item.symbol], total)}
+    </td>
+    <td class="${item.month_change >= 0 ? 'rank-pos' : 'rank-neg'}">
+        ${item.month_change >= 0 ? '+' : ''}${item.month_change.toFixed(2)}%
+        ${rankBadge(monthRanks[item.symbol], total)}
+    </td>
+`;
         tbody.appendChild(row);
     });
 }
