@@ -963,23 +963,26 @@ rankMarketData.push({
 }
 
 let rankPinnedSymbol = null; // 固定銘柄
-let rankActiveFilter = null; // スクリーニングフィルター
+let rankActiveFilter = []; // スクリーニングフィルター（複数選択可）
 
 function toggleRankFilter(filterKey) {
-    rankActiveFilter = (rankActiveFilter === filterKey) ? null : filterKey;
-    document.querySelectorAll('.rank-filter-btn').forEach(btn => btn.classList.remove('active'));
-    if (rankActiveFilter) {
-        const map = { '5D>10D': 0, '10D>1M': 1 };
-        document.querySelectorAll('.rank-filter-btn')[map[rankActiveFilter]]?.classList.add('active');
+    if (rankActiveFilter.includes(filterKey)) {
+        rankActiveFilter = rankActiveFilter.filter(f => f !== filterKey);
+    } else {
+        rankActiveFilter.push(filterKey);
     }
+    document.querySelectorAll('.rank-filter-btn').forEach((btn, i) => {
+        const keys = ['5D>10D', '10D>1M'];
+        btn.classList.toggle('active', rankActiveFilter.includes(keys[i]));
+    });
     renderRankTable();
 }
 
 function clearRankFilter() {
-    rankActiveFilter = null;
+    rankActiveFilter = [];
     document.querySelectorAll('.rank-filter-btn').forEach(btn => btn.classList.remove('active'));
     renderRankTable();
-} // 固定銘柄
+}
 
 function renderRankTable() {
     const tbody = document.getElementById('rank-table-body');
@@ -1009,16 +1012,17 @@ function renderRankTable() {
     }
 
     // スクリーニングフィルター：条件一致を先頭に固定
-    if (rankActiveFilter) {
+    if (rankActiveFilter.length > 0) {
         const match = (item) => {
-            if (rankActiveFilter === '5D>10D')  return item.five_day_change > item.ten_day_change;
-            if (rankActiveFilter === '10D>1M')  return item.ten_day_change > item.month_change;
-            return false;
+            if (rankActiveFilter.includes('5D>10D') && !(item.five_day_change > item.ten_day_change)) return false;
+            if (rankActiveFilter.includes('10D>1M') && !(item.ten_day_change > item.month_change)) return false;
+            return true;
         };
         const matched = displayData.filter(match);
         const unmatched = displayData.filter(d => !match(d));
         displayData = [...matched, ...unmatched];
-        document.getElementById('rank-status').innerText = `${rankActiveFilter}：${matched.length}件ヒット`;
+        const label = rankActiveFilter.join(' & ');
+        document.getElementById('rank-status').innerText = `${label}：${matched.length}件ヒット`;
     }
 
     // 固定銘柄を先頭に
@@ -1028,10 +1032,20 @@ function renderRankTable() {
         displayData = pinned ? [pinned, ...rest] : rest;
     }
 
+    // フィルター用match関数をスコープ外で定義
+    const isMatched = (item) => {
+        if (rankActiveFilter.length === 0) return true;
+        if (rankActiveFilter.includes('5D>10D') && !(item.five_day_change > item.ten_day_change)) return false;
+        if (rankActiveFilter.includes('10D>1M') && !(item.ten_day_change > item.month_change)) return false;
+        return true;
+    };
+
     displayData.forEach(item => {
         const isPinned = item.symbol === rankPinnedSymbol;
+        const hit = isMatched(item);
         const row = document.createElement('tr');
         if (isPinned) row.style.cssText = 'background:#1a1a2e; border-top:2px solid var(--rank-accent); border-bottom:2px solid var(--rank-accent);';
+        if (rankActiveFilter.length > 0 && !hit) row.style.opacity = '0.3';
 
         const rankBadge = (rank, total) => {
             const pct = rank / total;
