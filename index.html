@@ -229,6 +229,12 @@
         }
         .rank-pos { color: var(--win-deep); }
         .rank-neg { color: var(--lose-deep); }
+        .rank-filter-btn {
+    padding: 5px 10px; border: 1px solid var(--border); background: #334155;
+    color: var(--text-sub); border-radius: 6px; font-size: 0.68rem;
+    font-weight: 800; cursor: pointer; white-space: nowrap;
+}
+.rank-filter-btn.active { background: var(--rank-accent); color: white; border-color: var(--rank-accent); }
 
         /* ランキング モーダル */
         #rank-modal { display: none; position: fixed; z-index: 300; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); }
@@ -406,6 +412,11 @@
         style="padding:6px 12px; background:var(--rank-accent); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.8rem; white-space:nowrap;">
         検索
     </button>
+</div>
+<div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:8px;">
+    <button class="rank-filter-btn" onclick="toggleRankFilter('5D>10D')">5D&gt;10D</button>
+    <button class="rank-filter-btn" onclick="toggleRankFilter('10D>1M')">10D&gt;1M</button>
+    <button class="rank-filter-btn" onclick="clearRankFilter()">解除</button>
 </div>
 <div id="rank-status" class="rank-status">Ready</div>
         <table class="rank-table">
@@ -952,6 +963,23 @@ rankMarketData.push({
 }
 
 let rankPinnedSymbol = null; // 固定銘柄
+let rankActiveFilter = null; // スクリーニングフィルター
+
+function toggleRankFilter(filterKey) {
+    rankActiveFilter = (rankActiveFilter === filterKey) ? null : filterKey;
+    document.querySelectorAll('.rank-filter-btn').forEach(btn => btn.classList.remove('active'));
+    if (rankActiveFilter) {
+        const map = { '5D>10D': 0, '10D>1M': 1 };
+        document.querySelectorAll('.rank-filter-btn')[map[rankActiveFilter]]?.classList.add('active');
+    }
+    renderRankTable();
+}
+
+function clearRankFilter() {
+    rankActiveFilter = null;
+    document.querySelectorAll('.rank-filter-btn').forEach(btn => btn.classList.remove('active'));
+    renderRankTable();
+} // 固定銘柄
 
 function renderRankTable() {
     const tbody = document.getElementById('rank-table-body');
@@ -978,6 +1006,19 @@ function renderRankTable() {
             }
             return rankCurrentSort.asc ? a[rankCurrentSort.key] - b[rankCurrentSort.key] : b[rankCurrentSort.key] - a[rankCurrentSort.key];
         });
+    }
+
+    // スクリーニングフィルター：条件一致を先頭に固定
+    if (rankActiveFilter) {
+        const match = (item) => {
+            if (rankActiveFilter === '5D>10D')  return item.five_day_change > item.ten_day_change;
+            if (rankActiveFilter === '10D>1M')  return item.ten_day_change > item.month_change;
+            return false;
+        };
+        const matched = displayData.filter(match);
+        const unmatched = displayData.filter(d => !match(d));
+        displayData = [...matched, ...unmatched];
+        document.getElementById('rank-status').innerText = `${rankActiveFilter}：${matched.length}件ヒット`;
     }
 
     // 固定銘柄を先頭に
