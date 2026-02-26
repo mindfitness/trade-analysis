@@ -1201,7 +1201,8 @@ function deleteTheme(id) {
 
 function renderThemes() {
     const list = document.getElementById('theme-list');
-    list.innerHTML = themes.map(theme=>`
+    const sorted = [...themes].sort((a, b) => b.id - a.id);
+    list.innerHTML = sorted.map(theme=>`
         <div class="theme-card">
             <div class="theme-card-top">
                 <div style="min-width:0;flex:1;">
