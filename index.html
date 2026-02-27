@@ -331,15 +331,22 @@
 <!-- 分析ページ -->
 <div id="page-history" class="page">
     <div class="history-summary">
-        <div id="box-win" class="summary-box active-win" onclick="setHistoryFilter('win')">
-            <div class="summary-count" style="color: var(--win-deep);" id="count-win">0</div>
-            <div class="summary-label" style="color: var(--win-deep);">WIN</div>
-        </div>
-        <div id="box-lose" class="summary-box" onclick="setHistoryFilter('lose')">
-            <div class="summary-count" style="color: var(--lose-deep);" id="count-lose">0</div>
-            <div class="summary-label" style="color: var(--lose-deep);">LOSE</div>
-        </div>
+    <div id="box-win" class="summary-box active-win" onclick="setHistoryFilter('win')">
+        <div class="summary-count" style="color: var(--win-deep);" id="count-win">0</div>
+        <div class="summary-label" style="color: var(--win-deep);">WIN</div>
     </div>
+    <div id="box-lose" class="summary-box" onclick="setHistoryFilter('lose')">
+        <div class="summary-count" style="color: var(--lose-deep);" id="count-lose">0</div>
+        <div class="summary-label" style="color: var(--lose-deep);">LOSE</div>
+    </div>
+</div>
+<div style="display:flex; gap:8px; margin-bottom:10px;">
+    <button onclick="switchPage('cross')" 
+        style="flex:1; padding:8px; background:#1e1b4b; border:1px solid #4f46e5; 
+        color:#a5b4fc; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.75rem;">
+        ✕ WIN×LOSE分析
+    </button>
+</div>
     <section id="analysis-section" style="display:none; margin-bottom: 10px; padding: 10px 12px;">
         <h3 id="analysis-title" style="margin: 0 0 8px 0; font-size: 0.82rem; font-weight: 800;"></h3>
         <div id="analysis-content"></div>
@@ -431,6 +438,23 @@
             </thead>
             <tbody id="rank-table-body"></tbody>
         </table>
+    </section>
+</div>
+
+<!-- WIN×LOSE分析ページ -->
+<div id="page-cross" class="page">
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+        <button onclick="switchPage('history')" 
+            style="background:none; border:none; color:var(--text-sub); cursor:pointer; font-size:0.8rem;">
+            ← 戻る
+        </button>
+        <span style="font-size:0.85rem; font-weight:900; color:#a5b4fc;">WIN × LOSE 差別化分析</span>
+    </div>
+    <section>
+        <div style="font-size:0.68rem; color:var(--text-sub); margin-bottom:12px; line-height:1.6;">
+            スコア = WIN出現率 + LOSE欠如率の合算。<br>高いほど「あると勝ちやすく、ないと負けやすい」項目。
+        </div>
+        <div id="cross-analysis-content"></div>
     </section>
 </div>
 
@@ -620,6 +644,7 @@ function switchPage(pageId) {
     if (pageId === 'theme') { btn.textContent = '+ テーマ'; btn.style.color = 'var(--theme-accent)'; }
     else { btn.textContent = '+ 新規'; btn.style.color = 'var(--primary)'; }
     // ランキングページ表示時にデータがあれば描画
+    if (pageId === 'cross') renderCrossAnalysis();
     if (pageId === 'rank' && rankMarketData.length > 0) renderRankTable();
     if(window.lucide) lucide.createIcons();
 }
@@ -841,6 +866,62 @@ function renderAnalysis(filteredTrades, itemsList, title, baseColor) {
     }
 
     cnt.innerHTML = existingHtml + missingHtml;
+}
+
+function renderCrossAnalysis() {
+    const cnt = document.getElementById('cross-analysis-content');
+    const winTrades = trades.filter(t => t.result === 'win');
+    const loseTrades = trades.filter(t => t.result === 'lose');
+
+    if (winTrades.length === 0 || loseTrades.length === 0) {
+        cnt.innerHTML = '<p style="font-size:0.78rem; color:var(--text-sub); text-align:center; padding:20px 0;">WIN・LOSEどちらも1件以上必要です</p>';
+        return;
+    }
+
+    const winTotal = winTrades.length;
+    const loseTotal = loseTrades.length;
+
+    const stats = positiveItems.map(item => {
+        const winCount  = winTrades.filter(t => t.appliedItems.includes(item)).length;
+        const loseMissCount = loseTrades.filter(t => !t.appliedItems.includes(item)).length;
+        const winRate   = parseFloat(((winCount / winTotal) * 100).toFixed(1));
+        const loseMissRate = parseFloat(((loseMissCount / loseTotal) * 100).toFixed(1));
+        const score     = parseFloat((winRate + loseMissRate).toFixed(1));
+        return { item, winRate, winCount, loseMissRate, loseMissCount, score };
+    }).sort((a, b) => b.score - a.score);
+
+    cnt.innerHTML = stats.map((s, i) => {
+        const scoreColor = s.score >= 150 ? '#ef4444' : s.score >= 100 ? '#f59e0b' : 'var(--text-sub)';
+        const rank = i + 1;
+        return `
+        <div style="margin-bottom:10px; padding:10px; background:var(--input-bg); border-radius:8px; border:1px solid ${s.score >= 150 ? '#7f1d1d' : s.score >= 100 ? '#451a03' : 'var(--border)'};">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="font-size:0.62rem; font-weight:900; color:${scoreColor}; background:${s.score>=150?'#7f1d1d':s.score>=100?'#451a03':'#334155'}; padding:1px 5px; border-radius:3px;">#${rank}</span>
+                    <span style="font-size:0.82rem; font-weight:900; color:white;">${s.item}</span>
+                </div>
+                <span style="font-size:1rem; font-weight:900; color:${scoreColor};">SCORE ${s.score}</span>
+            </div>
+            <div style="display:flex; gap:6px;">
+                <div style="flex:1;">
+                    <div style="font-size:0.58rem; color:var(--win-deep); font-weight:800; margin-bottom:2px;">WIN出現率</div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                        <span style="font-size:0.68rem; color:var(--win-deep); font-weight:800;">${s.winRate}%</span>
+                        <span style="font-size:0.62rem; color:var(--text-sub);">${s.winCount}/${winTotal}</span>
+                    </div>
+                    <div class="progress-bg"><div style="background:var(--win-deep); height:100%; width:${s.winRate}%; transition:width 0.3s;"></div></div>
+                </div>
+                <div style="flex:1;">
+                    <div style="font-size:0.58rem; color:var(--lose-deep); font-weight:800; margin-bottom:2px;">LOSE欠如率</div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                        <span style="font-size:0.68rem; color:var(--lose-deep); font-weight:800;">${s.loseMissRate}%</span>
+                        <span style="font-size:0.62rem; color:var(--text-sub);">${s.loseMissCount}/${loseTotal}</span>
+                    </div>
+                    <div class="progress-bg"><div style="background:var(--lose-deep); height:100%; width:${s.loseMissRate}%; transition:width 0.3s;"></div></div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
 }
 
 function renderCard(t) {
