@@ -786,6 +786,8 @@ function renderAnalysis(filteredTrades, itemsList, title, baseColor) {
     const cnt = document.getElementById('analysis-content');
     if(filteredTrades.length===0){sec.style.display='none';return;}
     sec.style.display='block'; ttl.innerText=title; ttl.style.color=baseColor;
+
+    // 既存：出現率集計
     const counts = {};
     itemsList.forEach(item=>counts[item]=0);
     filteredTrades.forEach(trade=>{
@@ -796,7 +798,7 @@ function renderAnalysis(filteredTrades, itemsList, title, baseColor) {
     const stats = Object.entries(counts)
         .map(([item,count])=>({item,count,percentage:parseFloat(((count/total)*100).toFixed(1))}))
         .filter(s=>s.percentage>40).sort((a,b)=>b.percentage-a.percentage);
-    cnt.innerHTML = stats.map(stat=>{
+    const existingHtml = stats.map(stat=>{
         const color = stat.percentage>=80 ? baseColor : stat.percentage>=50 ? '#f59e0b' : 'var(--text-sub)';
         return `<div style="margin-bottom:5px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
@@ -806,6 +808,39 @@ function renderAnalysis(filteredTrades, itemsList, title, baseColor) {
             <div class="progress-bg"><div style="background:${color};height:100%;width:${stat.percentage}%;transition:width 0.3s;"></div></div>
         </div>`;
     }).join('') || '<p style="font-size:0.72rem;color:var(--text-sub);">40%を超える項目はありません</p>';
+
+    // 追加：LOSEの不足項目ランキング
+    let missingHtml = '';
+    if (currentHistoryFilter === 'lose') {
+        const missingCounts = {};
+        positiveItems.forEach(item => missingCounts[item] = 0);
+        filteredTrades.forEach(trade => {
+            positiveItems.forEach(item => {
+                if (!trade.appliedItems.includes(item)) missingCounts[item]++;
+            });
+        });
+        const missingStats = Object.entries(missingCounts)
+            .map(([item, count]) => ({ item, count, percentage: parseFloat(((count / total) * 100).toFixed(1)) }))
+            .sort((a, b) => b.percentage - a.percentage);
+
+        missingHtml = `
+            <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">
+            <div style="font-size:0.72rem;font-weight:800;color:var(--lose-deep);margin-bottom:8px;">
+                ⚠ LOSE時の不足ポジティブ項目
+            </div>
+            ${missingStats.map(stat => {
+                const color = stat.percentage >= 80 ? 'var(--lose-deep)' : stat.percentage >= 50 ? '#f59e0b' : 'var(--text-sub)';
+                return `<div style="margin-bottom:5px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
+                        <span style="font-size:0.68rem;font-weight:700;color:white;">${stat.item}</span>
+                        <span style="font-size:0.68rem;font-weight:800;color:${color};">欠如${stat.percentage}% <span style="color:var(--text-sub);font-weight:400;">${stat.count}/${total}</span></span>
+                    </div>
+                    <div class="progress-bg"><div style="background:${color};height:100%;width:${stat.percentage}%;transition:width 0.3s;"></div></div>
+                </div>`;
+            }).join('')}`;
+    }
+
+    cnt.innerHTML = existingHtml + missingHtml;
 }
 
 function renderCard(t) {
