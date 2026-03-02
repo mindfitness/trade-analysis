@@ -1402,9 +1402,10 @@ function renderThemes() {
             </div>
             <div class="stock-list">
                 ${theme.stocks.map((s,i)=>`
-                    <div class="stock-badge">${s}
-                        <span onclick="removeThemeStock(${theme.id},${i})" style="cursor:pointer;color:#64748b;margin-left:2px;font-size:0.65rem;">✕</span>
-                    </div>`).join('')}
+    <div class="stock-badge">
+        <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${s}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:var(--primary);">${s}</a>
+        <span onclick="removeThemeStock(${theme.id},${i})" style="cursor:pointer;color:#64748b;margin-left:2px;font-size:0.65rem;">✕</span>
+    </div>`).join('')}
                 <button onclick="addThemeStock(${theme.id})" style="border:1px dashed #475569;background:none;border-radius:14px;padding:2px 10px;color:#94a3b8;font-size:0.68rem;font-weight:bold;cursor:pointer;">+ 追加</button>
             </div>
         </div>`).join('');
