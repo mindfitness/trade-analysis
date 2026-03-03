@@ -573,7 +573,7 @@ const SECTOR_GAS_URL = "https://script.google.com/macros/s/AKfycby1lo_XSLpA6OIFv
 
 // Market Ranker 設定
 const RANK_API_KEY = "10f03734e47d4c5fb02dd591d7928e8c";
-const RANK_TICKERS = ["RSP","AIPO","POWR","ITA","BOAT","XOP","MOO","PEJ","TAN","FAN","ICLN","SMH","XBI","SOXX","IYT","SLX","LIT","WOOD","ITB","IHI","SIL","XRT","QTUM","BATT","KARS","GDX","KRE","URA","REMX","JETS","COPX","DRIV","WGMI","CIBR","AIRR","BOTZ","PAVE","FINX","SKYY","HEAL"];
+const RANK_TICKERS = ["RSP","AIPO","POWR","ITA","BOAT","XOP","MOO","PEJ","TAN","FAN","ICLN","SMH","XBI","SOXX","IYT","SLX","LIT","WOOD","ITB","IHI","SIL","XRT","QTUM","BATT","KARS","GDX","KRE","URA","REMX","JETS","COPX","DRIV","WGMI","CIBR","AIRR","BOTZ","PAVE","FINX","SKYY","HEAL","UFO"];
 const TICKER_INFO = {
     "RSP": { desc: "S&P500等ウェイト。", stocks: "S&P500全構成銘柄を均等保有" },
     "AIPO": { desc: "データセンター電力インフラ&冷却システム。", stocks: "VRT (Vertiv)、ETN (Eaton)、GEV" },
@@ -618,6 +618,7 @@ const TICKER_INFO = {
     "FINX": { desc: "フィンテック（金融テクノロジー）関連。モバイル決済、デジタル資産、金融ソフトウェア、P2Pレンディングなど、金融サービスのデジタル化を推進する企業で構成。", stocks: "PYPL (ペイパル), SQ (ブロック), COIN (コインベース)" },
     "SKYY": { desc: "クラウドコンピューティング。インフラ（IaaS）、プラットフォーム（PaaS）、ソフトウェア（SaaS）の3レイヤーを網羅し、クラウド移行を支える企業に投資。", stocks: "CRWV (コアウィーブ), ANET (アリスタ・ネットワークス), GOOGL (アルファベット), MSFT (マイクロソフト), AMZN (アマゾン)" },
     "HEAL": { desc: "ヘルステック（医療技術）関連。AIを活用した創薬、スマート医療機器、遠隔医療、ヘルスケア・アナリティクスなど、テクノロジーによって医療の効率化や高度化を推進する企業で構成。", stocks: "DXCM (デクスコム), ISRG (インテュイティブ・サージカル), GEHC (GEヘルスケア)" },
+    "UFO" : { desc: "宇宙産業関連。衛星製造・運用、ロケット打ち上げサービス、地上インフラ、衛星通信（放送・GPS）、宇宙探査技術など、宇宙空間の商用利用やインフラ構築を推進する企業で構成。", stocks: "GRMN (ガーミン), IRDM (イリジウム・コミュニケーションズ), RKLB (ロケット・ラボ), LHM (L3ハリス・テクノロジーズ)" },
 };
 
 let rankMarketData = JSON.parse(localStorage.getItem('market_perf_info')) || [];
