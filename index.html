@@ -573,7 +573,7 @@ const SECTOR_GAS_URL = "https://script.google.com/macros/s/AKfycby1lo_XSLpA6OIFv
 
 // Market Ranker 設定
 const RANK_API_KEY = "10f03734e47d4c5fb02dd591d7928e8c";
-const RANK_TICKERS = ["RSP","AIPO","POWR","ITA","BOAT","XOP","MOO","PEJ","TAN","FAN","ICLN","SMH","XBI","SOXX","IYT","SLX","LIT","WOOD","ITB","IHI","SIL","XRT","QTUM","BATT","KARS","GDX","KRE","URA","REMX","JETS","COPX","DRIV","WGMI","CIBR","AIRR","BOTZ","PAVE","FINX","SKYY","HEAL","UFO","EATZ"];
+const RANK_TICKERS = ["RSP","AIPO","POWR","ITA","BOAT","XOP","MOO","PEJ","TAN","FAN","ICLN","SMH","XBI","SOXX","IYT","SLX","LIT","WOOD","ITB","IHI","SIL","XRT","QTUM","BATT","KARS","GDX","KRE","URA","REMX","JETS","COPX","DRIV","WGMI","CIBR","AIRR","BOTZ","PAVE","FINX","SKYY","HEAL","UFO","EATZ","IGV"];
 const TICKER_INFO = {
     "RSP": { desc: "S&P500等ウェイト。", stocks: "S&P500全構成銘柄を均等保有" },
     "AIPO": { desc: "データセンター電力インフラ&冷却システム。", stocks: "VRT (Vertiv)、ETN (Eaton)、GEV" },
@@ -620,6 +620,7 @@ const TICKER_INFO = {
     "HEAL": { desc: "ヘルステック（医療技術）関連。AIを活用した創薬、スマート医療機器、遠隔医療、ヘルスケア・アナリティクスなど、テクノロジーによって医療の効率化や高度化を推進する企業で構成。", stocks: "DXCM (デクスコム), ISRG (インテュイティブ・サージカル), GEHC (GEヘルスケア)" },
     "UFO" : { desc: "宇宙産業関連。衛星製造・運用、ロケット打ち上げサービス、地上インフラ、衛星通信（放送・GPS）、宇宙探査技術など、宇宙空間の商用利用やインフラ構築を推進する企業で構成。", stocks: "GRMN (ガーミン), IRDM (イリジウム・コミュニケーションズ), RKLB (ロケット・ラボ), LHM (L3ハリス・テクノロジーズ)" },
     "EATZ": { desc: "米国の外食産業（ファストフード、カジュアルダイニング、バーなど）に特化。", stocks: "CMG (Chipotle)、DRI (Darden Restaurants)、TXRH (Texas Roadhouse)" },
+    "IGV": { desc: "北米のソフトウェア・サービス業界。クラウド、SaaS、CRM、システムソフトウェアなど、デジタルトランスフォーメーションの中核を担う企業で構成。", stocks: "MSFT (マイクロソフト), CRM (セールスフォース), ADBE (アドビ)" },
 };
 
 let rankMarketData = JSON.parse(localStorage.getItem('market_perf_info')) || [];
