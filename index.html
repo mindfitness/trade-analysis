@@ -842,16 +842,26 @@ function renderAnalysis(filteredTrades, itemsList, title, baseColor) {
     // 追加：LOSEの不足項目ランキング
     let missingHtml = '';
     if (currentHistoryFilter === 'lose') {
-        const missingCounts = {};
-        positiveItems.forEach(item => missingCounts[item] = 0);
-        filteredTrades.forEach(trade => {
-            positiveItems.forEach(item => {
-                if (!trade.appliedItems.includes(item)) missingCounts[item]++;
-            });
-        });
-        const missingStats = Object.entries(missingCounts)
-            .map(([item, count]) => ({ item, count, percentage: parseFloat(((count / total) * 100).toFixed(1)) }))
-            .sort((a, b) => b.percentage - a.percentage);
+        // WIN時に40%超の項目のみ対象
+const winTrades = trades.filter(t => t.result === 'win');
+const winTotal = winTrades.length;
+const qualifiedItems = winTotal > 0
+    ? positiveItems.filter(item => {
+        const winCount = winTrades.filter(t => t.appliedItems.includes(item)).length;
+        return (winCount / winTotal) * 100 > 40;
+    })
+    : [];
+
+const missingCounts = {};
+qualifiedItems.forEach(item => missingCounts[item] = 0);
+filteredTrades.forEach(trade => {
+    qualifiedItems.forEach(item => {
+        if (!trade.appliedItems.includes(item)) missingCounts[item]++;
+    });
+});
+const missingStats = Object.entries(missingCounts)
+    .map(([item, count]) => ({ item, count, percentage: parseFloat(((count / total) * 100).toFixed(1)) }))
+    .sort((a, b) => b.percentage - a.percentage);
 
         missingHtml = `
             <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">
