@@ -294,7 +294,6 @@
     <div class="nav-tabs">
         <button class="tab active" id="tab-active" onclick="switchPage('active')">PF</button>
         <button class="tab" id="tab-history" onclick="switchPage('history')">Log</button>
-        <button class="tab perfSector-tab" id="tab-perfSector" onclick="switchPage('perfSector')">Perf</button>
         <button class="tab rank-tab" id="tab-rank" onclick="switchPage('rank')">Rank</button>
         <button class="tab theme-tab" id="tab-theme" onclick="switchPage('theme')">Watch</button>
         <button class="tab ai-tab" id="tab-ai" onclick="switchPage('ai')">Func</button>
@@ -345,6 +344,8 @@
                 </div>
             </div>
             <div style="font-size:0.65rem; color:var(--text-sub); line-height:1.6;">
+                <span style="color:#94a3b8; font-weight:700;">企業名:</span> <span id="ep-name" style="color:var(--text-main);">--</span><br>
+                <span style="color:#94a3b8; font-weight:700;">業界:</span> <span id="ep-industry" style="color:var(--text-main);">--</span><br>
                 <span style="color:#94a3b8; font-weight:700;">Sector:</span> <span id="ep-sector" style="color:var(--text-main);">--</span>　
                 <span style="color:#94a3b8; font-weight:700;">ETF:</span> <span id="ep-etf" style="color:var(--sector-accent);">--</span>　
                 <span style="color:#94a3b8; font-weight:700;">Rank ETF:</span> <span id="ep-rank-etf" style="color:var(--rank-accent);">--</span>
@@ -387,52 +388,6 @@
         <div id="analysis-content"></div>
     </section>
     <div id="history-container"></div>
-</div>
-
-<!-- Perf + セクタ統合ページ -->
-<div id="page-perfSector" class="page">
-    <section>
-        <div style="display:flex; align-items:center; gap:6px; margin-bottom:10px;">
-            <i data-lucide="trending-up" style="width:14px; color:var(--perf-accent);"></i>
-            <span style="font-size:0.8rem; font-weight:800; color:var(--perf-accent);">パフォーマンス</span>
-            <span style="font-size:0.62rem; color:var(--text-sub); margin-left:4px;">→ セクタ自動取得</span>
-        </div>
-        <div class="perf-input-row">
-            <input type="text" id="perf-ticker" placeholder="ティッカー (例: NVDA)" onkeydown="if(event.key==='Enter') fetchPerfData()">
-            <button class="perf-search-btn" onclick="fetchPerfData()">取得</button>
-        </div>
-        <div id="perf-status" class="perf-status" style="display:none;"></div>
-        <div id="perf-result" style="display:none;">
-            <div id="perf-symbol-display" class="perf-symbol-title"></div>
-            <div class="perf-row"><span class="perf-label">1日</span><span id="perf-today" class="perf-value">--</span></div>
-            <div class="perf-row"><span class="perf-label">5日</span><span id="perf-5d" class="perf-value">--</span></div>
-            <div class="perf-row"><span class="perf-label">10日</span><span id="perf-10d" class="perf-value">--</span></div>
-            <div class="perf-row"><span class="perf-label">1ヶ月</span><span id="perf-1m" class="perf-value">--</span></div>
-            <div class="perf-row"><span class="perf-label">2ヶ月</span><span id="perf-2m" class="perf-value">--</span></div>
-        </div>
-    </section>
-
-    <section>
-        <div style="display:flex; align-items:center; gap:6px; margin-bottom:10px;">
-            <i data-lucide="search" style="width:14px; color:var(--sector-accent);"></i>
-            <span style="font-size:0.8rem; font-weight:800; color:var(--sector-accent);">セクタ</span>
-        </div>
-        <div class="sector-search-row">
-            <input type="text" id="sector-ticker" placeholder="ティッカー (例: TSLA)" onkeydown="if(event.key==='Enter') fetchSectorData()">
-            <button class="sector-search-btn" onclick="fetchSectorData()">検索</button>
-        </div>
-        <div id="sector-loading" class="sector-loading" style="display:none;">データ取得中...</div>
-        <div id="sector-result" style="display:none;">
-            <table class="sector-result-table">
-                <tr><th>Ticker</th><td id="sec-ticker"></td></tr>
-                <tr><th>企業名</th><td id="sec-name"></td></tr>
-                <tr><th>業界</th><td id="sec-industry"></td></tr>
-                <tr><th>セクター</th><td id="sec-sector"></td></tr>
-               <tr><th>XL ETF</th><td id="sec-etf"></td></tr>
-       　　　　 <tr><th>RANK ETF</th><td id="sec-rank-etf"></td></tr>
-            </table>
-        </div>
-    </section>
 </div>
 
 <!-- ランキングページ (Market Ranker) -->
@@ -1019,80 +974,16 @@ function renderCard(t) {
         </div>`;
 }
 
-// ======== Perf機能（セクタ自動取得付き） ========
-async function fetchPerfData() {
-    const ticker = document.getElementById('perf-ticker').value.trim().toUpperCase();
-    const statusEl = document.getElementById('perf-status');
-    const resultDiv = document.getElementById('perf-result');
-    if(!ticker) return;
-    statusEl.innerText="データ取得中..."; statusEl.style.display='block'; statusEl.style.color='var(--text-sub)';
-    resultDiv.style.display='none';
-
-    const [perfResult] = await Promise.allSettled([
-        fetchPerfOnly(ticker),
-        fetchSectorDataByTicker(ticker)
-    ]);
-
-    if(perfResult.status === 'rejected') {
-        statusEl.innerText="エラー: " + perfResult.reason.message;
-        statusEl.style.color='var(--lose-deep)';
-    } else {
-        statusEl.style.display='none';
-        resultDiv.style.display='block';
-    }
-}
-
-async function fetchPerfOnly(ticker) {
-    const response = await fetch(`https://api.twelvedata.com/time_series?symbol=${ticker}&interval=1day&outputsize=50&apikey=${PERF_API_KEY}`);
-    const data = await response.json();
-    if(data.status==="error") throw new Error(data.message);
-    const values = data.values;
-    const cur = parseFloat(values[0].close);
-    const gp = idx => values[idx] ? parseFloat(values[idx].close) : null;
-    const calc = (c,p) => p ? (((c-p)/p)*100).toFixed(2) : null;
-    document.getElementById('perf-symbol-display').innerText = `${data.meta.symbol}  $${cur.toFixed(2)}`;
-    updatePerfUI('perf-today',calc(cur,gp(1)));
-    updatePerfUI('perf-5d',calc(cur,gp(5)));
-    updatePerfUI('perf-10d',calc(cur,gp(10)));
-    updatePerfUI('perf-1m',calc(cur,gp(21)));
-    updatePerfUI('perf-2m',calc(cur,gp(42)));
-}
-
+// ======== セクタ取得 ========
 async function fetchSectorDataByTicker(ticker) {
-    const loading = document.getElementById('sector-loading');
-    const result = document.getElementById('sector-result');
-    document.getElementById('sector-ticker').value = ticker;
-    loading.style.display='block';
-    result.style.display='none';
     try {
         const response = await fetch(`${SECTOR_GAS_URL}?ticker=${encodeURIComponent(ticker)}`);
         const data = await response.json();
-        document.getElementById('sec-ticker').innerText = data.ticker||'-';
-        document.getElementById('sec-name').innerText = data.name||'-';
-        document.getElementById('sec-industry').innerText = data.industry||'-';
-        document.getElementById('sec-sector').innerText = data.sector||'-';
-        document.getElementById('sec-etf').innerText = data.etf||'-';
-        document.getElementById('sec-rank-etf').innerText = data.rank_etf||'-';
-        result.style.display='block';
+        return data;
     } catch(e) {
         console.error('セクタ取得エラー:', e);
-    } finally {
-        loading.style.display='none';
+        return {};
     }
-}
-
-function updatePerfUI(id, value) {
-    const el = document.getElementById(id);
-    if(value===null){el.innerText="データ不足";el.className="perf-value perf-na";return;}
-    const num = parseFloat(value);
-    el.innerText = (num>0?'+':'')+value+'%';
-    el.className = 'perf-value '+(num>=0?'perf-pos':'perf-neg');
-}
-
-async function fetchSectorData() {
-    const ticker = document.getElementById('sector-ticker').value.trim();
-    if(!ticker) return;
-    await fetchSectorDataByTicker(ticker.toUpperCase());
 }
 
 // ======== Market Ranker 機能 ========
@@ -1525,15 +1416,14 @@ async function autoFetchPrice() {
         setEp('ep-2m',    calc(cur, gp(42)));
         perfArea.style.display = 'block';
 
-        // セクタ非同期取得（失敗しても無視）
-        fetch(`${SECTOR_GAS_URL}?ticker=${encodeURIComponent(ticker)}`)
-            .then(r => r.json())
-            .then(d => {
-                document.getElementById('ep-sector').innerText   = d.sector   || '--';
-                document.getElementById('ep-etf').innerText      = d.etf      || '--';
-                document.getElementById('ep-rank-etf').innerText = d.rank_etf || '--';
-            })
-            .catch(() => {});
+        // セクタ非同期取得
+        fetchSectorDataByTicker(ticker).then(d => {
+            document.getElementById('ep-name').innerText     = d.name     || '--';
+            document.getElementById('ep-industry').innerText = d.industry || '--';
+            document.getElementById('ep-sector').innerText   = d.sector   || '--';
+            document.getElementById('ep-etf').innerText      = d.etf      || '--';
+            document.getElementById('ep-rank-etf').innerText = d.rank_etf || '--';
+        });
 
     } catch(e) {
         statusEl.innerText = '✗';
