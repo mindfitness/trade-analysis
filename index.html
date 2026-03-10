@@ -940,6 +940,14 @@ function renderCrossAnalysis() {
 }
 
 function renderCard(t) {
+    // 3日以上経過判定
+    const isOld = (() => {
+        if (t.result) return false;
+        if (!t.date) return false;
+        const entryDate = new Date(t.date.replace(/\//g, '-').replace(' ', 'T'));
+        const diffDays = (Date.now() - entryDate.getTime()) / (1000 * 60 * 60 * 24);
+        return diffDays >= 3;
+    })();
     const allTags = [
         ...t.appliedItems.map(item=>`<span class="tag">${item}</span>`),
         ...t.negativeItems.map(item=>`<span class="tag negative">${item}</span>`)
@@ -948,7 +956,7 @@ function renderCard(t) {
     const itemEditHtml = ''; // モーダルに移行したため不要
 
     return `
-        <div class="trade-card">
+        <div class="trade-card" style="${isOld ? 'border-color:#b45309; background:linear-gradient(135deg,#1e293b 0%,#1c1408 100%);' : ''}">
             <div class="card-top">
                 <div class="stock-info">
                     <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${t.name}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
@@ -956,6 +964,7 @@ function renderCard(t) {
                     </a>
                     <span class="stock-price-label">$${Number(t.price).toLocaleString()}</span>
                     <div id="pl-display-${t.id}" style="display:inline-flex;align-items:center;"></div>
+                    ${isOld ? `<span style="font-size:0.58rem;font-weight:900;background:#92400e;color:#fcd34d;padding:1px 5px;border-radius:3px;border:1px solid #b45309;">⏰ 3日超</span>` : ''}
                     ${t.result ? `<span class="result-badge ${t.result}-badge">${t.result.toUpperCase()}</span>${t.final_pl?`<span style="font-size:0.68rem;font-weight:800;color:${t.result==='win'?'var(--win-deep)':'var(--lose-deep)'};">${t.final_pl}</span>`:''}` : ''}
                 </div>
                 <div class="card-actions">
