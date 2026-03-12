@@ -109,6 +109,7 @@
         .result-badge { padding: 1px 5px; border-radius: 3px; font-size: 0.62rem; font-weight: 900; color: white; }
         .win-badge { background: var(--win-deep); }
         .lose-badge { background: var(--lose-deep); }
+        .watch-badge { background: #92400e; color: #fcd34d; border: 1px solid #b45309; }
         .del-btn { color: #475569; border: none; background: none; cursor: pointer; padding: 2px; line-height: 1; }
 
         .edit-btn {
@@ -761,6 +762,11 @@ async function updateTradeData(id, data) {
 function setHistoryFilter(type) { currentHistoryFilter = type; renderTrades(); }
 
 async function setTradeResult(id, result) {
+    if (result === 'watch') {
+        if (!confirm('監視継続としてLogに移動しますか？')) return;
+        await updateTradeData(id, { result: 'watch', final_pl: '' });
+        return;
+    }
     if (!confirm(`${result.toUpperCase()}で確定しますか？`)) return;
     const plDisplay = document.querySelector(`#pl-display-${id}`);
     const finalPL = plDisplay ? plDisplay.innerText.replace(/[()]/g,'') : "";
@@ -784,9 +790,17 @@ function renderTrades() {
     document.getElementById('box-win').className = `summary-box ${currentHistoryFilter==='win'?'active-win':''}`;
     document.getElementById('box-lose').className = `summary-box ${currentHistoryFilter==='lose'?'active-lose':''}`;
 
-    const activeCards = trades.filter(t=>!t.result).map(t=>renderCard(t)).join('');
-activeCont.innerHTML = activeCards
-    ? `<div class="active-grid">${activeCards}</div>`
+   const activeCards = trades.filter(t=>!t.result).map(t=>renderCard(t)).join('');
+const watchCards = trades.filter(t=>t.result==='watch').map(t => {
+    const cardHtml = renderCard(t);
+    return cardHtml.replace('<div class="trade-card"', '<div class="trade-card" style="border-color:#b45309;background:linear-gradient(135deg,#1e293b 0%,#2d1a00 100%);"');
+}).join('');
+const watchSection = watchCards
+    ? `<div style="font-size:0.68rem;font-weight:800;color:#f59e0b;margin:10px 0 5px;padding:0 2px;">👁 監視継続中</div>
+       <div class="active-grid">${watchCards}</div>`
+    : '';
+activeCont.innerHTML = (activeCards || watchCards)
+    ? `${activeCards ? `<div class="active-grid">${activeCards}</div>` : ''}${watchSection}`
     : '<p style="text-align:center;color:#475569;padding:20px 0;font-size:0.8rem;">取引中の銘柄はありません</p>';
     const filtered = currentHistoryFilter==='win' ? winTrades : loseTrades;
     const historyCards = filtered.map(t=>renderCard(t)).join('');
@@ -955,7 +969,7 @@ function renderCard(t) {
                     <span class="stock-price-label">$${Number(t.price).toLocaleString()}</span>
                     <div id="pl-display-${t.id}" style="display:inline-flex;align-items:center;"></div>
                     ${isOld ? `<span style="font-size:0.58rem;font-weight:900;background:#92400e;color:#fcd34d;padding:1px 5px;border-radius:3px;border:1px solid #b45309;">⏰ 3日超</span>` : ''}
-                    ${t.result ? `<span class="result-badge ${t.result}-badge">${t.result.toUpperCase()}</span>${t.final_pl?`<span style="font-size:0.68rem;font-weight:800;color:${t.result==='win'?'var(--win-deep)':'var(--lose-deep)'};">${t.final_pl}</span>`:''}` : ''}
+                   ${t.result ? `<span class="result-badge ${t.result}-badge">${t.result === 'watch' ? '👁 監視中' : t.result.toUpperCase()}</span>${t.final_pl?`<span style="font-size:0.68rem;font-weight:800;color:${t.result==='win'?'var(--win-deep)':t.result==='watch'?'var(--theme-accent)':'var(--lose-deep)'};">${t.final_pl}</span>`:''}` : ''}
                 </div>
                 <div class="card-actions">
                     ${!t.result ? `<button id="refresh-btn-${t.id}" class="edit-btn" onclick="refreshPrice('${t.id}','${t.name}',${t.price})" title="価格更新"><i data-lucide="refresh-cw" style="width:10px;"></i></button>` : ''}
@@ -968,9 +982,19 @@ function renderCard(t) {
             <div id="memo-text-${t.id}" class="memo-area" contenteditable="false">${t.memo||'メモを追加'}</div>
             ${itemEditHtml}
             ${!t.result
-                ? `<div class="res-actions"><button class="btn-win" onclick="setTradeResult('${t.id}','win')">WIN</button><button class="btn-lose" onclick="setTradeResult('${t.id}','lose')">LOSE</button></div>`
-                : `<div style="font-size:0.58rem;color:#475569;margin-top:3px;">${t.date}</div>`
-            }
+    ? `<div class="res-actions">
+        <button class="btn-win" onclick="setTradeResult('${t.id}','win')">WIN</button>
+        <button class="btn-lose" onclick="setTradeResult('${t.id}','lose')">LOSE</button>
+        <button style="background:#92400e;color:#fcd34d;border:none;border-radius:5px;font-weight:800;cursor:pointer;font-size:0.72rem;padding:5px;" onclick="setTradeResult('${t.id}','watch')">👁 監視</button>
+      </div>`
+    : t.result === 'watch'
+        ? `<div style="display:flex;gap:5px;margin-top:5px;">
+            <button class="btn-win" style="flex:1;" onclick="setTradeResult('${t.id}','win')">WIN確定</button>
+            <button class="btn-lose" style="flex:1;" onclick="setTradeResult('${t.id}','lose')">LOSE確定</button>
+           </div>
+           <div style="font-size:0.58rem;color:#475569;margin-top:3px;">${t.date}</div>`
+        : `<div style="font-size:0.58rem;color:#475569;margin-top:3px;">${t.date}</div>`
+}
         </div>`;
 }
 
