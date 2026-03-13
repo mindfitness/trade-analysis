@@ -1012,7 +1012,7 @@ async function startRankUpdate() {
   // 履歴保存
   let hist = JSON.parse(localStorage.getItem('mcd_score_history') || '[]');
   hist.unshift({ score: sc.total, cond: r2CondLabel(sc.total).text, date: new Date().toLocaleDateString('ja-JP') });
-  if (hist.length > 10) hist = hist.slice(0, 10);
+  if (hist.length > 10) hist = hist.slice(0, 4);
   localStorage.setItem('mcd_score_history', JSON.stringify(hist));
   r2RenderAll(mainData);
 
