@@ -974,7 +974,11 @@ function r2RenderAll(data) {
 async function startRankUpdate() {
   const btn = document.getElementById('rank-update-btn');
   const statusEl = document.getElementById('rank-status');
-  if (btn) btn.disabled = true;
+  if (btn) {
+    if (btn.disabled) return; // 実行中なら即リターン
+    btn.disabled = true;
+    btn.innerText = '更新中...';
+  }
 
   // Phase1: メインETF（スコア計算用）
   const mainData = [];
