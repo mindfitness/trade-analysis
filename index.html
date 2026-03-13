@@ -280,7 +280,9 @@
     <section>
         <div style="display:flex; gap:8px; margin-bottom:8px;">
             <input type="text" id="stock-name" placeholder="銘柄コード (例: NVDA)" style="flex:1; text-transform:uppercase;"
-    oninput="this.value=this.value.toUpperCase(); clearAutoPrice()" onblur="autoFetchPrice()">
+    autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
+    oninput="clearAutoPrice()"
+    onblur="this.value=this.value.toUpperCase(); autoFetchPrice()">
             <div style="flex:1; position:relative;">
                 <input type="number" id="entry-price" placeholder="取得中..." style="width:100%;" readonly>
                 <span id="price-status" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:0.6rem; color:var(--text-sub);"></span>
