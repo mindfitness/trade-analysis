@@ -575,6 +575,9 @@
 
 <!-- テーマトラッカーページ -->
 <div id="page-theme" class="page">
+    <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+        <button onclick="openThemeModal()" style="padding:6px 14px; background:var(--theme-accent); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.78rem;">+ テーマ追加</button>
+    </div>
     <div id="theme-list"></div>
 </div>
 
@@ -1178,16 +1181,15 @@ function switchPage(pageId) {
     if(tab) tab.classList.add('active');
     currentPage = pageId;
     const btn = document.getElementById('header-action-btn');
-    if (pageId === 'theme') { btn.textContent = '+ テーマ'; btn.style.color = 'var(--theme-accent)'; }
-    else { btn.textContent = '+ 新規'; btn.style.color = 'var(--primary)'; }
+btn.textContent = '+ 新規';
+btn.style.color = 'var(--primary)';
     if (pageId === 'cross') renderCrossAnalysis();
     if (pageId === 'rank' && rankMarketData.length > 0) renderRankTable();
     if(window.lucide) lucide.createIcons();
 }
 
 function headerAction() {
-    if (currentPage === 'theme') openThemeModal();
-    else switchPage('entry');
+    switchPage('entry');
 }
 
 // ======== トレード機能 ========
