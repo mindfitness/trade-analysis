@@ -199,55 +199,29 @@
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
 
         @media (min-width: 600px) {
-            .page { max-width: 700px; margin: 0 auto; padding: 12px 16px; }
-        }
+        .page { max-width: 700px; margin: 0 auto; padding: 12px 16px; }
+    }
 
-        /* ===== Market Ranker (ランキング) ページ ===== */
-        .rank-header-row {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 10px;
-        }
-        .rank-update-btn {
-            padding: 6px 14px; background: var(--rank-accent); color: white;
-            border: none; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 0.78rem;
-        }
-        .rank-update-btn:disabled { background: #475569; cursor: not-allowed; }
-        .rank-status { font-size: 0.72rem; color: var(--text-sub); margin-bottom: 8px; }
-        .rank-table { width: 100%; border-collapse: collapse; }
-        .rank-table thead th {
-            cursor: pointer; background: var(--input-bg); padding: 9px 8px;
-            text-align: right; border-bottom: 2px solid var(--border);
-            font-size: 0.72rem; font-weight: 800; color: var(--text-sub);
-            user-select: none;
-        }
-        .rank-table thead th:hover { color: var(--text-main); }
-        .rank-table thead th:first-child { text-align: left; }
-        .rank-table tbody td { padding: 9px 8px; text-align: right; font-weight: 700; font-size: 0.82rem; border-bottom: 1px solid var(--border); }
-        .rank-table tbody td:first-child { text-align: left; }
-        .rank-ticker-cell {
-            font-weight: 900; color: var(--rank-accent); cursor: pointer;
-            text-decoration: underline; font-size: 0.85rem;
-        }
-        .rank-pos { color: var(--win-deep); }
-        .rank-neg { color: var(--lose-deep); }
-        .rank-filter-btn {
-    padding: 5px 10px; border: 1px solid var(--border); background: #334155;
-    color: var(--text-sub); border-radius: 6px; font-size: 0.68rem;
-    font-weight: 800; cursor: pointer; white-space: nowrap;
-}
-.rank-filter-btn.active { background: var(--rank-accent); color: white; border-color: var(--rank-accent); }
+  /* ===== Rank移植CSS ===== */
+  .rank2-surface { --surface: #111827; --surface2: #1a2234; --border: #1e2d45; --border2: #2a3f5f; --text3: #4a6080; }
+  .rank2-section { background: #111827; border: 1px solid #1e2d45; border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+  .rank2-title { font-size: 0.68rem; font-weight: 800; color: #4a6080; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; }
+  .rank2-filter-btn { font-size: 0.65rem; font-weight: 800; padding: 4px 10px; border: 1px solid #2a3f5f; background: #1a2234; color: #8899aa; border-radius: 5px; cursor: pointer; }
+  .rank2-filter-btn.active { background: #22d3ee; color: #0a0e1a; border-color: #22d3ee; }
+  .rank2-table { width: 100%; border-collapse: collapse; min-width: 500px; }
+  .rank2-table th { font-size: 0.65rem; color: #4a6080; padding: 6px 8px; text-align: right; border-bottom: 1px solid #1e2d45; font-weight: 700; cursor: pointer; user-select: none; white-space: nowrap; }
+  .rank2-table th:hover { color: #e2e8f0; }
+  .rank2-table th:first-child { text-align: left; }
+  .rank2-table td { padding: 7px 8px; text-align: right; font-weight: 700; font-size: 0.78rem; border-bottom: 1px solid #1e2d45; white-space: nowrap; }
+  .rank2-table td:first-child { text-align: left; }
+  .rank2-table tbody tr:hover { background: #1a2234; }
+  .rank2-ticker { color: #22d3ee; font-weight: 900; font-size: 0.82rem; cursor: pointer; }
+  .rank2-pos { color: #10b981; }
+  .rank2-neg { color: #ef4444; }
+  .rank2-badge { font-size: 0.58rem; font-weight: 900; margin-left: 3px; padding: 0 3px; border-radius: 2px; }
+  .rank2-ema-pos { color: #10b981; }
+  .rank2-ema-neg { color: #ef4444; }
 
-        /* ランキング モーダル */
-        #rank-modal { display: none; position: fixed; z-index: 300; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); }
-        .rank-modal-content {
-            background: var(--card); margin: 15% auto; padding: 20px;
-            border-radius: 14px; width: 88%; max-width: 440px;
-            position: relative; line-height: 1.6; border: 1px solid var(--border);
-        }
-        .rank-modal-close { position: absolute; right: 16px; top: 12px; font-size: 22px; cursor: pointer; color: var(--text-sub); background: none; border: none; }
-        .rank-modal-title { font-size: 1.2rem; font-weight: 900; color: var(--rank-accent); margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-        .rank-modal-label { font-weight: 800; color: var(--text-sub); font-size: 0.72rem; margin-top: 12px; display: block; text-transform: uppercase; letter-spacing: 0.05em; }
-        .rank-modal-body { font-size: 0.88rem; color: var(--text-main); margin-top: 4px; }
     /* PF画面 PC2列レイアウト */
 @media (min-width: 600px) {
     #active-container {
@@ -391,45 +365,195 @@
     <div id="history-container"></div>
 </div>
 
-<!-- ランキングページ (Market Ranker) -->
+<!-- ランキングページ (コード1移植) -->
 <div id="page-rank" class="page">
-    <section style="padding: 10px 12px;">
-        <div class="rank-header-row">
-    <div style="display:flex; align-items:center; gap:6px;">
-        <i data-lucide="bar-chart-2" style="width:14px; color:var(--rank-accent);"></i>
-        <span style="font-size:0.8rem; font-weight:800; color:var(--rank-accent);">セクターETF ランキング</span>
+  <div style="padding:8px;">
+
+    <div class="rank2-section">
+      <div class="rank2-title">総合スコア</div>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;">
+        <div style="position:relative;width:160px;height:90px;">
+          <canvas id="r2-gauge-canvas" width="160" height="90"></canvas>
+          <div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);text-align:center;">
+            <div id="r2-gauge-score" style="font-size:1.8rem;font-weight:900;line-height:1;">--</div>
+            <div id="r2-gauge-cond" style="font-size:0.65rem;color:#8899aa;margin-top:2px;">---</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:0.7rem;color:#8899aa;width:110px;flex-shrink:0;">Breadth（SMA）</span>
+            <div style="flex:1;height:6px;background:#1a2234;border-radius:3px;overflow:hidden;"><div id="r2-bar-breadth" style="height:100%;border-radius:3px;background:#10b981;width:0%;transition:width 0.6s;"></div></div>
+            <span id="r2-val-breadth" style="font-size:0.72rem;font-weight:800;width:36px;text-align:right;">--</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:0.7rem;color:#8899aa;width:110px;flex-shrink:0;">Momentum</span>
+            <div style="flex:1;height:6px;background:#1a2234;border-radius:3px;overflow:hidden;"><div id="r2-bar-momentum" style="height:100%;border-radius:3px;background:#3b82f6;width:0%;transition:width 0.6s;"></div></div>
+            <span id="r2-val-momentum" style="font-size:0.72rem;font-weight:800;width:36px;text-align:right;">--</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:0.7rem;color:#8899aa;width:110px;flex-shrink:0;">Trend Align</span>
+            <div style="flex:1;height:6px;background:#1a2234;border-radius:3px;overflow:hidden;"><div id="r2-bar-trend" style="height:100%;border-radius:3px;background:#06b6d4;width:0%;transition:width 0.6s;"></div></div>
+            <span id="r2-val-trend" style="font-size:0.72rem;font-weight:800;width:36px;text-align:right;">--</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:0.7rem;color:#8899aa;width:110px;flex-shrink:0;">VIX ペナルティ</span>
+            <div style="flex:1;height:6px;background:#1a2234;border-radius:3px;overflow:hidden;"><div id="r2-bar-vix" style="height:100%;border-radius:3px;background:#ef4444;width:0%;transition:width 0.6s;"></div></div>
+            <span id="r2-val-vix" style="font-size:0.72rem;font-weight:800;width:auto;text-align:right;color:#ef4444;">--</span>
+          </div>
+        </div>
+      </div>
     </div>
-    <button id="rank-update-btn" class="rank-update-btn" onclick="startRankUpdate()">更新</button>
-</div>
-<div style="display:flex; gap:6px; margin-bottom:8px;">
-    <input type="text" id="rank-search-input" placeholder="ETF検索 (例: SMH)" 
-        style="flex:1; font-size:0.85rem; text-transform:uppercase;"
-        oninput="this.value=this.value.toUpperCase()" 
-        onkeydown="if(event.key==='Enter') jumpToRankSymbol()">
-    <button onclick="jumpToRankSymbol()" 
-        style="padding:6px 12px; background:var(--rank-accent); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.8rem; white-space:nowrap;">
-        検索
-    </button>
-</div>
-<div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:8px;">
-    <button class="rank-filter-btn" onclick="toggleRankFilter('5D>10D')">5D&gt;10D</button>
-    <button class="rank-filter-btn" onclick="toggleRankFilter('10D>1M')">10D&gt;1M</button>
-    <button class="rank-filter-btn" onclick="clearRankFilter()">解除</button>
-</div>
-<div id="rank-status" class="rank-status">Ready</div>
-        <table class="rank-table">
-            <thead>
-                <tr>
-                    <th onclick="sortRankTable('symbol')" style="text-align:left;">Ticker</th>
-                    <th onclick="sortRankTable('day_change')">Day %</th>
-                    <th onclick="sortRankTable('five_day_change')">5Day %</th>
-                    <th onclick="sortRankTable('ten_day_change')">10Day %</th>
-                    <th onclick="sortRankTable('month_change')">Month %</th>
-                </tr>
-            </thead>
-            <tbody id="rank-table-body"></tbody>
+
+    <div class="rank2-section">
+      <div class="rank2-title">過去スコア比較</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.62rem;color:#4a6080;margin-bottom:4px;">今回</div>
+          <div id="r2-h-now" style="font-size:1.2rem;font-weight:900;">--</div>
+          <div id="r2-h-now-c" style="font-size:0.6rem;margin-top:2px;"></div>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.62rem;color:#4a6080;margin-bottom:4px;">1回前</div>
+          <div id="r2-h-1" style="font-size:1.2rem;font-weight:900;">--</div>
+          <div id="r2-h-1-c" style="font-size:0.6rem;margin-top:2px;"></div>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.62rem;color:#4a6080;margin-bottom:4px;">2回前</div>
+          <div id="r2-h-2" style="font-size:1.2rem;font-weight:900;">--</div>
+          <div id="r2-h-2-c" style="font-size:0.6rem;margin-top:2px;"></div>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.62rem;color:#4a6080;margin-bottom:4px;">3回前</div>
+          <div id="r2-h-3" style="font-size:1.2rem;font-weight:900;">--</div>
+          <div id="r2-h-3-c" style="font-size:0.6rem;margin-top:2px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rank2-section">
+      <div class="rank2-title">Breadth &amp; Trend Metrics</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">SMA 10</div>
+          <div id="r2-b-sma10" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--%</div>
+          <span id="r2-b-sma10-badge" class="badge badge-neu">-</span>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">SMA 20</div>
+          <div id="r2-b-sma20" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--%</div>
+          <span id="r2-b-sma20-badge" class="badge badge-neu">-</span>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">SMA 50</div>
+          <div id="r2-b-sma50" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--%</div>
+          <span id="r2-b-sma50-badge" class="badge badge-neu">-</span>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">SMA 200</div>
+          <div id="r2-b-sma200" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--%</div>
+          <span id="r2-b-sma200-badge" class="badge badge-neu">-</span>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">SMA20&gt;SMA50</div>
+          <div id="r2-b-2050" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--%</div>
+          <span id="r2-b-2050-badge" class="badge badge-neu">-</span>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">SMA50&gt;SMA200</div>
+          <div id="r2-b-50200" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--%</div>
+          <span id="r2-b-50200-badge" class="badge badge-neu">-</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="rank2-section">
+      <div class="rank2-title">Performance Overview</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">% 1Day</div>
+          <div id="r2-p-1d" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--</div>
+          <span id="r2-p-1d-badge" class="badge badge-neu">-</span>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">% 5Day</div>
+          <div id="r2-p-5d" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--</div>
+          <span id="r2-p-5d-badge" class="badge badge-neu">-</span>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">% 10Day</div>
+          <div id="r2-p-10d" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--</div>
+          <span id="r2-p-10d-badge" class="badge badge-neu">-</span>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">% 1Month</div>
+          <div id="r2-p-1m" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--</div>
+          <span id="r2-p-1m-badge" class="badge badge-neu">-</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="rank2-section">
+      <div class="rank2-title">Market Snapshot</div>
+      <div id="r2-snapshot-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:0.6rem;color:#4a6080;">---</div>
+          <div style="font-size:1rem;font-weight:900;color:#22d3ee;">--</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div class="rank2-section" style="margin-bottom:0;">
+        <div class="rank2-title">上位5 ETF（5Day）</div>
+        <div id="r2-top5-list"></div>
+      </div>
+      <div class="rank2-section" style="margin-bottom:0;">
+        <div class="rank2-title">下位5 ETF（5Day）</div>
+        <div id="r2-bot5-list"></div>
+      </div>
+    </div>
+
+    <div class="rank2-section">
+      <div class="rank2-title">ETF ランキング</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <input type="text" id="rank-search-input" placeholder="ETF検索 (例: SMH)"
+          style="flex:1;padding:5px 10px;background:#1a2234;border:1px solid #2a3f5f;border-radius:6px;color:#e2e8f0;font-size:0.78rem;text-transform:uppercase;"
+          oninput="this.value=this.value.toUpperCase()"
+          onkeydown="if(event.key==='Enter') jumpToRankSymbol()">
+        <button onclick="jumpToRankSymbol()"
+          style="padding:5px 12px;background:#22d3ee;color:#0a0e1a;border:none;border-radius:6px;font-weight:800;cursor:pointer;font-size:0.78rem;white-space:nowrap;">
+          検索
+        </button>
+        <button id="rank-update-btn" onclick="startRankUpdate()"
+          style="padding:5px 12px;background:#f59e0b;color:#0a0e1a;border:none;border-radius:6px;font-weight:800;cursor:pointer;font-size:0.78rem;white-space:nowrap;">
+          更新
+        </button>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
+        <button class="rank2-filter-btn" id="r2-rf-5d10d" onclick="r2ToggleFilter('5D>10D')">5D&gt;10D</button>
+        <button class="rank2-filter-btn" id="r2-rf-10d1m" onclick="r2ToggleFilter('10D>1M')">10D&gt;1M</button>
+        <button class="rank2-filter-btn" onclick="r2ClearFilters()">解除</button>
+      </div>
+      <div id="rank-status" style="font-size:0.68rem;color:#4a6080;margin-bottom:8px;">Ready</div>
+      <div style="overflow-x:auto;">
+        <table class="rank2-table">
+          <thead>
+            <tr>
+              <th onclick="r2SortBy('symbol')" style="text-align:left;">Ticker</th>
+              <th onclick="r2SortBy('day_change')">1D%</th>
+              <th onclick="r2SortBy('five_day_change')">5D%</th>
+              <th onclick="r2SortBy('ten_day_change')">10D%</th>
+              <th onclick="r2SortBy('month_change')">1M%</th>
+              <th onclick="r2SortBy('above_ema21')">EMA21</th>
+              <th onclick="r2SortBy('above_sma50')">SMA50</th>
+            </tr>
+          </thead>
+          <tbody id="rank-table-body"></tbody>
         </table>
-    </section>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <!-- WIN×LOSE分析ページ -->
@@ -541,15 +665,15 @@
 </div>
 
 <!-- ランキング 詳細モーダル -->
-<div id="rank-modal">
-    <div class="rank-modal-content">
-        <button class="rank-modal-close" onclick="closeRankModal()">×</button>
-        <div id="rank-modal-title" class="rank-modal-title"></div>
-        <span class="rank-modal-label">セクター概要</span>
-        <div id="rank-modal-desc" class="rank-modal-body"></div>
-        <span class="rank-modal-label">代表的な銘柄</span>
-        <div id="rank-modal-stocks" class="rank-modal-body"></div>
-    </div>
+<div id="rank-modal" style="display:none;position:fixed;z-index:300;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.75);">
+  <div style="background:#111827;margin:15% auto;padding:20px;border-radius:14px;width:88%;max-width:440px;position:relative;border:1px solid #1e2d45;">
+    <button onclick="closeRankModal()" style="position:absolute;right:16px;top:12px;font-size:22px;cursor:pointer;color:#8899aa;background:none;border:none;">×</button>
+    <div id="rank-modal-title" style="font-size:1.2rem;font-weight:900;color:#22d3ee;margin-bottom:10px;border-bottom:1px solid #1e2d45;padding-bottom:10px;"></div>
+    <div style="font-size:0.72rem;font-weight:800;color:#8899aa;margin-top:12px;">セクター概要</div>
+    <div id="rank-modal-desc" style="font-size:0.88rem;color:#e2e8f0;margin-top:4px;"></div>
+    <div style="font-size:0.72rem;font-weight:800;color:#8899aa;margin-top:12px;">代表的な銘柄</div>
+    <div id="rank-modal-stocks" style="font-size:0.88rem;color:#e2e8f0;margin-top:4px;"></div>
+  </div>
 </div>
 
 <div id="loading-toast">保存中...</div>
@@ -562,9 +686,18 @@ const TRADE_API_URL = "/api";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbw8bphx9s_QhCLbgKbhkI1iAMu22EBIfsR0YVeEE4MoF0qYWcxyE9AKhm3yCzafO40_2g/exec";
 const SECTOR_GAS_URL = "https://script.google.com/macros/s/AKfycby1lo_XSLpA6OIFvX9MbyEqO6RzCWaSzSJuFtrKy6tuTZPEOjzBWfKxQ_7Fczd_fbV0/exec";
 
-// Market Ranker 設定
-const RANK_API_KEY = "10f03734e47d4c5fb02dd591d7928e8c";
+// ======== Rank移植（コード1） ========
+const RANK_API_KEY = "4745e87ea2404681a5c9fa6376aac35a";
+
+const R2_TICKERS_MAIN = [
+  "RSP","QQQ","IWM","QQQE",
+  "XLK","XLV","XLF","XLE","XLI","XLY","XLC","XLP","XLU","XLB","XLRE",
+  "SMH","SOXX","XBI","GDX","ITB","KRE","JETS","CIBR","PAVE","BOTZ",
+  "SKYY","IGV","FINX","XOP","ITA","URA","COPX","LIT"
+];
+const R2_SNAPSHOT_TICKERS = ["RSP","QQQ","IWM","QQQE","XLK","XLF","XLE","SMH"];
 const RANK_TICKERS = ["RSP","AIPO","POWR","ITA","BOAT","XOP","MOO","PEJ","TAN","FAN","ICLN","SMH","XBI","SOXX","IYT","SLX","LIT","WOOD","ITB","IHI","SIL","XRT","QTUM","BATT","KARS","GDX","KRE","URA","REMX","JETS","COPX","DRIV","WGMI","CIBR","AIRR","BOTZ","PAVE","FINX","SKYY","HEAL","UFO","EATZ","IGV"];
+
 const TICKER_INFO = {
     "RSP": { desc: "S&P500等ウェイト。", stocks: "S&P500全構成銘柄を均等保有" },
     "AIPO": { desc: "データセンター電力インフラ&冷却システム。", stocks: "VRT (Vertiv)、ETN (Eaton)、GEV" },
@@ -573,7 +706,6 @@ const TICKER_INFO = {
     "BOAT": { desc: "世界の海運・船舶産業。コンテナ船やタンカー、貨物輸送を含む。", stocks: "Maersk, Hapag-Lloyd, ZIM" },
     "XOP": { desc: "米国の石油・ガス探査・生産。エネルギー上流部門に特化。", stocks: "OXY (オキシデンタル), EOG, DVN" },
     "MOO": { desc: "農業ビジネス（アグリビジネス）。種子、肥料、農機、畜産など。", stocks: "DE (ディア), CTVA (コルテバ), ZTS (ゾエティス)" },
-    "FFTY": { desc: "IBD 50指数。高い成長性と株価のモメンタムを持つ成長株50社。", stocks: "時期により変動（テック、バイオ等）" },
     "PEJ": { desc: "レジャー・エンターテインメント。航空、ホテル、メディアなど。", stocks: "DIS (ディズニー), MAR (マリオット), BKNG" },
     "TAN": { desc: "太陽光発電。ソーラーパネル製造、設置、技術開発など。", stocks: "ENPH (エンフェーズ), SEDG (ソーラーエッジ)" },
     "FAN": { desc: "風力発電。風力タービン製造、発電所運営、部品メーカーなど。", stocks: "Vestas, Orsted, Siemens Gamesa" },
@@ -593,29 +725,434 @@ const TICKER_INFO = {
     "BATT": { desc: "電池材料、リチウム、コバルト等の供給網と電池技術。", stocks: "CATL, LG Chem, TSLA" },
     "KARS": { desc: "次世代車・EV。電気自動車、自動運転技術、関連部品。", stocks: "TSLA, BYD, NVDA" },
     "GDX": { desc: "金鉱株。世界の主要な産金会社で構成。", stocks: "NEM (ニューモント), GOLD (バリック・ゴールド)" },
-    "IPO": { desc: "新規公開株。直近2年以内に上場した米国企業。", stocks: "時期により変動（新興成長株）" },
     "KRE": { desc: "米国の地域銀行。各州に拠点を置く中堅・地方銀行。", stocks: "FITB, RF, KEY" },
     "URA": { desc: "ウラン採掘・核燃料。原子力発電に関わる供給網。", stocks: "Cameco, Kazatomprom" },
     "REMX": { desc: "希少金属（レアメタル・レアアース）。ハイテク製品に必須の資源。", stocks: "中国レアアース、MP Materials" },
-    "IAT": { desc: "米国地域銀行（KREよりも規模や範囲が限定的な銀行セクター）。", stocks: "KREと重複する地域金融機関" },
     "JETS": { desc: "航空業界。航空会社、航空機メーカー、空港管理企業。", stocks: "DAL (デルタ), UAL (ユナイテッド), LUV" },
     "COPX": { desc: "銅採掘。インフラや電気に不可欠な銅の生産企業。", stocks: "FCX (フリーポート・マクモラン), Southern Copper" },
     "DRIV": { desc: "自動運転・電気自動車。ハードウェアからソフトウェアまで。", stocks: "TSLA, NVDA, AAPL" },
     "WGMI": { desc: "ビットコインマイニング。仮想通貨の採掘業者と関連機器。", stocks: "MARA (マラソン), RIOT" },
-    "CIBR": { desc: "サイバーセキュリティ関連産業。ネットワーク保護、脅威検知、クラウド・エンドポイント防御の主要企業で構成。", stocks: "PANW, FTNT, CRWD" },
-    "AIRR": { desc: "米国産業ルネサンス（再工業化）関連。 AIデータセンターや半導体工場の用地開発、高度な空調・電力設備、通信網整備を担う建設・エンジニアリングの中核企業で構成。", stocks: "FIX, STRL, MTZ" },
-    "PAVE": { desc: "米国インフラ関連。道路、橋、鉄道、原材料、建設機器など、米国の物理的なインフラ整備に従事する企業で構成。", stocks: "URI (ユナイテッド・レンタルズ), ETN (イートン), NUE (ニューコア)" },
-    "BOTZ": { desc: "ロボット工学とAI。産業用ロボット、自動化、医療用ロボット、自律走行関連の技術を持つ企業に投資。", stocks: "NVDA (エヌビディア), ISRG (インテュイティブ・サージカル), ABB" },
-    "FINX": { desc: "フィンテック（金融テクノロジー）関連。モバイル決済、デジタル資産、金融ソフトウェア、P2Pレンディングなど、金融サービスのデジタル化を推進する企業で構成。", stocks: "PYPL (ペイパル), SQ (ブロック), COIN (コインベース)" },
-    "SKYY": { desc: "クラウドコンピューティング。インフラ（IaaS）、プラットフォーム（PaaS）、ソフトウェア（SaaS）の3レイヤーを網羅し、クラウド移行を支える企業に投資。", stocks: "CRWV (コアウィーブ), ANET (アリスタ・ネットワークス), GOOGL (アルファベット), MSFT (マイクロソフト), AMZN (アマゾン)" },
-    "HEAL": { desc: "ヘルステック（医療技術）関連。AIを活用した創薬、スマート医療機器、遠隔医療、ヘルスケア・アナリティクスなど、テクノロジーによって医療の効率化や高度化を推進する企業で構成。", stocks: "DXCM (デクスコム), ISRG (インテュイティブ・サージカル), GEHC (GEヘルスケア)" },
-    "UFO" : { desc: "宇宙産業関連。衛星製造・運用、ロケット打ち上げサービス、地上インフラ、衛星通信（放送・GPS）、宇宙探査技術など、宇宙空間の商用利用やインフラ構築を推進する企業で構成。", stocks: "GRMN (ガーミン), IRDM (イリジウム・コミュニケーションズ), RKLB (ロケット・ラボ), LHM (L3ハリス・テクノロジーズ)" },
-    "EATZ": { desc: "米国の外食産業（ファストフード、カジュアルダイニング、バーなど）に特化。", stocks: "CMG (Chipotle)、DRI (Darden Restaurants)、TXRH (Texas Roadhouse)" },
-    "IGV": { desc: "北米のソフトウェア・サービス業界。クラウド、SaaS、CRM、システムソフトウェアなど、デジタルトランスフォーメーションの中核を担う企業で構成。", stocks: "MSFT (マイクロソフト), CRM (セールスフォース), ADBE (アドビ)" },
+    "CIBR": { desc: "サイバーセキュリティ関連産業。", stocks: "PANW, FTNT, CRWD" },
+    "AIRR": { desc: "米国産業ルネサンス（再工業化）関連。", stocks: "FIX, STRL, MTZ" },
+    "PAVE": { desc: "米国インフラ関連。", stocks: "URI (ユナイテッド・レンタルズ), ETN (イートン), NUE (ニューコア)" },
+    "BOTZ": { desc: "ロボット工学とAI。", stocks: "NVDA (エヌビディア), ISRG (インテュイティブ・サージカル), ABB" },
+    "FINX": { desc: "フィンテック（金融テクノロジー）関連。", stocks: "PYPL (ペイパル), SQ (ブロック), COIN (コインベース)" },
+    "SKYY": { desc: "クラウドコンピューティング。", stocks: "CRWV, ANET, GOOGL, MSFT, AMZN" },
+    "HEAL": { desc: "ヘルステック（医療技術）関連。", stocks: "DXCM, ISRG, GEHC" },
+    "UFO":  { desc: "宇宙産業関連。", stocks: "GRMN, IRDM, RKLB, LHM" },
+    "EATZ": { desc: "米国の外食産業。", stocks: "CMG, DRI, TXRH" },
+    "IGV":  { desc: "北米のソフトウェア・サービス業界。", stocks: "MSFT, CRM, ADBE" },
+    "QQQ":  { desc: "ナスダック100指数。", stocks: "AAPL, MSFT, NVDA, AMZN" },
+    "IWM":  { desc: "Russell 2000。米国小型株。", stocks: "中小型株2000銘柄" },
+    "QQQE": { desc: "ナスダック100等ウェイト。", stocks: "QQQ構成銘柄を均等保有" },
+    "XLK":  { desc: "テクノロジーセクター。", stocks: "AAPL, MSFT, NVDA" },
+    "XLV":  { desc: "ヘルスケアセクター。", stocks: "JNJ, UNH, LLY" },
+    "XLF":  { desc: "金融セクター。", stocks: "BRK, JPM, BAC" },
+    "XLE":  { desc: "エネルギーセクター。", stocks: "XOM, CVX, COP" },
+    "XLI":  { desc: "資本財セクター。", stocks: "GE, CAT, RTX" },
+    "XLY":  { desc: "一般消費財セクター。", stocks: "AMZN, TSLA, HD" },
+    "XLC":  { desc: "通信サービスセクター。", stocks: "META, GOOGL, NFLX" },
+    "XLP":  { desc: "生活必需品セクター。", stocks: "PG, KO, WMT" },
+    "XLU":  { desc: "公益セクター。", stocks: "NEE, DUK, SO" },
+    "XLB":  { desc: "素材セクター。", stocks: "LIN, APD, ECL" },
+    "XLRE": { desc: "不動産セクター（REIT）。", stocks: "AMT, PLD, EQIX" },
 };
 
-let rankMarketData = JSON.parse(localStorage.getItem('market_perf_info')) || [];
+let r2AllData = [];
+let rankMarketData = JSON.parse(localStorage.getItem('market_perf_info') || '[]');
 let rankCurrentSort = { key: 'day_change', asc: false };
+let r2ActiveFilters = [];
+let r2PinnedSymbol = null;
+
+// ===== コード1から移植: データ処理関数 =====
+function r2CalcSMA(closes, period) {
+  if (closes.length < period) return null;
+  return closes.slice(0, period).reduce((a, b) => a + b, 0) / period;
+}
+function r2CalcEMA(closes, period) {
+  if (closes.length < period) return null;
+  const k = 2 / (period + 1);
+  let ema = closes.slice(0, period).reduce((a, b) => a + b, 0) / period;
+  for (let i = period - 1; i >= 0; i--) ema = closes[i] * k + ema * (1 - k);
+  return ema;
+}
+function r2ProcessValues(symbol, values) {
+  const closes  = values.map(v => parseFloat(v.close));
+  const volumes = values.map(v => parseFloat(v.volume));
+  const cur = closes[0];
+  const sma10  = r2CalcSMA(closes, 10);
+  const sma20  = r2CalcSMA(closes, 20);
+  const sma50  = r2CalcSMA(closes, 50);
+  const sma200 = r2CalcSMA(closes, 200);
+  const ema21  = r2CalcEMA(closes, 21);
+  const d1  = closes[1]  ? ((cur - closes[1])  / closes[1]  * 100) : null;
+  const d5  = closes[5]  ? ((cur - closes[5])  / closes[5]  * 100) : null;
+  const d10 = closes[10] ? ((cur - closes[10]) / closes[10] * 100) : null;
+  const d21 = closes[21] ? ((cur - closes[21]) / closes[21] * 100) : null;
+  const vol    = volumes[0];
+  const avgVol = volumes.slice(0, 50).reduce((a, b) => a + b, 0) / Math.min(volumes.length, 50);
+  const volPct = avgVol ? ((vol / avgVol - 1) * 100) : null;
+  return {
+    symbol, cur, sma10, sma20, sma50, sma200, ema21,
+    d1, d5, d10, d21, vol, avgVol, volPct,
+    aboveSma10:  sma10  !== null && cur > sma10,
+    aboveSma20:  sma20  !== null && cur > sma20,
+    aboveSma50:  sma50  !== null && cur > sma50,
+    aboveSma200: sma200 !== null && cur > sma200,
+    sma20aboveSma50:  sma20 !== null && sma50  !== null && sma20 > sma50,
+    sma50aboveSma200: sma50 !== null && sma200 !== null && sma50 > sma200,
+    aboveEma21: ema21 !== null && cur > ema21,
+  };
+}
+function r2CalcScore(data, vix = 0) {
+  const n = data.length;
+  if (n === 0) return { total: 0, breadth: 0, momentum: 0, trend: 0, vixPenalty: 0, vixValue: 0 };
+  const bVals = [
+    data.filter(d => d.aboveSma10).length / n,
+    data.filter(d => d.aboveSma20).length / n,
+    data.filter(d => d.aboveSma50).length / n,
+    data.filter(d => d.aboveSma200).length / n,
+    data.filter(d => d.sma20aboveSma50).length / n,
+    data.filter(d => d.sma50aboveSma200).length / n,
+  ];
+  const breadth  = (bVals.reduce((a, b) => a + b, 0) / bVals.length) * 40;
+  const mVals = [
+    data.filter(d => d.d1  !== null && d.d1  > 0).length / n,
+    data.filter(d => d.d5  !== null && d.d5  > 0).length / n,
+    data.filter(d => d.d10 !== null && d.d10 > 0).length / n,
+  ];
+  const momentum = (mVals.reduce((a, b) => a + b, 0) / mVals.length) * 40;
+  const trendCount = data.filter(d =>
+    d.d5 !== null && d.d10 !== null && d.d21 !== null && d.d5 > d.d10 && d.d10 > d.d21
+  ).length;
+  const trend = (trendCount / n) * 20;
+  const vixPenalty = vix >= 30 ? 25 : vix >= 20 ? 18 : vix >= 10 ? 12 : vix >= 5 ? 7 : vix >= 2 ? 3 : 0;
+  return {
+    total: Math.max(0, Math.round(breadth + momentum + trend - vixPenalty)),
+    breadth: Math.round(breadth * 10) / 10,
+    breadthRatio: (bVals.reduce((a, b) => a + b, 0) / bVals.length) * 100,
+    momentum: Math.round(momentum * 10) / 10,
+    trend: Math.round(trend * 10) / 10,
+    vixPenalty, vixValue: vix
+  };
+}
+function r2CondLabel(score) {
+  if (score >= 75) return { text: 'Bullish',  color: '#10b981' };
+  if (score >= 55) return { text: 'Positive', color: '#22d3ee' };
+  if (score >= 40) return { text: 'Neutral',  color: '#f59e0b' };
+  if (score >= 25) return { text: 'Negative', color: '#f97316' };
+  return { text: 'Bearish', color: '#ef4444' };
+}
+function r2DrawGauge(score) {
+  const canvas = document.getElementById('r2-gauge-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, 160, 90);
+  ctx.beginPath(); ctx.arc(80, 80, 68, Math.PI, 0, false);
+  ctx.lineWidth = 12; ctx.strokeStyle = '#1a2234'; ctx.stroke();
+  const col = r2CondLabel(score).color;
+  ctx.beginPath(); ctx.arc(80, 80, 68, Math.PI, Math.PI + Math.min(score / 100, 1) * Math.PI, false);
+  ctx.lineWidth = 12; ctx.strokeStyle = col; ctx.lineCap = 'round'; ctx.stroke();
+  const scoreEl = document.getElementById('r2-gauge-score');
+  const condEl  = document.getElementById('r2-gauge-cond');
+  if (scoreEl) { scoreEl.innerText = score; scoreEl.style.color = col; }
+  if (condEl)  { condEl.innerText = r2CondLabel(score).text; condEl.style.color = col; }
+}
+function r2RenderAll(data) {
+  r2AllData = data;
+  const vix = parseFloat(localStorage.getItem('mcd_vix') || '0');
+  const sc = r2CalcScore(data, vix);
+  r2DrawGauge(sc.total);
+
+  const setBar = (barId, valId, val, max) => {
+    const b = document.getElementById(barId);
+    const v = document.getElementById(valId);
+    if (b) b.style.width = Math.min(val / max * 100, 100) + '%';
+    if (v) v.innerText = val.toFixed(1);
+  };
+  setBar('r2-bar-breadth',  'r2-val-breadth',  sc.breadth,  40);
+  setBar('r2-bar-momentum', 'r2-val-momentum', sc.momentum, 40);
+  setBar('r2-bar-trend',    'r2-val-trend',    sc.trend,    20);
+  const vixBarEl = document.getElementById('r2-bar-vix');
+  const vixValEl = document.getElementById('r2-val-vix');
+  if (vixBarEl) vixBarEl.style.width = Math.min(sc.vixPenalty / 25 * 100, 100) + '%';
+  if (vixValEl) {
+    vixValEl.innerText = sc.vixPenalty > 0
+      ? `-${sc.vixPenalty} (VIXY 5D: ${sc.vixValue.toFixed(1)}%)`
+      : `なし (VIXY 5D: ${sc.vixValue.toFixed(1)}%)`;
+    vixValEl.style.color = sc.vixPenalty > 0 ? '#ef4444' : '#10b981';
+  }
+
+  // 履歴
+  const hist = JSON.parse(localStorage.getItem('mcd_score_history') || '[]');
+  ['r2-h-now','r2-h-1','r2-h-2','r2-h-3'].forEach((id, i) => {
+    const h = hist[i];
+    const el = document.getElementById(id);
+    const cel = document.getElementById(id + '-c');
+    if (h && el) { el.innerText = h.score; el.style.color = r2CondLabel(h.score).color; }
+    if (h && cel) { cel.innerText = h.cond + ' ' + h.date; cel.style.color = r2CondLabel(h.score).color; }
+  });
+
+  // Breadth
+  const n = data.length;
+  const setBreadth = (valId, badgeId, count) => {
+    const pct = (count / n * 100).toFixed(1);
+    const valEl = document.getElementById(valId);
+    const badgeEl = document.getElementById(badgeId);
+    if (valEl) valEl.innerText = pct + '%';
+    if (!badgeEl) return;
+    const num = parseFloat(pct);
+    if (num >= 50) { badgeEl.className = 'badge badge-pos'; badgeEl.innerText = 'Positive'; }
+    else if (num <= 40) { badgeEl.className = 'badge badge-neg'; badgeEl.innerText = 'Negative'; }
+    else { badgeEl.className = 'badge badge-neu'; badgeEl.innerText = 'Neutral'; }
+  };
+  setBreadth('r2-b-sma10',  'r2-b-sma10-badge',  data.filter(d => d.aboveSma10).length);
+  setBreadth('r2-b-sma20',  'r2-b-sma20-badge',  data.filter(d => d.aboveSma20).length);
+  setBreadth('r2-b-sma50',  'r2-b-sma50-badge',  data.filter(d => d.aboveSma50).length);
+  setBreadth('r2-b-sma200', 'r2-b-sma200-badge', data.filter(d => d.aboveSma200).length);
+  setBreadth('r2-b-2050',   'r2-b-2050-badge',   data.filter(d => d.sma20aboveSma50).length);
+  setBreadth('r2-b-50200',  'r2-b-50200-badge',  data.filter(d => d.sma50aboveSma200).length);
+
+  // Performance
+  const avg = arr => { const f = arr.filter(v => v !== null); return f.length ? f.reduce((a, b) => a + b, 0) / f.length : NaN; };
+  const setPerf = (valId, badgeId, vals) => {
+    const a = avg(vals);
+    const el = document.getElementById(valId);
+    const badge = document.getElementById(badgeId);
+    if (!el) return;
+    if (isNaN(a)) { el.innerText = '--'; return; }
+    el.innerText = (a >= 0 ? '+' : '') + a.toFixed(2) + '%';
+    el.style.color = a >= 0 ? '#10b981' : '#ef4444';
+    if (!badge) return;
+    if (a > 0.3) { badge.className = 'badge badge-pos'; badge.innerText = 'Positive'; }
+    else if (a < -0.3) { badge.className = 'badge badge-neg'; badge.innerText = 'Negative'; }
+    else { badge.className = 'badge badge-neu'; badge.innerText = 'Neutral'; }
+  };
+  setPerf('r2-p-1d', 'r2-p-1d-badge', data.map(d => d.d1));
+  setPerf('r2-p-5d', 'r2-p-5d-badge', data.map(d => d.d5));
+  setPerf('r2-p-10d','r2-p-10d-badge',data.map(d => d.d10));
+  setPerf('r2-p-1m', 'r2-p-1m-badge', data.map(d => d.d21));
+
+  // Snapshot
+  const grid = document.getElementById('r2-snapshot-grid');
+  if (grid) {
+    const snaps = R2_SNAPSHOT_TICKERS.map(sym => data.find(d => d.symbol === sym)).filter(Boolean);
+    grid.innerHTML = snaps.map(d => {
+      const chg = d.d1 !== null ? d.d1 : 0;
+      const chgStr = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+      const chgCol = chg >= 0 ? '#10b981' : '#ef4444';
+      const emaBadge = d.aboveEma21
+        ? `<span style="font-size:0.55rem;font-weight:800;padding:1px 5px;border-radius:3px;background:#064e3b;color:#10b981;margin-left:4px;">EMA高</span>`
+        : `<span style="font-size:0.55rem;font-weight:800;padding:1px 5px;border-radius:3px;background:#7f1d1d;color:#ef4444;margin-left:4px;">EMA低</span>`;
+      return `<div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px 12px;">
+        <div style="font-size:0.6rem;color:#4a6080;">${d.symbol}${emaBadge}</div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px;">
+          <span style="font-size:0.82rem;font-weight:800;">$${d.cur.toFixed(2)}</span>
+          <span style="font-size:0.78rem;font-weight:800;color:${chgCol};">${chgStr}</span>
+        </div>
+        ${d.volPct !== null ? `<div style="font-size:0.6rem;color:#4a6080;margin-top:3px;">出来高 ${d.volPct >= 0 ? '+' : ''}${d.volPct.toFixed(0)}%</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  // 上位/下位5
+  const sorted5d = [...data].filter(d => d.d5 !== null).sort((a, b) => b.d5 - a.d5);
+  const setTB = (id, items) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = items.map(d => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1e2d45;">
+        <span style="font-size:0.75rem;font-weight:800;color:#22d3ee;">${d.symbol}</span>
+        <span style="font-size:0.75rem;font-weight:900;color:${d.d5 >= 0 ? '#10b981' : '#ef4444'};">${d.d5 >= 0 ? '+' : ''}${d.d5.toFixed(2)}%</span>
+      </div>`).join('');
+  };
+  setTB('r2-top5-list', sorted5d.slice(0, 5));
+  setTB('r2-bot5-list', sorted5d.slice(-5).reverse());
+}
+
+// ===== 更新処理 =====
+async function startRankUpdate() {
+  const btn = document.getElementById('rank-update-btn');
+  const statusEl = document.getElementById('rank-status');
+  if (btn) btn.disabled = true;
+
+  // Phase1: メインETF（スコア計算用）
+  const mainData = [];
+  statusEl.innerText = 'VIXY取得中...';
+  try {
+    const vRes = await fetch(`https://api.twelvedata.com/time_series?symbol=VIXY&interval=1day&outputsize=10&apikey=${RANK_API_KEY}`);
+    const vJson = await vRes.json();
+    if (vJson.values && vJson.values.length >= 6) {
+      const cur = parseFloat(vJson.values[0].close);
+      const d5  = parseFloat(vJson.values[5].close);
+      localStorage.setItem('mcd_vix', ((cur - d5) / d5 * 100).toString());
+    }
+  } catch(e) { console.error('VIXY取得失敗', e); }
+  await r2Sleep(8500);
+
+  for (let i = 0; i < R2_TICKERS_MAIN.length; i++) {
+    const sym = R2_TICKERS_MAIN[i];
+    statusEl.innerText = `スコア計算用取得 ${i + 1}/${R2_TICKERS_MAIN.length}: ${sym}`;
+    try {
+      const res  = await fetch(`https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=210&apikey=${RANK_API_KEY}`);
+      const json = await res.json();
+      if (json.status === 'error') {
+        if (json.code === 429) { statusEl.innerText = 'レート制限 - 60秒待機中...'; await r2Sleep(60000); i--; continue; }
+        throw new Error(json.message);
+      }
+      mainData.push(r2ProcessValues(sym, json.values));
+    } catch(e) { console.error(sym, e); }
+    if (i < R2_TICKERS_MAIN.length - 1) await r2Sleep(8500);
+  }
+
+  r2AllData = mainData;
+  localStorage.setItem('mcd_etf_data', JSON.stringify(mainData));
+  const vix = parseFloat(localStorage.getItem('mcd_vix') || '0');
+  const sc = r2CalcScore(mainData, vix);
+  // 履歴保存
+  let hist = JSON.parse(localStorage.getItem('mcd_score_history') || '[]');
+  hist.unshift({ score: sc.total, cond: r2CondLabel(sc.total).text, date: new Date().toLocaleDateString('ja-JP') });
+  if (hist.length > 10) hist = hist.slice(0, 10);
+  localStorage.setItem('mcd_score_history', JSON.stringify(hist));
+  r2RenderAll(mainData);
+
+  // Phase2: ランキング用ETF
+  rankMarketData = [];
+  for (let i = 0; i < RANK_TICKERS.length; i++) {
+    const symbol = RANK_TICKERS[i];
+    statusEl.innerText = `ランキング取得 ${i + 1}/${RANK_TICKERS.length}: ${symbol}`;
+    try {
+      const res  = await fetch(`https://api.twelvedata.com/time_series?symbol=${symbol}&interval=1day&outputsize=60&apikey=${RANK_API_KEY}`);
+      const data = await res.json();
+      if (data.status === 'error') {
+        if (data.code === 429) { statusEl.innerText = 'レート制限 - 60秒待機中...'; await r2Sleep(60000); i--; continue; }
+        throw new Error(data.message);
+      }
+      const v = data.values;
+      const now = parseFloat(v[0].close);
+      const closes = v.map(x => parseFloat(x.close));
+      const sma50val = closes.slice(0, 50).reduce((a, b) => a + b, 0) / 50;
+      const k = 2 / 22; let ema21val = closes.slice(0, 21).reduce((a, b) => a + b, 0) / 21;
+      for (let j = 20; j >= 0; j--) ema21val = closes[j] * k + ema21val * (1 - k);
+      rankMarketData.push({
+        symbol,
+        day_change:      ((now - parseFloat(v[1].close))  / parseFloat(v[1].close))  * 100,
+        five_day_change: ((now - parseFloat(v[5]?.close  || v[v.length-1].close)) / parseFloat(v[5]?.close  || v[v.length-1].close)) * 100,
+        ten_day_change:  ((now - parseFloat(v[10]?.close || v[v.length-1].close)) / parseFloat(v[10]?.close || v[v.length-1].close)) * 100,
+        month_change:    ((now - parseFloat(v[21]?.close || v[v.length-1].close)) / parseFloat(v[21]?.close || v[v.length-1].close)) * 100,
+        above_ema21: now > ema21val,
+        above_sma50: now > sma50val,
+      });
+      localStorage.setItem('market_perf_info', JSON.stringify(rankMarketData));
+      renderRankTable();
+    } catch(e) { console.error(e); }
+    if (i < RANK_TICKERS.length - 1) await r2Sleep(8500);
+  }
+  statusEl.innerText = '更新完了';
+  if (btn) btn.disabled = false;
+}
+
+function r2Sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function r2SortBy(key) {
+  rankCurrentSort.asc = (rankCurrentSort.key === key) ? !rankCurrentSort.asc : false;
+  rankCurrentSort.key = key;
+  renderRankTable();
+}
+function r2ToggleFilter(f) {
+  if (r2ActiveFilters.includes(f)) r2ActiveFilters = r2ActiveFilters.filter(x => x !== f);
+  else r2ActiveFilters.push(f);
+  document.getElementById('r2-rf-5d10d').classList.toggle('active', r2ActiveFilters.includes('5D>10D'));
+  document.getElementById('r2-rf-10d1m').classList.toggle('active', r2ActiveFilters.includes('10D>1M'));
+  renderRankTable();
+}
+function r2ClearFilters() {
+  r2ActiveFilters = [];
+  document.getElementById('r2-rf-5d10d').classList.remove('active');
+  document.getElementById('r2-rf-10d1m').classList.remove('active');
+  renderRankTable();
+}
+function toggleRankPin(symbol) {
+  r2PinnedSymbol = (r2PinnedSymbol === symbol) ? null : symbol;
+  renderRankTable();
+}
+function renderRankTable() {
+  const tbody = document.getElementById('rank-table-body');
+  if (!tbody) return;
+  let disp = [...rankMarketData];
+  if (r2ActiveFilters.includes('5D>10D')) disp = disp.filter(d => d.five_day_change > d.ten_day_change);
+  if (r2ActiveFilters.includes('10D>1M')) disp = disp.filter(d => d.ten_day_change  > d.month_change);
+  disp.sort((a, b) => {
+    if (rankCurrentSort.key === 'symbol')
+      return rankCurrentSort.asc ? a.symbol.localeCompare(b.symbol) : b.symbol.localeCompare(a.symbol);
+    const av = a[rankCurrentSort.key] === true ? 1 : a[rankCurrentSort.key] === false ? 0 : (a[rankCurrentSort.key] ?? -9999);
+    const bv = b[rankCurrentSort.key] === true ? 1 : b[rankCurrentSort.key] === false ? 0 : (b[rankCurrentSort.key] ?? -9999);
+    return rankCurrentSort.asc ? av - bv : bv - av;
+  });
+  if (r2PinnedSymbol) {
+    const pinned = disp.find(d => d.symbol === r2PinnedSymbol);
+    disp = pinned ? [pinned, ...disp.filter(d => d.symbol !== r2PinnedSymbol)] : disp;
+  }
+  const total = rankMarketData.length;
+  const sortedD5 = [...rankMarketData].sort((a, b) => b.five_day_change - a.five_day_change);
+  const rankMap = {};
+  sortedD5.forEach((d, i) => rankMap[d.symbol] = i + 1);
+
+  tbody.innerHTML = disp.map(item => {
+    const isPinned = item.symbol === r2PinnedSymbol;
+    const fmt = v => {
+      const cls = v >= 0 ? 'rank2-pos' : 'rank2-neg';
+      return `<span class="${cls}">${v >= 0 ? '+' : ''}${v.toFixed(2)}%</span>`;
+    };
+    const rank = rankMap[item.symbol];
+    const rankPct = rank / total;
+    const rankColor = rankPct <= 0.2 ? '#10b981' : rankPct <= 0.5 ? '#f59e0b' : '#ef4444';
+    const emaBadge = item.above_ema21 === undefined ? '<span style="color:#4a6080">--</span>'
+      : item.above_ema21 ? '<span class="rank2-ema-pos">↑上</span>' : '<span class="rank2-ema-neg">↓下</span>';
+    const smaBadge = item.above_sma50 === undefined ? '<span style="color:#4a6080">--</span>'
+      : item.above_sma50 ? '<span class="rank2-ema-pos">↑上</span>' : '<span class="rank2-ema-neg">↓下</span>';
+    return `<tr style="${isPinned ? 'outline:2px solid #22d3ee;' : ''}">
+      <td>
+        <span class="rank2-ticker" onclick="showRankInfo('${item.symbol}')">${item.symbol}</span>
+        <span onclick="toggleRankPin('${item.symbol}')" style="cursor:pointer;margin-left:4px;font-size:0.75rem;opacity:${isPinned?1:0.3};">📌</span>
+        ${rank ? `<span class="rank2-badge" style="background:${rankColor}22;color:${rankColor};">#${rank}</span>` : ''}
+      </td>
+      <td>${fmt(item.day_change)}</td>
+      <td>${fmt(item.five_day_change)}</td>
+      <td>${fmt(item.ten_day_change)}</td>
+      <td>${fmt(item.month_change)}</td>
+      <td>${emaBadge}</td>
+      <td>${smaBadge}</td>
+    </tr>`;
+  }).join('');
+}
+function showRankInfo(symbol) {
+  const info = TICKER_INFO[symbol] || { desc: '説明データがありません。', stocks: '-' };
+  document.getElementById('rank-modal-title').innerText  = symbol;
+  document.getElementById('rank-modal-desc').innerText   = info.desc;
+  document.getElementById('rank-modal-stocks').innerText = info.stocks;
+  document.getElementById('rank-modal').style.display    = 'block';
+}
+function closeRankModal() { document.getElementById('rank-modal').style.display = 'none'; }
+function jumpToRankSymbol() {
+  const query = document.getElementById('rank-search-input').value.trim().toUpperCase();
+  if (!query) return;
+  const found = rankMarketData.find(d => d.symbol === query);
+  if (!found) {
+    document.getElementById('rank-status').innerText = `"${query}" はデータがありません。更新を実行してください。`;
+    return;
+  }
+  renderRankTable();
+  document.querySelectorAll('#rank-table-body tr').forEach(row => {
+    const cell = row.querySelector('.rank2-ticker');
+    if (cell && cell.innerText === query) {
+      row.style.outline = '2px solid #22d3ee';
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => { row.style.outline = ''; }, 3000);
+      document.getElementById('rank-status').innerText = `"${query}" を表示中`;
+    }
+  });
+}
 
 const positiveItems = [
     "RS=100%","RS21>63緑","RS10>21緑","RS=all緑","テーマ=緑","10D>1M","Break-Out","反発","雲上抜け",
@@ -639,7 +1176,6 @@ function switchPage(pageId) {
     const btn = document.getElementById('header-action-btn');
     if (pageId === 'theme') { btn.textContent = '+ テーマ'; btn.style.color = 'var(--theme-accent)'; }
     else { btn.textContent = '+ 新規'; btn.style.color = 'var(--primary)'; }
-    // ランキングページ表示時にデータがあれば描画
     if (pageId === 'cross') renderCrossAnalysis();
     if (pageId === 'rank' && rankMarketData.length > 0) renderRankTable();
     if(window.lucide) lucide.createIcons();
@@ -790,18 +1326,18 @@ function renderTrades() {
     document.getElementById('box-win').className = `summary-box ${currentHistoryFilter==='win'?'active-win':''}`;
     document.getElementById('box-lose').className = `summary-box ${currentHistoryFilter==='lose'?'active-lose':''}`;
 
-   const activeCards = trades.filter(t=>!t.result).map(t=>renderCard(t)).join('');
-const watchCards = trades.filter(t=>t.result==='watch').map(t => {
-    const cardHtml = renderCard(t);
-    return cardHtml.replace('<div class="trade-card"', '<div class="trade-card" style="border-color:#b45309;background:linear-gradient(135deg,#1e293b 0%,#2d1a00 100%);"');
-}).join('');
-const watchSection = watchCards
-    ? `<div style="font-size:0.68rem;font-weight:800;color:#f59e0b;margin:10px 0 5px;padding:0 2px;">👁 監視継続中</div>
-       <div class="active-grid">${watchCards}</div>`
-    : '';
-activeCont.innerHTML = (activeCards || watchCards)
-    ? `${activeCards ? `<div class="active-grid">${activeCards}</div>` : ''}${watchSection}`
-    : '<p style="text-align:center;color:#475569;padding:20px 0;font-size:0.8rem;">取引中の銘柄はありません</p>';
+    const activeCards = trades.filter(t=>!t.result).map(t=>renderCard(t)).join('');
+    const watchCards = trades.filter(t=>t.result==='watch').map(t => {
+        const cardHtml = renderCard(t);
+        return cardHtml.replace('<div class="trade-card"', '<div class="trade-card" style="border-color:#b45309;background:linear-gradient(135deg,#1e293b 0%,#2d1a00 100%);"');
+    }).join('');
+    const watchSection = watchCards
+        ? `<div style="font-size:0.68rem;font-weight:800;color:#f59e0b;margin:10px 0 5px;padding:0 2px;">👁 監視継続中</div>
+           <div class="active-grid">${watchCards}</div>`
+        : '';
+    activeCont.innerHTML = (activeCards || watchCards)
+        ? `${activeCards ? `<div class="active-grid">${activeCards}</div>` : ''}${watchSection}`
+        : '<p style="text-align:center;color:#475569;padding:20px 0;font-size:0.8rem;">取引中の銘柄はありません</p>';
     const filtered = currentHistoryFilter==='win' ? winTrades : loseTrades;
     const historyCards = filtered.map(t=>renderCard(t)).join('');
     historyCont.innerHTML = historyCards
@@ -821,7 +1357,6 @@ function renderAnalysis(filteredTrades, itemsList, title, baseColor) {
     if(filteredTrades.length===0){sec.style.display='none';return;}
     sec.style.display='block'; ttl.innerText=title; ttl.style.color=baseColor;
 
-    // 既存：出現率集計
     const counts = {};
     itemsList.forEach(item=>counts[item]=0);
     filteredTrades.forEach(trade=>{
@@ -843,30 +1378,26 @@ function renderAnalysis(filteredTrades, itemsList, title, baseColor) {
         </div>`;
     }).join('') || '<p style="font-size:0.72rem;color:var(--text-sub);">40%を超える項目はありません</p>';
 
-    // 追加：LOSEの不足項目ランキング
     let missingHtml = '';
     if (currentHistoryFilter === 'lose') {
-        // WIN時に40%超の項目のみ対象
-const winTrades = trades.filter(t => t.result === 'win');
-const winTotal = winTrades.length;
-const qualifiedItems = winTotal > 0
-    ? positiveItems.filter(item => {
-        const winCount = winTrades.filter(t => t.appliedItems.includes(item)).length;
-        return (winCount / winTotal) * 100 > 40;
-    })
-    : [];
-
-const missingCounts = {};
-qualifiedItems.forEach(item => missingCounts[item] = 0);
-filteredTrades.forEach(trade => {
-    qualifiedItems.forEach(item => {
-        if (!trade.appliedItems.includes(item)) missingCounts[item]++;
-    });
-});
-const missingStats = Object.entries(missingCounts)
-    .map(([item, count]) => ({ item, count, percentage: parseFloat(((count / total) * 100).toFixed(1)) }))
-    .sort((a, b) => b.percentage - a.percentage);
-
+        const winTrades = trades.filter(t => t.result === 'win');
+        const winTotal = winTrades.length;
+        const qualifiedItems = winTotal > 0
+            ? positiveItems.filter(item => {
+                const winCount = winTrades.filter(t => t.appliedItems.includes(item)).length;
+                return (winCount / winTotal) * 100 > 40;
+            })
+            : [];
+        const missingCounts = {};
+        qualifiedItems.forEach(item => missingCounts[item] = 0);
+        filteredTrades.forEach(trade => {
+            qualifiedItems.forEach(item => {
+                if (!trade.appliedItems.includes(item)) missingCounts[item]++;
+            });
+        });
+        const missingStats = Object.entries(missingCounts)
+            .map(([item, count]) => ({ item, count, percentage: parseFloat(((count / total) * 100).toFixed(1)) }))
+            .sort((a, b) => b.percentage - a.percentage);
         missingHtml = `
             <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">
             <div style="font-size:0.72rem;font-weight:800;color:var(--lose-deep);margin-bottom:8px;">
@@ -883,7 +1414,6 @@ const missingStats = Object.entries(missingCounts)
                 </div>`;
             }).join('')}`;
     }
-
     cnt.innerHTML = existingHtml + missingHtml;
 }
 
@@ -944,7 +1474,6 @@ function renderCrossAnalysis() {
 }
 
 function renderCard(t) {
-    // 3日以上経過判定
     const isOld = (() => {
         if (t.result) return false;
         if (!t.date) return false;
@@ -957,8 +1486,6 @@ function renderCard(t) {
         ...t.negativeItems.map(item=>`<span class="tag negative">${item}</span>`)
     ].join('');
 
-    const itemEditHtml = ''; // モーダルに移行したため不要
-
     return `
         <div class="trade-card" style="${isOld ? 'border-color:#b45309; background:linear-gradient(135deg,#1e293b 0%,#1c1408 100%);' : ''}">
             <div class="card-top">
@@ -969,7 +1496,7 @@ function renderCard(t) {
                     <span class="stock-price-label">$${Number(t.price).toLocaleString()}</span>
                     <div id="pl-display-${t.id}" style="display:inline-flex;align-items:center;"></div>
                     ${isOld ? `<span style="font-size:0.58rem;font-weight:900;background:#92400e;color:#fcd34d;padding:1px 5px;border-radius:3px;border:1px solid #b45309;">⏰ 3日超</span>` : ''}
-                   ${t.result ? `<span class="result-badge ${t.result}-badge">${t.result === 'watch' ? '👁 監視中' : t.result.toUpperCase()}</span>${t.final_pl?`<span style="font-size:0.68rem;font-weight:800;color:${t.result==='win'?'var(--win-deep)':t.result==='watch'?'var(--theme-accent)':'var(--lose-deep)'};">${t.final_pl}</span>`:''}` : ''}
+                    ${t.result ? `<span class="result-badge ${t.result}-badge">${t.result === 'watch' ? '👁 監視中' : t.result.toUpperCase()}</span>${t.final_pl?`<span style="font-size:0.68rem;font-weight:800;color:${t.result==='win'?'var(--win-deep)':t.result==='watch'?'var(--theme-accent)':'var(--lose-deep)'};">${t.final_pl}</span>`:''}` : ''}
                 </div>
                 <div class="card-actions">
                     ${!t.result ? `<button id="refresh-btn-${t.id}" class="edit-btn" onclick="refreshPrice('${t.id}','${t.name}',${t.price})" title="価格更新"><i data-lucide="refresh-cw" style="width:10px;"></i></button>` : ''}
@@ -980,7 +1507,6 @@ function renderCard(t) {
             </div>
             ${allTags ? `<div class="tag-row">${allTags}</div>` : ''}
             <div id="memo-text-${t.id}" class="memo-area" contenteditable="false">${t.memo||'メモを追加'}</div>
-            ${itemEditHtml}
             ${!t.result
     ? `<div class="res-actions">
         <button class="btn-win" onclick="setTradeResult('${t.id}','win')">WIN</button>
@@ -1010,226 +1536,6 @@ async function fetchSectorDataByTicker(ticker) {
     }
 }
 
-// ======== Market Ranker 機能 ========
-async function startRankUpdate() {
-    const btn = document.getElementById('rank-update-btn');
-    const statusEl = document.getElementById('rank-status');
-    btn.disabled = true;
-    rankMarketData = [];
-    for (let i = 0; i < RANK_TICKERS.length; i++) {
-        const symbol = RANK_TICKERS[i];
-        statusEl.innerText = `取得中 ${i + 1}/${RANK_TICKERS.length}: ${symbol}...`;
-        try {
-            const response = await fetch(`https://api.twelvedata.com/time_series?symbol=${symbol}&interval=1day&outputsize=30&apikey=${RANK_API_KEY}`);
-            const resData = await response.json();
-            if (resData.status === "error") {
-                if (resData.code === 429) {
-                    statusEl.innerText = `レート制限 - 60秒待機中...`;
-                    await new Promise(r => setTimeout(r, 60000));
-                    i--; continue;
-                }
-                throw new Error(resData.message);
-            }
-            const v = resData.values;
-            const now = parseFloat(v[0].close);
-            const d1 = parseFloat(v[1].close);
-            const d5  = parseFloat(v[5]?.close  || v[v.length-1].close);
-            const d10 = parseFloat(v[10]?.close || v[v.length-1].close);
-            const d21 = parseFloat(v[21]?.close || v[v.length-1].close);
-rankMarketData.push({
-    symbol,
-    day_change:      ((now-d1)/d1)*100,
-    five_day_change: ((now-d5)/d5)*100,
-    ten_day_change:  ((now-d10)/d10)*100,
-    month_change:    ((now-d21)/d21)*100
-});
-            localStorage.setItem('market_perf_info', JSON.stringify(rankMarketData));
-            renderRankTable();
-        } catch (e) { console.error(e); }
-        await new Promise(r => setTimeout(r, 8500));
-    }
-    statusEl.innerText = "更新完了";
-    btn.disabled = false;
-}
-
-let rankPinnedSymbol = null; // 固定銘柄
-let rankActiveFilter = []; // スクリーニングフィルター（複数選択可）
-
-function toggleRankFilter(filterKey) {
-    if (rankActiveFilter.includes(filterKey)) {
-        rankActiveFilter = rankActiveFilter.filter(f => f !== filterKey);
-    } else {
-        rankActiveFilter.push(filterKey);
-    }
-    document.querySelectorAll('.rank-filter-btn').forEach((btn, i) => {
-        const keys = ['5D>10D', '10D>1M'];
-        btn.classList.toggle('active', rankActiveFilter.includes(keys[i]));
-    });
-    renderRankTable();
-}
-
-function clearRankFilter() {
-    rankActiveFilter = [];
-    document.querySelectorAll('.rank-filter-btn').forEach(btn => btn.classList.remove('active'));
-    renderRankTable();
-}
-
-function renderRankTable() {
-    const tbody = document.getElementById('rank-table-body');
-    tbody.innerHTML = '';
-
-    // 順位計算（全データを各軸でソートして順位付け）
-    const calcRanks = (key) => {
-        const sorted = [...rankMarketData].sort((a, b) => b[key] - a[key]);
-        const ranks = {};
-        sorted.forEach((item, i) => ranks[item.symbol] = i + 1);
-        return ranks;
-    };
-    const dayRanks     = calcRanks('day_change');
-    const fiveDayRanks = calcRanks('five_day_change');
-    const tenDayRanks  = calcRanks('ten_day_change');
-    const monthRanks   = calcRanks('month_change');
-
-    // 表示順：固定銘柄を先頭、次にピン以外を現在のソート順
-    let displayData = [...rankMarketData];
-    if (rankCurrentSort.key) {
-        displayData.sort((a, b) => {
-            if (rankCurrentSort.key === 'symbol') {
-                return rankCurrentSort.asc ? a.symbol.localeCompare(b.symbol) : b.symbol.localeCompare(a.symbol);
-            }
-            return rankCurrentSort.asc ? a[rankCurrentSort.key] - b[rankCurrentSort.key] : b[rankCurrentSort.key] - a[rankCurrentSort.key];
-        });
-    }
-
-    // スクリーニングフィルター：条件一致を先頭に固定
-    if (rankActiveFilter.length > 0) {
-        const match = (item) => {
-            if (rankActiveFilter.includes('5D>10D') && !(item.five_day_change > item.ten_day_change)) return false;
-            if (rankActiveFilter.includes('10D>1M') && !(item.ten_day_change > item.month_change)) return false;
-            return true;
-        };
-        const matched = displayData.filter(match);
-        const unmatched = displayData.filter(d => !match(d));
-        displayData = [...matched, ...unmatched];
-        const label = rankActiveFilter.join(' & ');
-        document.getElementById('rank-status').innerText = `${label}：${matched.length}件ヒット`;
-    }
-
-    // 固定銘柄を先頭に
-    if (rankPinnedSymbol) {
-        const pinned = displayData.find(d => d.symbol === rankPinnedSymbol);
-        const rest = displayData.filter(d => d.symbol !== rankPinnedSymbol);
-        displayData = pinned ? [pinned, ...rest] : rest;
-    }
-
-    // フィルター用match関数をスコープ外で定義
-    const isMatched = (item) => {
-        if (rankActiveFilter.length === 0) return true;
-        if (rankActiveFilter.includes('5D>10D') && !(item.five_day_change > item.ten_day_change)) return false;
-        if (rankActiveFilter.includes('10D>1M') && !(item.ten_day_change > item.month_change)) return false;
-        return true;
-    };
-
-    displayData.forEach(item => {
-        const isPinned = item.symbol === rankPinnedSymbol;
-        const hit = isMatched(item);
-        const row = document.createElement('tr');
-        if (isPinned) row.style.cssText = 'background:#1a1a2e; border-top:2px solid var(--rank-accent); border-bottom:2px solid var(--rank-accent);';
-        if (rankActiveFilter.length > 0 && !hit) row.style.opacity = '0.3';
-
-        const rankBadge = (rank, total) => {
-            const pct = rank / total;
-            const color = pct <= 0.2 ? 'var(--win-deep)' : pct <= 0.5 ? '#f59e0b' : 'var(--lose-deep)';
-            return `<span style="font-size:0.6rem;color:${color};font-weight:900;margin-left:3px;">#${rank}</span>`;
-        };
-        const total = rankMarketData.length;
-
-        row.innerHTML = `
-    <td>
-        <span class="rank-ticker-cell" onclick="showRankInfo('${item.symbol}')">${item.symbol}</span>
-        <span onclick="toggleRankPin('${item.symbol}')" title="固定" style="cursor:pointer;margin-left:4px;font-size:0.75rem;opacity:${isPinned?1:0.3};">📌</span>
-    </td>
-    <td class="${item.day_change >= 0 ? 'rank-pos' : 'rank-neg'}">
-        ${item.day_change >= 0 ? '+' : ''}${item.day_change.toFixed(2)}%
-        ${rankBadge(dayRanks[item.symbol], total)}
-    </td>
-    <td class="${item.five_day_change >= 0 ? 'rank-pos' : 'rank-neg'}">
-        ${item.five_day_change >= 0 ? '+' : ''}${item.five_day_change.toFixed(2)}%
-        ${rankBadge(fiveDayRanks[item.symbol], total)}
-    </td>
-    <td class="${item.ten_day_change >= 0 ? 'rank-pos' : 'rank-neg'}">
-        ${item.ten_day_change >= 0 ? '+' : ''}${item.ten_day_change.toFixed(2)}%
-        ${rankBadge(tenDayRanks[item.symbol], total)}
-    </td>
-    <td class="${item.month_change >= 0 ? 'rank-pos' : 'rank-neg'}">
-        ${item.month_change >= 0 ? '+' : ''}${item.month_change.toFixed(2)}%
-        ${rankBadge(monthRanks[item.symbol], total)}
-    </td>
-`;
-        tbody.appendChild(row);
-    });
-}
-
-function toggleRankPin(symbol) {
-    rankPinnedSymbol = (rankPinnedSymbol === symbol) ? null : symbol;
-    renderRankTable();
-}
-
-function sortRankTable(key) {
-    rankCurrentSort.asc = (rankCurrentSort.key === key) ? !rankCurrentSort.asc : false;
-    rankCurrentSort.key = key;
-    renderRankTable(); // ソートはrenderRankTable内で処理
-}
-
-function showRankInfo(symbol) {
-    const info = TICKER_INFO[symbol] || { desc: "説明データがありません。", stocks: "-" };
-    document.getElementById('rank-modal-title').innerText = symbol;
-    document.getElementById('rank-modal-desc').innerText = info.desc;
-    document.getElementById('rank-modal-stocks').innerText = info.stocks;
-    document.getElementById('rank-modal').style.display = "block";
-}
-
-function closeRankModal() { document.getElementById('rank-modal').style.display = "none"; }
-
-function jumpToRankSymbol() {
-    const query = document.getElementById('rank-search-input').value.trim().toUpperCase();
-    if (!query) return;
-
-    // rankMarketDataにデータがあるか確認
-    const found = rankMarketData.find(d => d.symbol === query);
-    if (!found) {
-        // データ未取得のETFでもTICKER_INFOにあれば案内
-        const inList = RANK_TICKERS.includes(query);
-        document.getElementById('rank-status').innerText = inList
-            ? `"${query}" はリストにありますが未取得です。まず「更新」してください。`
-            : `"${query}" はリストにありません。`;
-        return;
-    }
-
-    // 一度ソートをリセットして対象行を探す
-    renderRankTable();
-
-    // 該当行をハイライトしてスクロール
-    const rows = document.querySelectorAll('#rank-table-body tr');
-    let targetRow = null;
-    rows.forEach(row => {
-        const cell = row.querySelector('.rank-ticker-cell');
-        if (cell && cell.innerText === query) {
-            targetRow = row;
-        }
-    });
-
-    if (targetRow) {
-        // 既存ハイライトをリセット
-        rows.forEach(r => r.style.outline = '');
-        targetRow.style.outline = '2px solid var(--rank-accent)';
-        targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-        // 3秒後にハイライト解除
-        setTimeout(() => { targetRow.style.outline = ''; }, 3000);
-        document.getElementById('rank-status').innerText = `"${query}" を表示中`;
-    }
-}
 window.addEventListener('click', (event) => {
     const modal = document.getElementById('rank-modal');
     if (event.target === modal) closeRankModal();
@@ -1414,14 +1720,12 @@ async function autoFetchPrice() {
         const data = await res.json();
         if (data.status === 'error') throw new Error(data.message);
 
-        // 価格セット
         const values = data.values;
         const price = parseFloat(values[0].close);
         priceEl.value = price.toFixed(2);
         statusEl.innerText = '✓';
         statusEl.style.color = 'var(--win-deep)';
 
-        // Perf計算
         const cur = price;
         const gp = idx => values[idx] ? parseFloat(values[idx].close) : null;
         const calc = (c, p) => p ? (((c - p) / p) * 100).toFixed(2) : null;
@@ -1440,7 +1744,6 @@ async function autoFetchPrice() {
         setEp('ep-2m',    calc(cur, gp(42)));
         perfArea.style.display = 'block';
 
-        // セクタ非同期取得
         fetchSectorDataByTicker(ticker).then(d => {
             document.getElementById('ep-name').innerText     = d.name     || '--';
             document.getElementById('ep-industry').innerText = d.industry || '--';
@@ -1480,17 +1783,22 @@ function calcProfit() {
     document.getElementById('calc-percent').style.color = color;
     document.getElementById('calc-diff').innerText = (isPos ? '+' : '') + '$' + diff.toFixed(2);
     document.getElementById('calc-diff').style.color = color;
-    const simAmounts = [1000, 3000, 5000, 10000];
     resultEl.style.display = 'block';
 }
 
 // ======== 初期化 ========
 window.onload = () => {
-    renderEntryChecks(); 
-    loadTrades(); 
+    renderEntryChecks();
+    loadTrades();
     loadThemes();
+    const savedMain = localStorage.getItem('mcd_etf_data');
+    if (savedMain) {
+        try { r2RenderAll(JSON.parse(savedMain)); } catch(e) {}
+    } else {
+        r2DrawGauge(0);
+    }
     if (rankMarketData.length > 0) renderRankTable();
-    if(window.lucide) lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
 };
 </script>
 </body>
