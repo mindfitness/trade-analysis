@@ -831,7 +831,8 @@ function r2CalcScore(data, vix = 0) {
     d.d5 !== null && d.d10 !== null && d.d21 !== null && d.d5 > d.d10 && d.d10 > d.d21
   ).length;
   const trend = (trendCount / n) * 20;
-  const vixPenalty = vix >= 30 ? 25 : vix >= 20 ? 18 : vix >= 10 ? 12 : vix >= 5 ? 7 : vix >= 2 ? 3 : 0;
+  // vix = VIXY の SMA20比（%）。100% = SMA20と同値
+const vixPenalty = vix >= 140 ? 25 : vix >= 125 ? 18 : vix >= 115 ? 12 : vix >= 108 ? 7 : vix >= 103 ? 3 : 0;
   return {
     total: Math.max(0, Math.round(breadth + momentum + trend - vixPenalty)),
     breadth: Math.round(breadth * 10) / 10,
@@ -882,9 +883,11 @@ function r2RenderAll(data) {
   const vixValEl = document.getElementById('r2-val-vix');
   if (vixBarEl) vixBarEl.style.width = Math.min(sc.vixPenalty / 25 * 100, 100) + '%';
   if (vixValEl) {
-    vixValEl.innerText = sc.vixPenalty > 0
-      ? `-${sc.vixPenalty} (VIXY 5D: ${sc.vixValue.toFixed(1)}%)`
-      : `なし (VIXY 5D: ${sc.vixValue.toFixed(1)}%)`;
+    const vixyCur  = parseFloat(localStorage.getItem('mcd_vixy_cur')  || '0');
+const vixySma  = parseFloat(localStorage.getItem('mcd_vixy_sma20') || '0');
+vixValEl.innerText = sc.vixPenalty > 0
+  ? `-${sc.vixPenalty} (VIXY $${vixyCur.toFixed(2)} / SMA20比 ${sc.vixValue.toFixed(1)}%)`
+  : `なし (VIXY $${vixyCur.toFixed(2)} / SMA20比 ${sc.vixValue.toFixed(1)}%)`;
     vixValEl.style.color = sc.vixPenalty > 0 ? '#ef4444' : '#10b981';
   }
 
@@ -991,11 +994,14 @@ async function startRankUpdate() {
   try {
     const vRes = await fetch(`https://api.twelvedata.com/time_series?symbol=VIXY&interval=1day&outputsize=10&apikey=${RANK_API_KEY}`);
     const vJson = await vRes.json();
-    if (vJson.values && vJson.values.length >= 6) {
-      const cur = parseFloat(vJson.values[0].close);
-      const d5  = parseFloat(vJson.values[5].close);
-      localStorage.setItem('mcd_vix', ((cur - d5) / d5 * 100).toString());
-    }
+    if (vJson.values && vJson.values.length >= 20) {
+  const cur = parseFloat(vJson.values[0].close);
+  const sma20 = vJson.values.slice(0, 20).reduce((a, v) => a + parseFloat(v.close), 0) / 20;
+  const ratio = (cur / sma20) * 100; // SMA20比（%）
+  localStorage.setItem('mcd_vix', ratio.toString());
+  localStorage.setItem('mcd_vixy_cur', cur.toString());
+  localStorage.setItem('mcd_vixy_sma20', sma20.toFixed(2));
+}
   } catch(e) { console.error('VIXY取得失敗', e); }
   await r2Sleep(8500);
 
