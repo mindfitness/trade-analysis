@@ -992,7 +992,7 @@ async function startRankUpdate() {
   const mainData = [];
   statusEl.innerText = 'VIXY取得中...';
   try {
-    const vRes = await fetch(`https://api.twelvedata.com/time_series?symbol=VIXY&interval=1day&outputsize=10&apikey=${RANK_API_KEY}`);
+    const vRes = await fetch(`https://api.twelvedata.com/time_series?symbol=VIXY&interval=1day&outputsize=25&apikey=${RANK_API_KEY}`);
     const vJson = await vRes.json();
     if (vJson.values && vJson.values.length >= 20) {
   const cur = parseFloat(vJson.values[0].close);
