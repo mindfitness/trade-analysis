@@ -1841,7 +1841,7 @@ function copyPF() {
     const watch  = trades.filter(t => t.result === 'watch');
     let lines = [];
     if (active.length > 0) {
-        lines.push('ポジション');
+        lines.push('Watchlist');
         active.forEach(t => lines.push(`・$${t.name}`));
     }
     if (watch.length > 0) {
