@@ -834,7 +834,7 @@ function r2CalcScore(data, vix = 0) {
   ).length;
   const trend = (trendCount / n) * 20;
   // vix = VIXY の SMA20比（%）。100% = SMA20と同値
-const vixPenalty = vix >= 140 ? 30 : vix >= 125 ? 22 : vix >= 115 ? 15 : vix >= 108 ? 9 : vix >= 103 ? 4 : vix >= 100 ? 1 : 0;
+const vixPenalty = vix >= 140 ? 35 : vix >= 125 ? 26 : vix >= 115 ? 18 : vix >= 108 ? 11 : vix >= 103 ? 5 : vix >= 100 ? 1 : 0;
   return {
     total: Math.max(0, Math.round(breadth + momentum + trend - vixPenalty)),
     breadth: Math.round(breadth * 10) / 10,
@@ -912,7 +912,7 @@ vixValEl.innerText = sc.vixPenalty > 0
     if (valEl) valEl.innerText = pct + '%';
     if (!badgeEl) return;
     const num = parseFloat(pct);
-    if (num >= 55) { badgeEl.className = 'badge badge-pos'; badgeEl.innerText = 'Positive'; }
+    if (num >= 60) { badgeEl.className = 'badge badge-pos'; badgeEl.innerText = 'Positive'; }
     else if (num <= 45) { badgeEl.className = 'badge badge-neg'; badgeEl.innerText = 'Negative'; }
     else { badgeEl.className = 'badge badge-neu'; badgeEl.innerText = 'Neutral'; }
   };
