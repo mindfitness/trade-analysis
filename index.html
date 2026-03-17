@@ -533,8 +533,10 @@
       </div>
       <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
         <button class="rank2-filter-btn" id="r2-rf-5d10d" onclick="r2ToggleFilter('5D>10D')">5D&gt;10D</button>
-        <button class="rank2-filter-btn" id="r2-rf-10d1m" onclick="r2ToggleFilter('10D>1M')">10D&gt;1M</button>
-        <button class="rank2-filter-btn" onclick="r2ClearFilters()">解除</button>
+<button class="rank2-filter-btn" id="r2-rf-10d1m" onclick="r2ToggleFilter('10D>1M')">10D&gt;1M</button>
+<button class="rank2-filter-btn" id="r2-rf-ema21" onclick="r2ToggleFilter('EMA21↑')">EMA21↑</button>
+<button class="rank2-filter-btn" id="r2-rf-sma50" onclick="r2ToggleFilter('SMA50↑')">SMA50↑</button>
+<button class="rank2-filter-btn" onclick="r2ClearFilters()">解除</button>
       </div>
       <div id="rank-status" style="font-size:0.68rem;color:#4a6080;margin-bottom:8px;">Ready</div>
       <div style="overflow-x:auto;">
@@ -700,7 +702,7 @@ const R2_TICKERS_MAIN = [
   "SMH","SOXX","XBI","GDX","ITB","KRE","JETS","CIBR","PAVE","BOTZ",
   "SKYY","IGV","FINX","XOP","ITA","URA","COPX","LIT"
 ];
-const R2_SNAPSHOT_TICKERS = ["RSP","QQQ","IWM","QQQE","XLK","XLF","XLE","SMH"];
+const R2_SNAPSHOT_TICKERS = ["RSP","QQQ","IWM","QQQE","XLK","XLF","XLE","BTC/USD"];
 const RANK_TICKERS = ["RSP","AIPO","POWR","ITA","BOAT","XOP","MOO","PEJ","TAN","FAN","ICLN","SMH","XBI","SOXX","IYT","SLX","LIT","WOOD","ITB","IHI","SIL","XRT","QTUM","BATT","KARS","GDX","KRE","URA","REMX","JETS","COPX","DRIV","WGMI","CIBR","AIRR","BOTZ","PAVE","FINX","SKYY","HEAL","UFO","EATZ","IGV"];
 
 const TICKER_INFO = {
@@ -832,7 +834,7 @@ function r2CalcScore(data, vix = 0) {
   ).length;
   const trend = (trendCount / n) * 20;
   // vix = VIXY の SMA20比（%）。100% = SMA20と同値
-const vixPenalty = vix >= 140 ? 25 : vix >= 125 ? 18 : vix >= 115 ? 12 : vix >= 108 ? 7 : vix >= 103 ? 3 : 0;
+const vixPenalty = vix >= 140 ? 30 : vix >= 125 ? 22 : vix >= 115 ? 15 : vix >= 108 ? 9 : vix >= 103 ? 4 : vix >= 100 ? 1 : 0;
   return {
     total: Math.max(0, Math.round(breadth + momentum + trend - vixPenalty)),
     breadth: Math.round(breadth * 10) / 10,
@@ -867,7 +869,7 @@ function r2DrawGauge(score) {
 function r2RenderAll(data) {
   r2AllData = data;
   const vix = parseFloat(localStorage.getItem('mcd_vix') || '0');
-  const sc = r2CalcScore(data, vix);
+  const sc = r2CalcScore(data.filter(d => !d._isBtc), vix);
   r2DrawGauge(sc.total);
 
   const setBar = (barId, valId, val, max) => {
@@ -910,8 +912,8 @@ vixValEl.innerText = sc.vixPenalty > 0
     if (valEl) valEl.innerText = pct + '%';
     if (!badgeEl) return;
     const num = parseFloat(pct);
-    if (num >= 50) { badgeEl.className = 'badge badge-pos'; badgeEl.innerText = 'Positive'; }
-    else if (num <= 40) { badgeEl.className = 'badge badge-neg'; badgeEl.innerText = 'Negative'; }
+    if (num >= 55) { badgeEl.className = 'badge badge-pos'; badgeEl.innerText = 'Positive'; }
+    else if (num <= 45) { badgeEl.className = 'badge badge-neg'; badgeEl.innerText = 'Negative'; }
     else { badgeEl.className = 'badge badge-neu'; badgeEl.innerText = 'Neutral'; }
   };
   setBreadth('r2-b-sma10',  'r2-b-sma10-badge',  data.filter(d => d.aboveSma10).length);
@@ -1005,7 +1007,26 @@ async function startRankUpdate() {
   } catch(e) { console.error('VIXY取得失敗', e); }
   await r2Sleep(8500);
 
-  for (let i = 0; i < R2_TICKERS_MAIN.length; i++) {
+  try {
+  const btcRes = await fetch(`https://api.twelvedata.com/time_series?symbol=BTC/USD&interval=1day&outputsize=5&apikey=${RANK_API_KEY}`);
+  const btcJson = await btcRes.json();
+  if (btcJson.values && btcJson.values.length >= 2) {
+    const btcD = btcJson.values;
+    const btcCur = parseFloat(btcD[0].close);
+    const btcD1  = ((btcCur - parseFloat(btcD[1].close)) / parseFloat(btcD[1].close)) * 100;
+    mainData.push({
+      symbol: 'BTC/USD', cur: btcCur,
+      d1: btcD1, d5: null, d10: null, d21: null,
+      aboveEma21: null, volPct: null,
+      aboveSma10: false, aboveSma20: false, aboveSma50: false, aboveSma200: false,
+      sma20aboveSma50: false, sma50aboveSma200: false,
+      _isBtc: true  // スコア計算から除外するフラグ
+    });
+  }
+} catch(e) { console.error('BTC取得失敗', e); }
+await r2Sleep(8500);
+
+for (let i = 0; i < R2_TICKERS_MAIN.length; i++) {
     const sym = R2_TICKERS_MAIN[i];
     statusEl.innerText = `スコア計算用取得 ${i + 1}/${R2_TICKERS_MAIN.length}: ${sym}`;
     try {
@@ -1021,9 +1042,10 @@ async function startRankUpdate() {
   }
 
   r2AllData = mainData;
-  localStorage.setItem('mcd_etf_data', JSON.stringify(mainData));
-  const vix = parseFloat(localStorage.getItem('mcd_vix') || '0');
-  const sc = r2CalcScore(mainData, vix);
+localStorage.setItem('mcd_etf_data', JSON.stringify(mainData));
+const vix = parseFloat(localStorage.getItem('mcd_vix') || '0');
+const scoreData = mainData.filter(d => !d._isBtc);
+const sc = r2CalcScore(scoreData, vix);
   // 履歴保存
   let hist = JSON.parse(localStorage.getItem('mcd_score_history') || '[]');
   hist.unshift({ score: sc.total, cond: r2CondLabel(sc.total).text, date: new Date().toLocaleDateString('ja-JP') });
@@ -1079,12 +1101,16 @@ function r2ToggleFilter(f) {
   else r2ActiveFilters.push(f);
   document.getElementById('r2-rf-5d10d').classList.toggle('active', r2ActiveFilters.includes('5D>10D'));
   document.getElementById('r2-rf-10d1m').classList.toggle('active', r2ActiveFilters.includes('10D>1M'));
+  document.getElementById('r2-rf-ema21').classList.toggle('active', r2ActiveFilters.includes('EMA21↑'));
+  document.getElementById('r2-rf-sma50').classList.toggle('active', r2ActiveFilters.includes('SMA50↑'));
   renderRankTable();
 }
 function r2ClearFilters() {
   r2ActiveFilters = [];
   document.getElementById('r2-rf-5d10d').classList.remove('active');
   document.getElementById('r2-rf-10d1m').classList.remove('active');
+  document.getElementById('r2-rf-ema21').classList.remove('active');
+  document.getElementById('r2-rf-sma50').classList.remove('active');
   renderRankTable();
 }
 function toggleRankPin(symbol) {
@@ -1097,6 +1123,8 @@ function renderRankTable() {
   let disp = [...rankMarketData];
   if (r2ActiveFilters.includes('5D>10D')) disp = disp.filter(d => d.five_day_change > d.ten_day_change);
   if (r2ActiveFilters.includes('10D>1M')) disp = disp.filter(d => d.ten_day_change  > d.month_change);
+  if (r2ActiveFilters.includes('EMA21↑')) disp = disp.filter(d => d.above_ema21 === true);
+if (r2ActiveFilters.includes('SMA50↑')) disp = disp.filter(d => d.above_sma50 === true);
   disp.sort((a, b) => {
     if (rankCurrentSort.key === 'symbol')
       return rankCurrentSort.asc ? a.symbol.localeCompare(b.symbol) : b.symbol.localeCompare(a.symbol);
