@@ -1841,13 +1841,13 @@ function copyPF() {
     const watch  = trades.filter(t => t.result === 'watch');
     let lines = [];
     if (active.length > 0) {
-        lines.push('📈 保有中');
-        active.forEach(t => lines.push(`・$${t.name}  $${Number(t.price).toLocaleString()}`));
+        lines.push('ポジション');
+        active.forEach(t => lines.push(`・$${t.name}`));
     }
     if (watch.length > 0) {
         if (lines.length > 0) lines.push('');
         lines.push('👁 監視中');
-        watch.forEach(t => lines.push(`・$${t.name}  $${Number(t.price).toLocaleString()}`));
+        watch.forEach(t => lines.push(`・$${t.name}`));
     }
     if (lines.length === 0) { alert('銘柄が登録されていません'); return; }
     const text = lines.join('\n');
@@ -1863,9 +1863,7 @@ function copyMC() {
     const condEl  = document.getElementById('r2-gauge-cond');
     const score   = scoreEl ? scoreEl.innerText : '--';
     const cond    = condEl  ? condEl.innerText  : '--';
-    const vixEl   = document.getElementById('r2-val-vix');
-    const vixText = vixEl   ? vixEl.innerText   : '--';
-    const text = `🇺🇸 米国株マーケットトレンド\nスコア：${score}\nセンチメント：${cond}\nVIX：${vixText}`;
+    const text = `🇺🇸 米国株マーケットトレンド\nスコア：${score}\nセンチメント：${cond}`;
     navigator.clipboard.writeText(text).then(() => {
         const btn = document.getElementById('copy-mc-btn');
         btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
