@@ -338,6 +338,9 @@
 
 <!-- 取引中ページ -->
 <div id="page-active" class="page active">
+    <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
+        <button onclick="copyPF()" style="padding:5px 14px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:8px; font-weight:800; cursor:pointer; font-size:0.75rem;" id="copy-pf-btn">📋 コピー</button>
+    </div>
     <div id="active-container"></div>
 </div>
 
@@ -371,6 +374,9 @@
 <div id="page-rank" class="page">
   <div style="padding:8px;">
 
+    <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
+        <button onclick="copyMC()" style="padding:5px 14px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:8px; font-weight:800; cursor:pointer; font-size:0.75rem;" id="copy-mc-btn">📋 コピー</button>
+    </div>
     <div class="rank2-section">
       <div class="rank2-title">総合スコア</div>
       <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;">
@@ -1716,7 +1722,8 @@ function renderThemes() {
                         ${theme.tags.map(tag=>`<span class="theme-tag"># ${tag}</span>`).join('')}
                     </div>
                 </div>
-                <div style="display:flex;gap:2px;flex-shrink:0;">
+                <div style="display:flex;gap:2px;flex-shrink:0;align-items:center;">
+                    <button onclick="copyTheme(${theme.id})" style="padding:3px 8px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem;" id="copy-theme-btn-${theme.id}">📋</button>
                     <button class="btn-ghost" onclick="openThemeModal(${theme.id})"><i data-lucide="edit-3" style="width:13px;"></i></button>
                     <button class="btn-ghost" onclick="deleteTheme(${theme.id})"><i data-lucide="trash-2" style="width:13px;"></i></button>
                 </div>
@@ -1826,6 +1833,62 @@ function calcProfit() {
     document.getElementById('calc-diff').innerText = (isPos ? '+' : '') + '$' + diff.toFixed(2);
     document.getElementById('calc-diff').style.color = color;
     resultEl.style.display = 'block';
+}
+
+// ======== Twitterコピー機能 ========
+function copyPF() {
+    const active = trades.filter(t => !t.result);
+    const watch  = trades.filter(t => t.result === 'watch');
+    let lines = [];
+    if (active.length > 0) {
+        lines.push('📈 保有中');
+        active.forEach(t => lines.push(`・$${t.name}  $${Number(t.price).toLocaleString()}`));
+    }
+    if (watch.length > 0) {
+        if (lines.length > 0) lines.push('');
+        lines.push('👁 監視中');
+        watch.forEach(t => lines.push(`・$${t.name}  $${Number(t.price).toLocaleString()}`));
+    }
+    if (lines.length === 0) { alert('銘柄が登録されていません'); return; }
+    const text = lines.join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copy-pf-btn');
+        btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
+        setTimeout(() => { btn.innerText = '📋 コピー'; btn.style.background = '#334155'; }, 2000);
+    });
+}
+
+function copyMC() {
+    const scoreEl = document.getElementById('r2-gauge-score');
+    const condEl  = document.getElementById('r2-gauge-cond');
+    const score   = scoreEl ? scoreEl.innerText : '--';
+    const cond    = condEl  ? condEl.innerText  : '--';
+    const vixEl   = document.getElementById('r2-val-vix');
+    const vixText = vixEl   ? vixEl.innerText   : '--';
+    const text = `🇺🇸 米国株マーケットトレンド\nスコア：${score}\nセンチメント：${cond}\nVIX：${vixText}`;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copy-mc-btn');
+        btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
+        setTimeout(() => { btn.innerText = '📋 コピー'; btn.style.background = '#334155'; }, 2000);
+    });
+}
+
+function copyTheme(themeId) {
+    const theme = themes.find(t => t.id === themeId);
+    if (!theme) return;
+    let lines = [];
+    lines.push(`📌 ${theme.name}`);
+    if (theme.stocks.length > 0) {
+        theme.stocks.forEach(s => lines.push(`・$${s}`));
+    } else {
+        lines.push('（銘柄未登録）');
+    }
+    const text = lines.join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById(`copy-theme-btn-${themeId}`);
+        btn.innerText = '✅'; btn.style.background = '#064e3b';
+        setTimeout(() => { btn.innerText = '📋'; btn.style.background = '#334155'; }, 2000);
+    });
 }
 
 // ======== 初期化 ========
