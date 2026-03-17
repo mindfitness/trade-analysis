@@ -1163,7 +1163,7 @@ if (r2ActiveFilters.includes('SMA50↑')) disp = disp.filter(d => d.above_sma50 
     return `<tr style="${isPinned ? 'outline:2px solid #22d3ee;' : ''}">
       <td>
         <span class="rank2-ticker" onclick="showRankInfo('${item.symbol}')">${item.symbol}</span>
-        <span onclick="toggleRankPin('${item.symbol}')" style="cursor:pointer;margin-left:4px;font-size:0.75rem;opacity:${isPinned?1:0.3};">📌</span>
+        <span onclick="toggleRankPin('${item.symbol}')" style="cursor:pointer;margin-left:4px;font-size:0.75rem;opacity:${isPinned?1:0.3};"></span>
         ${rank ? `<span class="rank2-badge" style="background:${rankColor}22;color:${rankColor};">#${rank}</span>` : ''}
       </td>
       <td>${fmt(item.day_change)}</td>
@@ -1875,7 +1875,7 @@ function copyTheme(themeId) {
     const theme = themes.find(t => t.id === themeId);
     if (!theme) return;
     let lines = [];
-    lines.push(`📌 ${theme.name}`);
+    lines.push(`${theme.name}`);
     if (theme.stocks.length > 0) {
         theme.stocks.forEach(s => lines.push(`・$${s}`));
     } else {
