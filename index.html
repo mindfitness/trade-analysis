@@ -643,8 +643,15 @@
             <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4screener</span>
             <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-3', this)">コピー</button>
         </div>
-        <div class="prompt-container-static"><pre id="prompt-3">var tickers = Array.from(document.querySelectorAll('.tickerName-h_u59cln, .apply-common-tooltip')).map(el => el.textContent.trim()).filter(txt => txt.length > 0 && txt.length < 10);
-console.log([...new Set(tickers)].join(', '));</pre></div>
+        <div class="prompt-container-static"><pre id="prompt-3">// 「大文字のみ」「1〜5文字」の条件でティッカーだけを抽出
+var elements = document.querySelectorAll('span[class*="tickerName-"], a[href*="/symbols/"]');
+var tickers = Array.from(elements)
+    .map(el => el.innerText.split('\n')[0].trim())
+    .filter(t => /^[A-Z]{1,5}$/.test(t)); // 英大文字1〜5文字のみに限定
+
+var result = [...new Set(tickers)].join(', ');
+console.log(result);
+copy(result); // そのままクリップボードにコピー</pre></div>
     </section>
 </div>
 
