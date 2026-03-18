@@ -640,10 +640,11 @@
     </section>
     <section>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">NA</span>
+            <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4screener</span>
             <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-3', this)">コピー</button>
         </div>
-        <div class="prompt-container-static"><pre id="prompt-3">NA</pre></div>
+        <div class="prompt-container-static"><pre id="prompt-3">var tickers = Array.from(document.querySelectorAll('.tickerName-h_u59cln, .apply-common-tooltip')).map(el => el.textContent.trim()).filter(txt => txt.length > 0 && txt.length < 10);
+console.log([...new Set(tickers)].join(', '));</pre></div>
     </section>
 </div>
 
