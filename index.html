@@ -271,6 +271,7 @@
         <button class="tab" id="tab-history" onclick="switchPage('history')">Log</button>
         <button class="tab rank-tab" id="tab-rank" onclick="switchPage('rank')">MC</button>
         <button class="tab theme-tab" id="tab-theme" onclick="switchPage('theme')">Watch</button>
+        <button class="tab" id="tab-screen" onclick="switchPage('screen')">Screen</button>
         <button class="tab ai-tab" id="tab-ai" onclick="switchPage('ai')">Func</button>
     </div>
 </header>
@@ -589,6 +590,49 @@
         <button onclick="openThemeModal()" style="padding:6px 14px; background:var(--theme-accent); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.78rem;">+ テーマ追加</button>
     </div>
     <div id="theme-list"></div>
+</div>
+
+<!-- スクリーナーページ -->
+<div id="page-screen" class="page">
+  <div style="margin-bottom:12px;">
+    <div style="font-size:0.65rem; color:var(--text-sub); margin-bottom:8px; letter-spacing:0.05em;">RS(SPY比・パーセントランク) + Volume Spike + DCR%</div>
+    <textarea id="screen-ticker-input" placeholder="KLAC, GEV, NVDA, AAPL ..." rows="3"
+      style="font-family:monospace; font-size:0.82rem;"></textarea>
+    <div style="display:flex; flex-wrap:wrap; gap:5px; margin:8px 0;">
+      <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">RS10 &gt; 50%</span>
+      <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">RS21 &gt; 70%</span>
+      <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">Vol ×1.3</span>
+      <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">DCR &gt; 20%</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:6px; font-size:0.62rem; color:var(--text-sub); margin-bottom:8px;">
+      <div id="screen-spy-dot" style="width:6px;height:6px;border-radius:50%;background:#2a3f5f;flex-shrink:0;"></div>
+      <span id="screen-spy-text">SPY: 未取得</span>
+    </div>
+    <button id="screen-run-btn" onclick="startScreening()"
+      style="width:100%; padding:10px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
+      ▶ スクリーニング開始
+    </button>
+  </div>
+
+  <div id="screen-progress" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:12px;">
+    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+      <span style="font-size:0.62rem; color:var(--text-sub); letter-spacing:0.08em;">SCANNING</span>
+      <span id="screen-progress-count" style="font-size:0.62rem; font-weight:700; color:#22d3ee;">0 / 0</span>
+    </div>
+    <div style="height:3px; background:var(--border); border-radius:2px; overflow:hidden; margin-bottom:6px;">
+      <div id="screen-progress-bar" style="height:100%; background:#22d3ee; border-radius:2px; width:0%; transition:width 0.3s;"></div>
+    </div>
+    <div id="screen-progress-ticker" style="font-size:0.65rem; color:var(--text-sub); margin-bottom:6px;">待機中...</div>
+    <div id="screen-log" style="background:var(--input-bg); border:1px solid var(--border); border-radius:6px; padding:6px 10px; max-height:100px; overflow-y:auto; font-size:0.6rem; color:var(--text-sub); line-height:1.7; font-family:monospace;"></div>
+  </div>
+
+  <div id="screen-results" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <span style="font-size:0.65rem; font-weight:700; color:var(--text-sub); letter-spacing:0.1em; text-transform:uppercase;">Results</span>
+      <span id="screen-results-count" style="font-size:0.65rem; font-weight:700; color:var(--win-deep);">0 matches</span>
+    </div>
+    <div id="screen-results-body"></div>
+  </div>
 </div>
 
 <!-- プロンプトページ -->
@@ -1895,6 +1939,160 @@ function copyTheme(themeId) {
         btn.innerText = '✅'; btn.style.background = '#064e3b';
         setTimeout(() => { btn.innerText = '📋'; btn.style.background = '#334155'; }, 2000);
     });
+}
+
+// ======== スクリーナー ========
+const SCREEN_API_KEY = 'f550f672515b4cd6b4c2966f1e2cc0fb';
+const SCREEN_DELAY = 10000;
+let screenSpyMap = null;
+
+function screenAddLog(msg, type = '') {
+  const area = document.getElementById('screen-log');
+  const line = document.createElement('div');
+  if (type === 'match') line.style.color = 'var(--win-deep)', line.style.fontWeight = '700';
+  if (type === 'err')   line.style.color = 'var(--lose-deep)';
+  if (type === 'skip')  line.style.color = '#2a3f5f';
+  line.innerText = msg;
+  area.appendChild(line);
+  area.scrollTop = area.scrollHeight;
+}
+
+function screenSetSpyStatus(state, text) {
+  const dot = document.getElementById('screen-spy-dot');
+  const txt = document.getElementById('screen-spy-text');
+  const colors = { ok: 'var(--win-deep)', err: 'var(--lose-deep)', loading: '#22d3ee' };
+  dot.style.background = colors[state] || '#2a3f5f';
+  if (state === 'loading') dot.style.animation = 'spyPulse 1s infinite';
+  else dot.style.animation = '';
+  txt.innerText = text;
+}
+
+async function screenFetchTimeSeries(symbol, outputsize = 252) {
+  const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=1day&outputsize=${outputsize}&apikey=${SCREEN_API_KEY}`;
+  const res = await fetch(url);
+  const json = await res.json();
+  if (json.status === 'error') throw new Error(json.message);
+  if (!json.values || json.values.length === 0) throw new Error('No data');
+  return json.values;
+}
+
+async function screenEnsureSpy() {
+  if (screenSpyMap) return true;
+  screenSetSpyStatus('loading', 'SPY: 取得中...');
+  try {
+    const values = await screenFetchTimeSeries('SPY', 252);
+    screenSpyMap = {};
+    values.forEach(d => { screenSpyMap[d.datetime] = parseFloat(d.close); });
+    screenSetSpyStatus('ok', `SPY: 取得済み (${values.length}日分)`);
+    return true;
+  } catch(e) {
+    screenSetSpyStatus('err', `SPY: 取得失敗 — ${e.message}`);
+    return false;
+  }
+}
+
+function screenPercentRank(values, length) {
+  if (values.length < length) return NaN;
+  const current = values[0];
+  const window = values.slice(0, length);
+  return (window.filter(v => v < current).length / length) * 100;
+}
+
+function screenRsClass(v) {
+  if (isNaN(v)) return 'color:var(--text-sub)';
+  if (v >= 80) return 'color:var(--win-deep)';
+  if (v >= 50) return 'color:var(--warn)';
+  return 'color:var(--text-sub)';
+}
+
+async function screenTicker(symbol) {
+  const values = await screenFetchTimeSeries(symbol, 252);
+  const closes = values.map(d => parseFloat(d.close));
+  const sClose = closes[0];
+  const ratios = values.filter(d => screenSpyMap[d.datetime] !== undefined)
+    .map(d => parseFloat(d.close) / screenSpyMap[d.datetime]);
+  const rs10 = screenPercentRank(ratios, 10);
+  const rs21 = screenPercentRank(ratios, 21);
+  const volumes = values.map(d => parseInt(d.volume));
+  const vol50Avg = volumes.slice(0, 50).reduce((s, v) => s + v, 0) / 50;
+  const hasVolSpike = values.slice(0, 10).some(d =>
+    parseFloat(d.close) > parseFloat(d.open) && parseInt(d.volume) > vol50Avg * 1.3
+  );
+  const h0 = parseFloat(values[0].high), l0 = parseFloat(values[0].low);
+  const dcr = (h0 - l0) > 0 ? ((sClose - l0) / (h0 - l0)) * 100 : NaN;
+  return { symbol, price: sClose, rs10, rs21, hasVolSpike, dcr,
+    match: rs10 > 50 && rs21 > 70 && hasVolSpike && !isNaN(dcr) && dcr > 20 };
+}
+
+function screenAppendCard(r) {
+  const body = document.getElementById('screen-results-body');
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;border-left:3px solid var(--win-deep);display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${r.symbol}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;min-width:55px;">
+        <span style="font-size:0.88rem;font-weight:900;color:#22d3ee;text-decoration:underline;">${r.symbol}</span>
+      </a>
+      <span style="font-size:0.72rem;color:var(--text-sub);">$${r.price.toFixed(2)}</span>
+      <span style="font-size:0.72rem;font-weight:700;${screenRsClass(r.rs10)}">R10:${isNaN(r.rs10)?'N/A':r.rs10.toFixed(0)}%</span>
+      <span style="font-size:0.72rem;font-weight:700;${screenRsClass(r.rs21)}">R21:${isNaN(r.rs21)?'N/A':r.rs21.toFixed(0)}%</span>
+      <span style="font-size:0.72rem;font-weight:700;color:${r.hasVolSpike?'var(--win-deep)':'var(--text-sub)'};">${r.hasVolSpike?'VOL✓':'VOL✗'}</span>
+    </div>`;
+  body.appendChild(div.firstElementChild);
+}
+
+async function startScreening() {
+  const input = document.getElementById('screen-ticker-input').value;
+  const tickers = [...new Set(input.split(/[\s,]+/).map(t => t.trim().toUpperCase()).filter(Boolean))];
+  if (tickers.length === 0) return;
+
+  const btn = document.getElementById('screen-run-btn');
+  btn.disabled = true; btn.innerText = '... 実行中';
+  document.getElementById('screen-log').innerHTML = '';
+  document.getElementById('screen-results-body').innerHTML = '';
+  document.getElementById('screen-results').style.display = 'none';
+  document.getElementById('screen-progress').style.display = 'block';
+
+  const spyOk = await screenEnsureSpy();
+  if (!spyOk) {
+    btn.disabled = false; btn.innerText = '▶ スクリーニング開始';
+    screenAddLog('SPY取得失敗のため中断', 'err');
+    return;
+  }
+  await new Promise(r => setTimeout(r, SCREEN_DELAY));
+
+  let matchCount = 0;
+  for (let i = 0; i < tickers.length; i++) {
+    const sym = tickers[i];
+    const pct = Math.round((i / tickers.length) * 100);
+    document.getElementById('screen-progress-bar').style.width = pct + '%';
+    document.getElementById('screen-progress-count').innerText = `${i} / ${tickers.length}`;
+    document.getElementById('screen-progress-ticker').innerText = `スキャン中: ${sym}`;
+
+    try {
+      const result = await screenTicker(sym);
+      if (result.match) {
+        matchCount++;
+        screenAddLog(`✓ MATCH  ${sym}  R10:${result.rs10.toFixed(1)}%  R21:${result.rs21.toFixed(1)}%`, 'match');
+        document.getElementById('screen-results').style.display = 'block';
+        document.getElementById('screen-results-count').innerText = `${matchCount} match${matchCount !== 1 ? 'es' : ''}`;
+        screenAppendCard(result);
+      } else {
+        screenAddLog(`— skip  ${sym}  R10:${isNaN(result.rs10)?'N/A':result.rs10.toFixed(1)}%  R21:${isNaN(result.rs21)?'N/A':result.rs21.toFixed(1)}%`, 'skip');
+      }
+    } catch(e) {
+      screenAddLog(`✗ error  ${sym}  ${e.message}`, 'err');
+    }
+    if (i < tickers.length - 1) await new Promise(r => setTimeout(r, SCREEN_DELAY));
+  }
+
+  document.getElementById('screen-progress-bar').style.width = '100%';
+  document.getElementById('screen-progress-count').innerText = `${tickers.length} / ${tickers.length}`;
+  document.getElementById('screen-progress-ticker').innerText = '完了';
+  if (matchCount === 0) {
+    document.getElementById('screen-results').style.display = 'block';
+    document.getElementById('screen-results-body').innerHTML = '<div style="text-align:center;color:var(--text-sub);padding:20px;font-size:0.75rem;">条件に合致する銘柄はありませんでした</div>';
+  }
+  btn.disabled = false; btn.innerText = '▶ スクリーニング開始';
 }
 
 // ======== 初期化 ========
