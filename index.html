@@ -39,9 +39,10 @@
         header { background: var(--header); padding: 10px 12px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
         .nav-tabs { display: flex; gap: 3px; margin-top: 8px; }
         .tab { 
-            flex: 1; padding: 6px 2px; border: none; background: #334155; border-radius: 6px; 
+            flex: 1; padding: 5px 2px; border: none; background: #334155; border-radius: 6px; 
             font-weight: bold; color: var(--text-sub); font-size: 0.58rem; cursor: pointer;
-            white-space: nowrap;
+            white-space: nowrap; display: flex; flex-direction: column;
+            align-items: center; gap: 1px; line-height: 1.2;
         }
         .tab.active { background: var(--primary); color: white; }
         .tab.ai-tab.active { background: var(--ai-accent); color: white; }
@@ -267,11 +268,26 @@
         <button id="header-action-btn" onclick="headerAction()" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer; font-size:0.82rem;">+ 新規</button>
     </div>
     <div class="nav-tabs">
-        <button class="tab active" id="tab-active" onclick="switchPage('active')">PF</button>
-        <button class="tab" id="tab-history" onclick="switchPage('history')">Log</button>
-        <button class="tab rank-tab" id="tab-rank" onclick="switchPage('rank')">MC</button>
-        <button class="tab theme-tab" id="tab-theme" onclick="switchPage('theme')">Watch</button>
-        <button class="tab" id="tab-screen" onclick="switchPage('screen')">Screen</button>
+        <button class="tab active" id="tab-active" onclick="switchPage('active')">
+            <div style="font-size:0.9rem;">📈</div>
+            <div>PF</div>
+        </button>
+        <button class="tab" id="tab-history" onclick="switchPage('history')">
+            <div style="font-size:0.9rem;">📋</div>
+            <div>Log</div>
+        </button>
+        <button class="tab rank-tab" id="tab-rank" onclick="switchPage('rank')">
+            <div style="font-size:0.9rem;">🌐</div>
+            <div>MC</div>
+        </button>
+        <button class="tab theme-tab" id="tab-theme" onclick="switchPage('theme')">
+            <div style="font-size:0.9rem;">👁</div>
+            <div>Watch</div>
+        </button>
+        <button class="tab" id="tab-screen" onclick="switchPage('screen')">
+            <div style="font-size:0.9rem;">🔍</div>
+            <div>Screen</div>
+        </button>
     </div>
 </header>
 
