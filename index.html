@@ -633,6 +633,14 @@
     </div>
     <div id="screen-results-body"></div>
   </div>
+
+  <div id="screen-skip-section" style="display:none; margin-top:12px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <span style="font-size:0.65rem; font-weight:700; color:var(--text-sub); letter-spacing:0.1em; text-transform:uppercase;">Non-Match</span>
+      <span id="screen-skip-count" style="font-size:0.65rem; font-weight:700; color:var(--text-sub);">0 skipped</span>
+    </div>
+    <div id="screen-skip-body"></div>
+  </div>
 </div>
 
 <!-- プロンプトページ -->
@@ -2123,6 +2131,26 @@ function screenAppendCard(r) {
   body.appendChild(div.firstElementChild);
 }
 
+// 既存のscreenAppendCard関数の直後に追加
+function screenAppendSkipCard(r) {
+  const body = document.getElementById('screen-skip-body');
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;opacity:0.6;">
+      <div style="min-width:55px;">
+        <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${r.symbol}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
+          <span style="font-size:0.88rem;font-weight:900;color:#64748b;text-decoration:underline;">${r.symbol}</span>
+        </a>
+      </div>
+      <span style="font-size:0.72rem;color:var(--text-sub);">$${r.price.toFixed(2)}</span>
+      <span style="font-size:0.72rem;font-weight:700;${screenRsClass(r.rs10)}">R10:${isNaN(r.rs10)?'N/A':r.rs10.toFixed(0)}%</span>
+      <span style="font-size:0.72rem;font-weight:700;${screenRsClass(r.rs21)}">R21:${isNaN(r.rs21)?'N/A':r.rs21.toFixed(0)}%</span>
+      <span style="font-size:0.72rem;font-weight:700;color:${r.hasVolSpike?'var(--win-deep)':'var(--text-sub)'};">${r.hasVolSpike?'VOL✓':'VOL✗'}</span>
+      <span style="font-size:0.72rem;font-weight:700;color:var(--text-sub);">VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}</span>
+    </div>`;
+  body.appendChild(div.firstElementChild);
+}
+
 function screenRegisterToWatch(result) {
   const typeKey  = result.matchType === 'vcs' ? 'VCS' : 'RS';
   const existing = themes.find(t => t.name === typeKey);
@@ -2157,7 +2185,9 @@ async function startScreening() {
   btn.disabled = true; btn.innerText = '... 実行中';
   document.getElementById('screen-log').innerHTML = '';
   document.getElementById('screen-results-body').innerHTML = '';
+  document.getElementById('screen-skip-body').innerHTML = '';
   document.getElementById('screen-results').style.display = 'none';
+  document.getElementById('screen-skip-section').style.display = 'none';
   document.getElementById('screen-progress').style.display = 'block';
 
   const spyOk = await screenEnsureSpy();
@@ -2169,6 +2199,7 @@ async function startScreening() {
   await new Promise(r => setTimeout(r, SCREEN_DELAY));
 
   let matchCount = 0;
+  let skipCount = 0;
   for (let i = 0; i < tickers.length; i++) {
     const sym = tickers[i];
     const pct = Math.round((i / tickers.length) * 100);
@@ -2187,9 +2218,12 @@ async function startScreening() {
         document.getElementById('screen-results-count').innerText = `${matchCount} match${matchCount !== 1 ? 'es' : ''}`;
         screenAppendCard(result);
         screenRegisterToWatch(result);
-      }
-        else {
+      } else {
+        skipCount++;
         screenAddLog(`— skip  ${sym}  R10:${isNaN(result.rs10)?'N/A':result.rs10.toFixed(1)}%  R21:${isNaN(result.rs21)?'N/A':result.rs21.toFixed(1)}%`, 'skip');
+        document.getElementById('screen-skip-section').style.display = 'block';
+        document.getElementById('screen-skip-count').innerText = `${skipCount} skipped`;
+        screenAppendSkipCard(result);
       }
     } catch(e) {
       screenAddLog(`✗ error  ${sym}  ${e.message}`, 'err');
