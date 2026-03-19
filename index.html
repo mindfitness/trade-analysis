@@ -2005,6 +2005,74 @@ function screenRsClass(v) {
   return 'color:var(--text-sub)';
 }
 
+function screenCalcVCS(values) {
+  if (values.length < 64) return NaN;
+  const asc = [...values].reverse();
+  const close  = asc.map(v => parseFloat(v.close));
+  const high   = asc.map(v => parseFloat(v.high));
+  const low    = asc.map(v => parseFloat(v.low));
+  const volume = asc.map(v => parseFloat(v.volume));
+
+  const smaN = (arr, n) => arr.map((_, i, a) =>
+    i < n - 1 ? null : a.slice(i - n + 1, i + 1).reduce((s, v) => s + v, 0) / n);
+  const stdevN = (arr, n) => arr.map((_, i, a) => {
+    if (i < n - 1) return null;
+    const sl = a.slice(i - n + 1, i + 1), avg = sl.reduce((s,v)=>s+v,0)/n;
+    return Math.sqrt(sl.map(v=>(v-avg)**2).reduce((s,v)=>s+v,0)/n);
+  });
+  const emaN = (arr, n) => {
+    const k = 2/(n+1); let prev = null, res = [];
+    for (const v of arr) {
+      if (v === null) { res.push(null); continue; }
+      prev = prev === null ? v : v*k + prev*(1-k);
+      res.push(prev);
+    }
+    return res;
+  };
+
+  const tr = close.map((_, i) => i === 0
+    ? high[i] - low[i]
+    : Math.max(high[i]-low[i], Math.abs(high[i]-close[i-1]), Math.abs(low[i]-close[i-1])));
+
+  const trShort   = smaN(tr, 13);
+  const trLong    = smaN(tr, 63);
+  const stdShort  = stdevN(close, 13);
+  const stdLong   = stdevN(close, 63);
+  const volAvg    = smaN(volume, 50);
+  const volShort  = smaN(volume, 5);
+
+  const raw = close.map((_, i) => {
+    if (i < 63 || trLong[i] === null) return null;
+    const rATR = trShort[i] / (trLong[i] || 1e-9);
+    const rStd = stdShort[i] / (stdLong[i] || 1e-9);
+    const rVol = volShort[i] / (volAvg[i] || 1);
+    const sAtr = Math.max(0, 1 - rATR) * 2;
+    const sStd = Math.max(0, 1 - rStd) * 2;
+    const sVol = Math.max(0, 1 - rVol);
+    const net  = Math.abs(close[i] - close[i-13]);
+    const ttl  = tr.slice(i-12, i+1).reduce((a,b)=>a+b,0);
+    const eff  = net / (ttl || 1e-9);
+    const tFac = Math.max(0, 1 - eff);
+    return (sAtr*0.4 + sStd*0.4 + sVol*0.2) * tFac * 100;
+  });
+
+  const smooth = emaN(raw, 3);
+  const last = smooth.length - 1;
+
+  let daysTight = 0;
+  for (let i = last - 20; i <= last; i++) {
+    if (smooth[i] >= 70) daysTight++; else daysTight = 0;
+  }
+
+  const lowRecent = Math.min(...low.slice(last-12, last+1));
+  const lowBase   = Math.min(...low.slice(Math.max(0, last-75), last-12));
+  const isHL      = lowRecent >= lowBase;
+
+  let score = (smooth[last] ?? 0) * 0.85 + Math.min(15, daysTight);
+  if (!isHL) score *= 0.75;
+  return score;
+}
+
 async function screenTicker(symbol) {
   const values = await screenFetchTimeSeries(symbol, 252);
   const closes = values.map(d => parseFloat(d.close));
@@ -2020,22 +2088,38 @@ async function screenTicker(symbol) {
   );
   const h0 = parseFloat(values[0].high), l0 = parseFloat(values[0].low);
   const dcr = (h0 - l0) > 0 ? ((sClose - l0) / (h0 - l0)) * 100 : NaN;
-  return { symbol, price: sClose, rs10, rs21, hasVolSpike, dcr,
-    match: rs10 > 50 && rs21 > 70 && hasVolSpike && !isNaN(dcr) && dcr > 20 };
+  const vcs = screenCalcVCS(values);
+
+  const rsCondition  = rs10 > 50 && rs21 > 70 && hasVolSpike && !isNaN(dcr) && dcr > 20;
+  const vcsCondition = !isNaN(vcs) && vcs >= 60;
+
+  return { symbol, price: sClose, rs10, rs21, hasVolSpike, dcr, vcs,
+    matchType: rsCondition ? 'rs' : vcsCondition ? 'vcs' : null,
+    match: rsCondition || vcsCondition };
 }
 
 function screenAppendCard(r) {
   const body = document.getElementById('screen-results-body');
   const div = document.createElement('div');
+  const isVcsOnly = r.matchType === 'vcs';
+  const accentColor = isVcsOnly ? '#8b5cf6' : 'var(--win-deep)';
+  const badge = isVcsOnly
+    ? `<span style="font-size:0.6rem;font-weight:900;background:#4c1d95;color:#c4b5fd;padding:1px 6px;border-radius:3px;">VCS</span>`
+    : `<span style="font-size:0.6rem;font-weight:900;background:#064e3b;color:#6ee7b7;padding:1px 6px;border-radius:3px;">RS</span>`;
+  const vcsColor = isNaN(r.vcs) ? 'var(--text-sub)' : r.vcs >= 60 ? '#8b5cf6' : 'var(--text-sub)';
   div.innerHTML = `
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;border-left:3px solid var(--win-deep);display:flex;align-items:center;justify-content:space-between;gap:8px;">
-      <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${r.symbol}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;min-width:55px;">
-        <span style="font-size:0.88rem;font-weight:900;color:#22d3ee;text-decoration:underline;">${r.symbol}</span>
-      </a>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;border-left:3px solid ${accentColor};display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:5px;min-width:55px;">
+        <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${r.symbol}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
+          <span style="font-size:0.88rem;font-weight:900;color:#22d3ee;text-decoration:underline;">${r.symbol}</span>
+        </a>
+        ${badge}
+      </div>
       <span style="font-size:0.72rem;color:var(--text-sub);">$${r.price.toFixed(2)}</span>
       <span style="font-size:0.72rem;font-weight:700;${screenRsClass(r.rs10)}">R10:${isNaN(r.rs10)?'N/A':r.rs10.toFixed(0)}%</span>
       <span style="font-size:0.72rem;font-weight:700;${screenRsClass(r.rs21)}">R21:${isNaN(r.rs21)?'N/A':r.rs21.toFixed(0)}%</span>
       <span style="font-size:0.72rem;font-weight:700;color:${r.hasVolSpike?'var(--win-deep)':'var(--text-sub)'};">${r.hasVolSpike?'VOL✓':'VOL✗'}</span>
+      <span style="font-size:0.72rem;font-weight:700;color:${vcsColor};">VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}</span>
     </div>`;
   body.appendChild(div.firstElementChild);
 }
@@ -2072,7 +2156,9 @@ async function startScreening() {
       const result = await screenTicker(sym);
       if (result.match) {
         matchCount++;
-        screenAddLog(`✓ MATCH  ${sym}  R10:${result.rs10.toFixed(1)}%  R21:${result.rs21.toFixed(1)}%`, 'match');
+        const vcsStr = isNaN(result.vcs) ? 'N/A' : result.vcs.toFixed(1);
+const typeLabel = result.matchType === 'vcs' ? '[VCS]' : '[RS]';
+screenAddLog(`✓ MATCH ${typeLabel}  ${sym}  R10:${isNaN(result.rs10)?'N/A':result.rs10.toFixed(1)}%  R21:${isNaN(result.rs21)?'N/A':result.rs21.toFixed(1)}%  VCS:${vcsStr}`, 'match');
         document.getElementById('screen-results').style.display = 'block';
         document.getElementById('screen-results-count').innerText = `${matchCount} match${matchCount !== 1 ? 'es' : ''}`;
         screenAppendCard(result);
