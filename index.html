@@ -272,7 +272,6 @@
         <button class="tab rank-tab" id="tab-rank" onclick="switchPage('rank')">MC</button>
         <button class="tab theme-tab" id="tab-theme" onclick="switchPage('theme')">Watch</button>
         <button class="tab" id="tab-screen" onclick="switchPage('screen')">Screen</button>
-        <button class="tab ai-tab" id="tab-ai" onclick="switchPage('ai')">Func</button>
     </div>
 </header>
 
@@ -594,8 +593,23 @@
 
 <!-- スクリーナーページ -->
 <div id="page-screen" class="page">
-  <div style="margin-bottom:12px;">
-    <div style="font-size:0.65rem; color:var(--text-sub); margin-bottom:8px; letter-spacing:0.05em;">RS + Volume Spike + VCS</div>
+
+  <!-- サブタブ -->
+  <div style="display:flex; gap:4px; margin-bottom:12px; background:#334155; border-radius:8px; padding:3px;">
+    <button id="subtab-screen" onclick="switchScreenSubtab('screen')"
+      style="flex:1; padding:5px; border:none; border-radius:6px; font-size:0.68rem; font-weight:800; cursor:pointer; background:var(--primary); color:white;">
+      Screen
+    </button>
+    <button id="subtab-func" onclick="switchScreenSubtab('func')"
+      style="flex:1; padding:5px; border:none; border-radius:6px; font-size:0.68rem; font-weight:800; cursor:pointer; background:transparent; color:var(--text-sub);">
+      Func
+    </button>
+  </div>
+
+  <!-- Screen本体 -->
+  <div id="screen-subtab-screen">
+    <div style="margin-bottom:12px;">
+      <div style="font-size:0.65rem; color:var(--text-sub); margin-bottom:8px; letter-spacing:0.05em;">RS + Volume Spike + VCS</div>
     <textarea id="screen-ticker-input" placeholder="NVDA, AAPL ..." rows="3"
       style="font-family:monospace; font-size:0.82rem;"></textarea>
     <div style="display:flex; flex-wrap:wrap; gap:5px; margin:8px 0;">
@@ -640,16 +654,15 @@
       <span id="screen-skip-count" style="font-size:0.65rem; font-weight:700; color:var(--text-sub);">0 skipped</span>
     </div>
     <div id="screen-skip-body"></div>
-  </div>
-</div>
+  </div><!-- /screen-skip-section -->
+  </div><!-- /screen-subtab-screen -->
 
-<!-- プロンプトページ -->
-<div id="page-ai" class="page">
+  <!-- Func サブタブ本体（旧page-ai の中身をそのまま移植） -->
+  <div id="screen-subtab-func" style="display:none;">
     <div style="color:var(--ai-accent); display:flex; align-items:center; gap:5px; margin-bottom:10px; font-size:0.78rem; font-weight:800;">
         <i data-lucide="bot" style="width:14px;"></i> プロンプトストック
     </div>
 
-    <!-- 利益率カリキュレーター -->
     <section style="margin-bottom:10px;">
         <div style="display:flex; align-items:center; gap:6px; margin-bottom:10px;">
             <i data-lucide="calculator" style="width:14px; color:var(--ai-accent);"></i>
@@ -705,7 +718,9 @@ var result = [...new Set(tickers)].join(', ');
 console.log(result);
 copy(result); // そのままクリップボードにコピー</pre></div>
     </section>
-</div>
+  </div><!-- /screen-subtab-func -->
+
+</div><!-- /page-screen -->
 
 <!-- テーマ作成モーダル -->
 <div id="theme-overlay">
@@ -720,7 +735,8 @@ copy(result); // そのままクリップボードにコピー</pre></div>
             <button onclick="handleThemeSave()" style="flex:2; padding:10px; background:var(--theme-accent); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer;">保存</button>
         </div>
     </div>
-</div>
+</div><!-- /theme-modal -->
+</div><!-- /theme-overlay -->
 
 <!-- 項目編集モーダル -->
 <div id="item-edit-modal">
@@ -1287,7 +1303,8 @@ btn.textContent = '+ 新規';
 btn.style.color = 'var(--primary)';
     if (pageId === 'cross') renderCrossAnalysis();
     if (pageId === 'rank' && rankMarketData.length > 0) renderRankTable();
-    if(window.lucide) lucide.createIcons();
+if (pageId === 'screen') switchScreenSubtab('screen'); // サブタブをリセット
+if(window.lucide) lucide.createIcons();
 }
 
 function headerAction() {
@@ -2245,6 +2262,21 @@ async function startScreening() {
   btn.disabled = false; btn.innerText = '▶ スクリーニング開始';
 }
 
+// ======== Screen サブタブ切替 ========
+function switchScreenSubtab(tab) {
+    const isScreen = tab === 'screen';
+    document.getElementById('screen-subtab-screen').style.display = isScreen ? 'block' : 'none';
+    document.getElementById('screen-subtab-func').style.display   = isScreen ? 'none'  : 'block';
+
+    const btnScreen = document.getElementById('subtab-screen');
+    const btnFunc   = document.getElementById('subtab-func');
+    btnScreen.style.background = isScreen ? 'var(--primary)' : 'transparent';
+    btnScreen.style.color      = isScreen ? 'white' : 'var(--text-sub)';
+    btnFunc.style.background   = isScreen ? 'transparent' : 'var(--ai-accent)';
+    btnFunc.style.color        = isScreen ? 'var(--text-sub)' : 'white';
+
+    if (window.lucide) lucide.createIcons();
+}
 // ======== 初期化 ========
 window.onload = () => {
     renderEntryChecks();
