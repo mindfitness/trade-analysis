@@ -27,18 +27,27 @@
             --tag-bg: #1e3a8a;
             --tag-text: #bfdbfe;
             --rank-accent: #f97316;
-            --nav-h: 58px;
         }
         
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { 
             font-family: -apple-system, sans-serif; 
-            background: var(--bg); margin: 0;
-            padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+            background: var(--bg); margin: 0; padding-bottom: env(safe-area-inset-bottom);
             color: var(--text-main); font-size: 14px;
         }
 
         header { background: var(--header); padding: 10px 12px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+        .nav-tabs { display: flex; gap: 3px; margin-top: 8px; }
+        .tab { 
+            flex: 1; padding: 6px 2px; border: none; background: #334155; border-radius: 6px; 
+            font-weight: bold; color: var(--text-sub); font-size: 0.58rem; cursor: pointer;
+            white-space: nowrap;
+        }
+        .tab.active { background: var(--primary); color: white; }
+        .tab.ai-tab.active { background: var(--ai-accent); color: white; }
+        .tab.theme-tab.active { background: var(--theme-accent); color: white; }
+        .tab.perfSector-tab.active { background: var(--perf-accent); color: #0f172a; }
+        .tab.rank-tab.active { background: var(--rank-accent); color: white; }
 
         .page { padding: 8px; display: none; }
         .page.active { display: block; }
@@ -140,7 +149,7 @@
         .btn-ghost { background: none; border: none; color: var(--text-sub); padding: 3px; cursor: pointer; }
 
         #loading-toast { 
-            position: fixed; bottom: calc(var(--nav-h) + 10px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
             background: #3b82f6; color: white; padding: 6px 20px; border-radius: 20px;
             font-size: 0.75rem; display: none; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
@@ -155,6 +164,32 @@
         .theme-check-box.checked { background: var(--primary); border-color: var(--primary); color: white; }
         .theme-check-box input { display: none; }
 
+        /* ===== Perf+Sector統合ページ ===== */
+        .perf-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+        .perf-input-row input { flex: 1; font-size: 0.9rem; text-transform: uppercase; }
+        .perf-search-btn { padding: 8px 14px; background: var(--perf-accent); color: #0f172a; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; white-space: nowrap; font-size: 0.85rem; }
+        .perf-status { font-size: 0.8rem; color: var(--text-sub); margin-bottom: 8px; }
+        .perf-symbol-title { font-size: 1rem; font-weight: 900; margin-bottom: 8px; color: white; }
+        .perf-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; background: var(--input-bg); border-radius: 8px; border: 1px solid var(--border); margin-bottom: 5px; }
+        .perf-label { font-size: 0.78rem; color: var(--text-sub); font-weight: 600; }
+        .perf-value { font-size: 0.9rem; font-weight: 900; }
+        .perf-pos { color: var(--win-deep); }
+        .perf-neg { color: var(--lose-deep); }
+        .perf-na { color: #475569; font-size: 0.75rem; }
+
+        /* セクタ検索（単体） */
+        .sector-search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+        .sector-search-row input { flex: 1; }
+        .sector-search-btn { padding: 8px 14px; background: var(--sector-accent); color: white; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; white-space: nowrap; font-size: 0.85rem; }
+        .sector-result-table { width: 100%; border-collapse: collapse; }
+        .sector-result-table tr { border-bottom: 1px solid var(--border); }
+        .sector-result-table th { padding: 8px; text-align: left; color: var(--text-sub); font-size: 0.7rem; font-weight: 700; width: 35%; }
+        .sector-result-table td { padding: 8px; font-weight: 800; color: var(--text-main); font-size: 0.85rem; }
+        .sector-loading { text-align: center; color: var(--text-sub); padding: 16px; font-size: 0.8rem; }
+
+        /* 区切り線 */
+        .divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+
         .prompt-container-static { background: #000; padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
         .prompt-container-static pre { font-family: monospace; font-size: 0.73rem; color: #a7f3d0; white-space: pre-wrap; margin: 0; line-height: 1.4; word-break: break-all; }
         .copy-btn-static { background: #334155; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 0.62rem; cursor: pointer; font-weight: bold; }
@@ -164,88 +199,64 @@
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
 
         @media (min-width: 600px) {
-            .page { max-width: 700px; margin: 0 auto; padding: 12px 16px; }
-        }
+        .page { max-width: 700px; margin: 0 auto; padding: 12px 16px; }
+    }
 
-        /* ===== Rank CSS ===== */
-        .rank2-section { background: #111827; border: 1px solid #1e2d45; border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
-        .rank2-title { font-size: 0.68rem; font-weight: 800; color: #4a6080; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; }
-        .rank2-filter-btn { font-size: 0.65rem; font-weight: 800; padding: 4px 10px; border: 1px solid #2a3f5f; background: #1a2234; color: #8899aa; border-radius: 5px; cursor: pointer; }
-        .rank2-filter-btn.active { background: #22d3ee; color: #0a0e1a; border-color: #22d3ee; }
-        .rank2-table { width: 100%; border-collapse: collapse; min-width: 500px; }
-        .rank2-table th { font-size: 0.65rem; color: #4a6080; padding: 6px 8px; text-align: right; border-bottom: 1px solid #1e2d45; font-weight: 700; cursor: pointer; user-select: none; white-space: nowrap; }
-        .rank2-table th:hover { color: #e2e8f0; }
-        .rank2-table th:first-child { text-align: left; }
-        .rank2-table td { padding: 7px 8px; text-align: right; font-weight: 700; font-size: 0.78rem; border-bottom: 1px solid #1e2d45; white-space: nowrap; }
-        .rank2-table td:first-child { text-align: left; }
-        .rank2-table tbody tr:hover { background: #1a2234; }
-        .rank2-ticker { color: #22d3ee; font-weight: 900; font-size: 0.82rem; cursor: pointer; }
-        .rank2-pos { color: #10b981; }
-        .rank2-neg { color: #ef4444; }
-        .rank2-badge { font-size: 0.58rem; font-weight: 900; margin-left: 3px; padding: 0 3px; border-radius: 2px; }
-        .rank2-ema-pos { color: #10b981; }
-        .rank2-ema-neg { color: #ef4444; }
+  /* ===== Rank移植CSS ===== */
+  .rank2-surface { --surface: #111827; --surface2: #1a2234; --border: #1e2d45; --border2: #2a3f5f; --text3: #4a6080; }
+  .rank2-section { background: #111827; border: 1px solid #1e2d45; border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+  .rank2-title { font-size: 0.68rem; font-weight: 800; color: #4a6080; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; }
+  .rank2-filter-btn { font-size: 0.65rem; font-weight: 800; padding: 4px 10px; border: 1px solid #2a3f5f; background: #1a2234; color: #8899aa; border-radius: 5px; cursor: pointer; }
+  .rank2-filter-btn.active { background: #22d3ee; color: #0a0e1a; border-color: #22d3ee; }
+  .rank2-table { width: 100%; border-collapse: collapse; min-width: 500px; }
+  .rank2-table th { font-size: 0.65rem; color: #4a6080; padding: 6px 8px; text-align: right; border-bottom: 1px solid #1e2d45; font-weight: 700; cursor: pointer; user-select: none; white-space: nowrap; }
+  .rank2-table th:hover { color: #e2e8f0; }
+  .rank2-table th:first-child { text-align: left; }
+  .rank2-table td { padding: 7px 8px; text-align: right; font-weight: 700; font-size: 0.78rem; border-bottom: 1px solid #1e2d45; white-space: nowrap; }
+  .rank2-table td:first-child { text-align: left; }
+  .rank2-table tbody tr:hover { background: #1a2234; }
+  .rank2-ticker { color: #22d3ee; font-weight: 900; font-size: 0.82rem; cursor: pointer; }
+  .rank2-pos { color: #10b981; }
+  .rank2-neg { color: #ef4444; }
+  .rank2-badge { font-size: 0.58rem; font-weight: 900; margin-left: 3px; padding: 0 3px; border-radius: 2px; }
+  .rank2-ema-pos { color: #10b981; }
+  .rank2-ema-neg { color: #ef4444; }
 
-        @media (min-width: 600px) {
-            #active-container { max-width: 700px; margin: 0 auto; }
-            .active-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; box-sizing: border-box; }
-            .active-grid .trade-card { margin-bottom: 0; min-width: 0; overflow: hidden; }
-            .active-grid .tag-row { flex-wrap: wrap; }
-        }
+    /* PF画面 PC2列レイアウト */
+@media (min-width: 600px) {
+    #active-container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    .active-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .active-grid .trade-card {
+        margin-bottom: 0;
+        min-width: 0;
+        overflow: hidden;
+    }
+    .active-grid .tag-row {
+        flex-wrap: wrap;
+    }
+}
 
-        #item-edit-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 250; align-items: center; justify-content: center; }
-        #item-edit-modal.open { display: flex; }
-        .item-edit-modal-inner { background: var(--card); width: 92%; max-width: 480px; border-radius: 14px; padding: 16px; max-height: 88vh; overflow-y: auto; border: 1px solid var(--border); }
-
-        /* ===== Func サブタブ ===== */
-        .func-subtabs { display: flex; gap: 4px; margin-bottom: 12px; }
-        .func-subtab {
-            flex: 1; padding: 7px 4px; border: 1px solid var(--border); background: var(--card);
-            border-radius: 7px; font-size: 0.65rem; font-weight: 800; color: var(--text-sub);
-            cursor: pointer; text-align: center;
-        }
-        .func-subtab.active { background: var(--ai-accent); border-color: var(--ai-accent); color: white; }
-        .func-subtab.screen-tab.active { background: var(--perf-accent); border-color: var(--perf-accent); color: #0f172a; }
-        .func-subpage { display: none; }
-        .func-subpage.active { display: block; }
-
-        /* ===== BottomNavBar ===== */
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            height: calc(var(--nav-h) + env(safe-area-inset-bottom));
-            background: var(--card); border-top: 1px solid var(--border);
-            display: flex; align-items: flex-start; padding-top: 5px;
-            padding-bottom: env(safe-area-inset-bottom);
-            z-index: 150;
-        }
-        @media (min-width: 600px) {
-            .bottom-nav { max-width: 700px; left: 50%; transform: translateX(-50%); border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
-        }
-        .nav-item {
-            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
-            cursor: pointer; padding: 4px 0; border: none; background: none;
-            color: var(--text-sub); position: relative; transition: color 0.15s;
-        }
-        .nav-item.active { color: var(--primary); }
-        .nav-item.active.nav-mc    { color: var(--rank-accent); }
-        .nav-item.active.nav-watch { color: var(--theme-accent); }
-        .nav-item.active.nav-func  { color: var(--ai-accent); }
-        .nav-item::after {
-            content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-            width: 0; height: 2px; background: currentColor; border-radius: 0 0 2px 2px;
-            transition: width 0.2s;
-        }
-        .nav-item.active::after { width: 28px; }
-        .nav-icon { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; position: relative; }
-        .nav-icon svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-        .nav-label { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.03em; }
-        .nav-badge {
-            position: absolute; top: -3px; right: -7px;
-            background: var(--lose-deep); color: white;
-            font-size: 0.48rem; font-weight: 900;
-            min-width: 13px; height: 13px; border-radius: 7px;
-            display: flex; align-items: center; justify-content: center; padding: 0 3px;
-        }
+    /* ===== 項目編集モーダル ===== */
+    #item-edit-modal {
+        display: none; position: fixed; top: 0; left: 0;
+        width: 100%; height: 100%; background: rgba(0,0,0,0.8);
+        z-index: 250; align-items: center; justify-content: center;
+    }
+    #item-edit-modal.open { display: flex; }
+    .item-edit-modal-inner {
+        background: var(--card); width: 92%; max-width: 480px;
+        border-radius: 14px; padding: 16px; max-height: 88vh;
+        overflow-y: auto; border: 1px solid var(--border);
+    }
     </style>
 </head>
 <body>
@@ -254,6 +265,14 @@
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <h1 style="margin:0; font-size:1.05rem; font-weight:900; color:white;">Trade Analysis</h1>
         <button id="header-action-btn" onclick="headerAction()" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer; font-size:0.82rem;">+ 新規</button>
+    </div>
+    <div class="nav-tabs">
+        <button class="tab active" id="tab-active" onclick="switchPage('active')">PF</button>
+        <button class="tab" id="tab-history" onclick="switchPage('history')">Log</button>
+        <button class="tab rank-tab" id="tab-rank" onclick="switchPage('rank')">MC</button>
+        <button class="tab theme-tab" id="tab-theme" onclick="switchPage('theme')">Watch</button>
+        <button class="tab" id="tab-screen" onclick="switchPage('screen')">Screen</button>
+        <button class="tab ai-tab" id="tab-ai" onclick="switchPage('ai')">Func</button>
     </div>
 </header>
 
@@ -274,17 +293,33 @@
         <div id="entry-check-grid-positive" class="check-grid"></div>
         <div class="section-title" style="color: var(--lose-deep); margin-top: 10px;">⚠ -項目</div>
         <div id="entry-check-grid-negative" class="check-grid"></div>
+       <!-- Perf + セクタ自動表示エリア -->
         <div id="entry-perf-area" style="display:none; margin-top:10px; background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:8px 10px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                 <span id="entry-perf-symbol" style="font-size:0.8rem; font-weight:900; color:white;"></span>
                 <span style="font-size:0.58rem; color:var(--text-sub);">Perf & Sector</span>
             </div>
             <div style="display:flex; gap:4px; flex-wrap:wrap; margin-bottom:6px;">
-                <div style="flex:1; min-width:80px; background:#0f172a; border-radius:6px; padding:5px 8px; border:1px solid var(--border);"><div style="font-size:0.55rem; color:var(--text-sub); margin-bottom:2px;">1D</div><div id="ep-today" style="font-size:0.82rem; font-weight:900;">--</div></div>
-                <div style="flex:1; min-width:80px; background:#0f172a; border-radius:6px; padding:5px 8px; border:1px solid var(--border);"><div style="font-size:0.55rem; color:var(--text-sub); margin-bottom:2px;">5D</div><div id="ep-5d" style="font-size:0.82rem; font-weight:900;">--</div></div>
-                <div style="flex:1; min-width:80px; background:#0f172a; border-radius:6px; padding:5px 8px; border:1px solid var(--border);"><div style="font-size:0.55rem; color:var(--text-sub); margin-bottom:2px;">10D</div><div id="ep-10d" style="font-size:0.82rem; font-weight:900;">--</div></div>
-                <div style="flex:1; min-width:80px; background:#0f172a; border-radius:6px; padding:5px 8px; border:1px solid var(--border);"><div style="font-size:0.55rem; color:var(--text-sub); margin-bottom:2px;">1M</div><div id="ep-1m" style="font-size:0.82rem; font-weight:900;">--</div></div>
-                <div style="flex:1; min-width:80px; background:#0f172a; border-radius:6px; padding:5px 8px; border:1px solid var(--border);"><div style="font-size:0.55rem; color:var(--text-sub); margin-bottom:2px;">2M</div><div id="ep-2m" style="font-size:0.82rem; font-weight:900;">--</div></div>
+                <div style="flex:1; min-width:80px; background:#0f172a; border-radius:6px; padding:5px 8px; border:1px solid var(--border);">
+                    <div style="font-size:0.55rem; color:var(--text-sub); margin-bottom:2px;">1D</div>
+                    <div id="ep-today" style="font-size:0.82rem; font-weight:900;">--</div>
+                </div>
+                <div style="flex:1; min-width:80px; background:#0f172a; border-radius:6px; padding:5px 8px; border:1px solid var(--border);">
+                    <div style="font-size:0.55rem; color:var(--text-sub); margin-bottom:2px;">5D</div>
+                    <div id="ep-5d" style="font-size:0.82rem; font-weight:900;">--</div>
+                </div>
+                <div style="flex:1; min-width:80px; background:#0f172a; border-radius:6px; padding:5px 8px; border:1px solid var(--border);">
+                    <div style="font-size:0.55rem; color:var(--text-sub); margin-bottom:2px;">10D</div>
+                    <div id="ep-10d" style="font-size:0.82rem; font-weight:900;">--</div>
+                </div>
+                <div style="flex:1; min-width:80px; background:#0f172a; border-radius:6px; padding:5px 8px; border:1px solid var(--border);">
+                    <div style="font-size:0.55rem; color:var(--text-sub); margin-bottom:2px;">1M</div>
+                    <div id="ep-1m" style="font-size:0.82rem; font-weight:900;">--</div>
+                </div>
+                <div style="flex:1; min-width:80px; background:#0f172a; border-radius:6px; padding:5px 8px; border:1px solid var(--border);">
+                    <div style="font-size:0.55rem; color:var(--text-sub); margin-bottom:2px;">2M</div>
+                    <div id="ep-2m" style="font-size:0.82rem; font-weight:900;">--</div>
+                </div>
             </div>
             <div style="font-size:0.65rem; color:var(--text-sub); line-height:1.6;">
                 <span style="color:#94a3b8; font-weight:700;">企業名:</span> <span id="ep-name" style="color:var(--text-main);">--</span><br>
@@ -294,6 +329,7 @@
                 <span style="color:#94a3b8; font-weight:700;">Rank ETF:</span> <span id="ep-rank-etf" style="color:var(--rank-accent);">--</span>
             </div>
         </div>
+
         <div style="margin-top: 8px;">
             <textarea id="trade-memo" placeholder="陽線,週足,月足,21→雲反発" rows="2"></textarea>
         </div>
@@ -301,7 +337,7 @@
     </section>
 </div>
 
-<!-- PFページ -->
+<!-- 取引中ページ -->
 <div id="page-active" class="page active">
     <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
         <button onclick="copyPF()" style="padding:5px 14px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:8px; font-weight:800; cursor:pointer; font-size:0.75rem;" id="copy-pf-btn">📋 コピー</button>
@@ -309,21 +345,25 @@
     <div id="active-container"></div>
 </div>
 
-<!-- Logページ -->
+<!-- 分析ページ -->
 <div id="page-history" class="page">
     <div class="history-summary">
-        <div id="box-win" class="summary-box active-win" onclick="setHistoryFilter('win')">
-            <div class="summary-count" style="color: var(--win-deep);" id="count-win">0</div>
-            <div class="summary-label" style="color: var(--win-deep);">WIN</div>
-        </div>
-        <div id="box-lose" class="summary-box" onclick="setHistoryFilter('lose')">
-            <div class="summary-count" style="color: var(--lose-deep);" id="count-lose">0</div>
-            <div class="summary-label" style="color: var(--lose-deep);">LOSE</div>
-        </div>
+    <div id="box-win" class="summary-box active-win" onclick="setHistoryFilter('win')">
+        <div class="summary-count" style="color: var(--win-deep);" id="count-win">0</div>
+        <div class="summary-label" style="color: var(--win-deep);">WIN</div>
     </div>
-    <div style="display:flex; gap:8px; margin-bottom:10px;">
-        <button onclick="switchPage('cross')" style="flex:1; padding:8px; background:#1e1b4b; border:1px solid #4f46e5; color:#a5b4fc; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.75rem;">WIN×LOSE分析</button>
+    <div id="box-lose" class="summary-box" onclick="setHistoryFilter('lose')">
+        <div class="summary-count" style="color: var(--lose-deep);" id="count-lose">0</div>
+        <div class="summary-label" style="color: var(--lose-deep);">LOSE</div>
     </div>
+</div>
+<div style="display:flex; gap:8px; margin-bottom:10px;">
+    <button onclick="switchPage('cross')" 
+        style="flex:1; padding:8px; background:#1e1b4b; border:1px solid #4f46e5; 
+        color:#a5b4fc; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.75rem;">
+        WIN×LOSE分析
+    </button>
+</div>
     <section id="analysis-section" style="display:none; margin-bottom: 10px; padding: 10px 12px;">
         <h3 id="analysis-title" style="margin: 0 0 8px 0; font-size: 0.82rem; font-weight: 800;"></h3>
         <div id="analysis-content"></div>
@@ -331,9 +371,10 @@
     <div id="history-container"></div>
 </div>
 
-<!-- MCページ -->
+<!-- ランキングページ (コード1移植) -->
 <div id="page-rank" class="page">
   <div style="padding:8px;">
+
     <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
         <button onclick="copyMC()" style="padding:5px 14px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:8px; font-weight:800; cursor:pointer; font-size:0.75rem;" id="copy-mc-btn">📋 コピー</button>
     </div>
@@ -348,96 +389,202 @@
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px;">
-          <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:0.7rem;color:#8899aa;width:110px;flex-shrink:0;">Breadth（SMA）</span><div style="flex:1;height:6px;background:#1a2234;border-radius:3px;overflow:hidden;"><div id="r2-bar-breadth" style="height:100%;border-radius:3px;background:#10b981;width:0%;transition:width 0.6s;"></div></div><span id="r2-val-breadth" style="font-size:0.72rem;font-weight:800;width:36px;text-align:right;">--</span></div>
-          <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:0.7rem;color:#8899aa;width:110px;flex-shrink:0;">Momentum</span><div style="flex:1;height:6px;background:#1a2234;border-radius:3px;overflow:hidden;"><div id="r2-bar-momentum" style="height:100%;border-radius:3px;background:#3b82f6;width:0%;transition:width 0.6s;"></div></div><span id="r2-val-momentum" style="font-size:0.72rem;font-weight:800;width:36px;text-align:right;">--</span></div>
-          <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:0.7rem;color:#8899aa;width:110px;flex-shrink:0;">Trend Align</span><div style="flex:1;height:6px;background:#1a2234;border-radius:3px;overflow:hidden;"><div id="r2-bar-trend" style="height:100%;border-radius:3px;background:#06b6d4;width:0%;transition:width 0.6s;"></div></div><span id="r2-val-trend" style="font-size:0.72rem;font-weight:800;width:36px;text-align:right;">--</span></div>
-          <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:0.7rem;color:#8899aa;width:110px;flex-shrink:0;">VIX ペナルティ</span><div style="flex:1;height:6px;background:#1a2234;border-radius:3px;overflow:hidden;"><div id="r2-bar-vix" style="height:100%;border-radius:3px;background:#ef4444;width:0%;transition:width 0.6s;"></div></div><span id="r2-val-vix" style="font-size:0.72rem;font-weight:800;width:auto;text-align:right;color:#ef4444;">--</span></div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:0.7rem;color:#8899aa;width:110px;flex-shrink:0;">Breadth（SMA）</span>
+            <div style="flex:1;height:6px;background:#1a2234;border-radius:3px;overflow:hidden;"><div id="r2-bar-breadth" style="height:100%;border-radius:3px;background:#10b981;width:0%;transition:width 0.6s;"></div></div>
+            <span id="r2-val-breadth" style="font-size:0.72rem;font-weight:800;width:36px;text-align:right;">--</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:0.7rem;color:#8899aa;width:110px;flex-shrink:0;">Momentum</span>
+            <div style="flex:1;height:6px;background:#1a2234;border-radius:3px;overflow:hidden;"><div id="r2-bar-momentum" style="height:100%;border-radius:3px;background:#3b82f6;width:0%;transition:width 0.6s;"></div></div>
+            <span id="r2-val-momentum" style="font-size:0.72rem;font-weight:800;width:36px;text-align:right;">--</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:0.7rem;color:#8899aa;width:110px;flex-shrink:0;">Trend Align</span>
+            <div style="flex:1;height:6px;background:#1a2234;border-radius:3px;overflow:hidden;"><div id="r2-bar-trend" style="height:100%;border-radius:3px;background:#06b6d4;width:0%;transition:width 0.6s;"></div></div>
+            <span id="r2-val-trend" style="font-size:0.72rem;font-weight:800;width:36px;text-align:right;">--</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:0.7rem;color:#8899aa;width:110px;flex-shrink:0;">VIX ペナルティ</span>
+            <div style="flex:1;height:6px;background:#1a2234;border-radius:3px;overflow:hidden;"><div id="r2-bar-vix" style="height:100%;border-radius:3px;background:#ef4444;width:0%;transition:width 0.6s;"></div></div>
+            <span id="r2-val-vix" style="font-size:0.72rem;font-weight:800;width:auto;text-align:right;color:#ef4444;">--</span>
+          </div>
         </div>
       </div>
     </div>
+
     <div class="rank2-section">
       <div class="rank2-title">過去スコア比較</div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
-        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.62rem;color:#4a6080;margin-bottom:4px;">今回</div><div id="r2-h-now" style="font-size:1.2rem;font-weight:900;">--</div><div id="r2-h-now-c" style="font-size:0.6rem;margin-top:2px;"></div></div>
-        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.62rem;color:#4a6080;margin-bottom:4px;">1回前</div><div id="r2-h-1" style="font-size:1.2rem;font-weight:900;">--</div><div id="r2-h-1-c" style="font-size:0.6rem;margin-top:2px;"></div></div>
-        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.62rem;color:#4a6080;margin-bottom:4px;">2回前</div><div id="r2-h-2" style="font-size:1.2rem;font-weight:900;">--</div><div id="r2-h-2-c" style="font-size:0.6rem;margin-top:2px;"></div></div>
-        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.62rem;color:#4a6080;margin-bottom:4px;">3回前</div><div id="r2-h-3" style="font-size:1.2rem;font-weight:900;">--</div><div id="r2-h-3-c" style="font-size:0.6rem;margin-top:2px;"></div></div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.62rem;color:#4a6080;margin-bottom:4px;">今回</div>
+          <div id="r2-h-now" style="font-size:1.2rem;font-weight:900;">--</div>
+          <div id="r2-h-now-c" style="font-size:0.6rem;margin-top:2px;"></div>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.62rem;color:#4a6080;margin-bottom:4px;">1回前</div>
+          <div id="r2-h-1" style="font-size:1.2rem;font-weight:900;">--</div>
+          <div id="r2-h-1-c" style="font-size:0.6rem;margin-top:2px;"></div>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.62rem;color:#4a6080;margin-bottom:4px;">2回前</div>
+          <div id="r2-h-2" style="font-size:1.2rem;font-weight:900;">--</div>
+          <div id="r2-h-2-c" style="font-size:0.6rem;margin-top:2px;"></div>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.62rem;color:#4a6080;margin-bottom:4px;">3回前</div>
+          <div id="r2-h-3" style="font-size:1.2rem;font-weight:900;">--</div>
+          <div id="r2-h-3-c" style="font-size:0.6rem;margin-top:2px;"></div>
+        </div>
       </div>
     </div>
+
     <div class="rank2-section">
       <div class="rank2-title">Breadth &amp; Trend Metrics</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">SMA 10</div><div id="r2-b-sma10" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--%</div><span id="r2-b-sma10-badge" class="badge badge-neu">-</span></div>
-        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">SMA 20</div><div id="r2-b-sma20" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--%</div><span id="r2-b-sma20-badge" class="badge badge-neu">-</span></div>
-        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">SMA 50</div><div id="r2-b-sma50" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--%</div><span id="r2-b-sma50-badge" class="badge badge-neu">-</span></div>
-        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">SMA 200</div><div id="r2-b-sma200" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--%</div><span id="r2-b-sma200-badge" class="badge badge-neu">-</span></div>
-        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">SMA20&gt;SMA50</div><div id="r2-b-2050" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--%</div><span id="r2-b-2050-badge" class="badge badge-neu">-</span></div>
-        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">SMA50&gt;SMA200</div><div id="r2-b-50200" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--%</div><span id="r2-b-50200-badge" class="badge badge-neu">-</span></div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">SMA 10</div>
+          <div id="r2-b-sma10" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--%</div>
+          <span id="r2-b-sma10-badge" class="badge badge-neu">-</span>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">SMA 20</div>
+          <div id="r2-b-sma20" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--%</div>
+          <span id="r2-b-sma20-badge" class="badge badge-neu">-</span>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">SMA 50</div>
+          <div id="r2-b-sma50" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--%</div>
+          <span id="r2-b-sma50-badge" class="badge badge-neu">-</span>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">SMA 200</div>
+          <div id="r2-b-sma200" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--%</div>
+          <span id="r2-b-sma200-badge" class="badge badge-neu">-</span>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">SMA20&gt;SMA50</div>
+          <div id="r2-b-2050" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--%</div>
+          <span id="r2-b-2050-badge" class="badge badge-neu">-</span>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">SMA50&gt;SMA200</div>
+          <div id="r2-b-50200" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--%</div>
+          <span id="r2-b-50200-badge" class="badge badge-neu">-</span>
+        </div>
       </div>
     </div>
+
     <div class="rank2-section">
       <div class="rank2-title">Performance Overview</div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
-        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">% 1Day</div><div id="r2-p-1d" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--</div><span id="r2-p-1d-badge" class="badge badge-neu">-</span></div>
-        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">% 5Day</div><div id="r2-p-5d" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--</div><span id="r2-p-5d-badge" class="badge badge-neu">-</span></div>
-        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">% 10Day</div><div id="r2-p-10d" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--</div><span id="r2-p-10d-badge" class="badge badge-neu">-</span></div>
-        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">% 1Month</div><div id="r2-p-1m" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--</div><span id="r2-p-1m-badge" class="badge badge-neu">-</span></div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">% 1Day</div>
+          <div id="r2-p-1d" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--</div>
+          <span id="r2-p-1d-badge" class="badge badge-neu">-</span>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">% 5Day</div>
+          <div id="r2-p-5d" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--</div>
+          <span id="r2-p-5d-badge" class="badge badge-neu">-</span>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">% 10Day</div>
+          <div id="r2-p-10d" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--</div>
+          <span id="r2-p-10d-badge" class="badge badge-neu">-</span>
+        </div>
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:0.6rem;color:#4a6080;margin-bottom:4px;">% 1Month</div>
+          <div id="r2-p-1m" style="font-size:1rem;font-weight:900;margin-bottom:4px;">--</div>
+          <span id="r2-p-1m-badge" class="badge badge-neu">-</span>
+        </div>
       </div>
     </div>
+
     <div class="rank2-section">
       <div class="rank2-title">Market Snapshot</div>
-      <div id="r2-snapshot-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;"></div>
+      <div id="r2-snapshot-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+        <div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px 12px;">
+          <div style="font-size:0.6rem;color:#4a6080;">---</div>
+          <div style="font-size:1rem;font-weight:900;color:#22d3ee;">--</div>
+        </div>
+      </div>
     </div>
+
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-      <div class="rank2-section" style="margin-bottom:0;"><div class="rank2-title">上位5 ETF（5Day）</div><div id="r2-top5-list"></div></div>
-      <div class="rank2-section" style="margin-bottom:0;"><div class="rank2-title">下位5 ETF（5Day）</div><div id="r2-bot5-list"></div></div>
+      <div class="rank2-section" style="margin-bottom:0;">
+        <div class="rank2-title">上位5 ETF（5Day）</div>
+        <div id="r2-top5-list"></div>
+      </div>
+      <div class="rank2-section" style="margin-bottom:0;">
+        <div class="rank2-title">下位5 ETF（5Day）</div>
+        <div id="r2-bot5-list"></div>
+      </div>
     </div>
+
     <div class="rank2-section">
       <div class="rank2-title">ETF ランキング</div>
       <div style="display:flex;gap:8px;margin-bottom:8px;">
-        <input type="text" id="rank-search-input" placeholder="ETF検索 (例: SMH)" style="flex:1;padding:5px 10px;background:#1a2234;border:1px solid #2a3f5f;border-radius:6px;color:#e2e8f0;font-size:0.78rem;text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter') jumpToRankSymbol()">
-        <button onclick="jumpToRankSymbol()" style="padding:5px 12px;background:#22d3ee;color:#0a0e1a;border:none;border-radius:6px;font-weight:800;cursor:pointer;font-size:0.78rem;white-space:nowrap;">検索</button>
-        <button id="rank-update-btn" onclick="startRankUpdate()" style="padding:5px 12px;background:#f59e0b;color:#0a0e1a;border:none;border-radius:6px;font-weight:800;cursor:pointer;font-size:0.78rem;white-space:nowrap;">更新</button>
+        <input type="text" id="rank-search-input" placeholder="ETF検索 (例: SMH)"
+          style="flex:1;padding:5px 10px;background:#1a2234;border:1px solid #2a3f5f;border-radius:6px;color:#e2e8f0;font-size:0.78rem;text-transform:uppercase;"
+          oninput="this.value=this.value.toUpperCase()"
+          onkeydown="if(event.key==='Enter') jumpToRankSymbol()">
+        <button onclick="jumpToRankSymbol()"
+          style="padding:5px 12px;background:#22d3ee;color:#0a0e1a;border:none;border-radius:6px;font-weight:800;cursor:pointer;font-size:0.78rem;white-space:nowrap;">
+          検索
+        </button>
+        <button id="rank-update-btn" onclick="startRankUpdate()"
+          style="padding:5px 12px;background:#f59e0b;color:#0a0e1a;border:none;border-radius:6px;font-weight:800;cursor:pointer;font-size:0.78rem;white-space:nowrap;">
+          更新
+        </button>
       </div>
       <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
         <button class="rank2-filter-btn" id="r2-rf-5d10d" onclick="r2ToggleFilter('5D>10D')">5D&gt;10D</button>
-        <button class="rank2-filter-btn" id="r2-rf-10d1m" onclick="r2ToggleFilter('10D>1M')">10D&gt;1M</button>
-        <button class="rank2-filter-btn" id="r2-rf-ema21" onclick="r2ToggleFilter('EMA21↑')">EMA21↑</button>
-        <button class="rank2-filter-btn" id="r2-rf-sma50" onclick="r2ToggleFilter('SMA50↑')">SMA50↑</button>
-        <button class="rank2-filter-btn" onclick="r2ClearFilters()">解除</button>
+<button class="rank2-filter-btn" id="r2-rf-10d1m" onclick="r2ToggleFilter('10D>1M')">10D&gt;1M</button>
+<button class="rank2-filter-btn" id="r2-rf-ema21" onclick="r2ToggleFilter('EMA21↑')">EMA21↑</button>
+<button class="rank2-filter-btn" id="r2-rf-sma50" onclick="r2ToggleFilter('SMA50↑')">SMA50↑</button>
+<button class="rank2-filter-btn" onclick="r2ClearFilters()">解除</button>
       </div>
       <div id="rank-status" style="font-size:0.68rem;color:#4a6080;margin-bottom:8px;">Ready</div>
       <div style="overflow-x:auto;">
         <table class="rank2-table">
-          <thead><tr>
-            <th onclick="r2SortBy('symbol')" style="text-align:left;">Ticker</th>
-            <th onclick="r2SortBy('day_change')">1D%</th>
-            <th onclick="r2SortBy('five_day_change')">5D%</th>
-            <th onclick="r2SortBy('ten_day_change')">10D%</th>
-            <th onclick="r2SortBy('month_change')">1M%</th>
-            <th onclick="r2SortBy('above_ema21')">EMA21</th>
-            <th onclick="r2SortBy('above_sma50')">SMA50</th>
-          </tr></thead>
+          <thead>
+            <tr>
+              <th onclick="r2SortBy('symbol')" style="text-align:left;">Ticker</th>
+              <th onclick="r2SortBy('day_change')">1D%</th>
+              <th onclick="r2SortBy('five_day_change')">5D%</th>
+              <th onclick="r2SortBy('ten_day_change')">10D%</th>
+              <th onclick="r2SortBy('month_change')">1M%</th>
+              <th onclick="r2SortBy('above_ema21')">EMA21</th>
+              <th onclick="r2SortBy('above_sma50')">SMA50</th>
+            </tr>
+          </thead>
           <tbody id="rank-table-body"></tbody>
         </table>
       </div>
     </div>
+
   </div>
 </div>
 
 <!-- WIN×LOSE分析ページ -->
 <div id="page-cross" class="page">
     <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
-        <button onclick="switchPage('history')" style="background:none; border:none; color:var(--text-sub); cursor:pointer; font-size:0.8rem;">← 戻る</button>
+        <button onclick="switchPage('history')" 
+            style="background:none; border:none; color:var(--text-sub); cursor:pointer; font-size:0.8rem;">
+            ← 戻る
+        </button>
         <span style="font-size:0.85rem; font-weight:900; color:#a5b4fc;">WIN × LOSE 差別化分析</span>
     </div>
     <section>
-        <div style="font-size:0.68rem; color:var(--text-sub); margin-bottom:12px; line-height:1.6;">スコア = WIN出現率 + LOSE欠如率の合算。<br>高いほど「あると勝ちやすく、ないと負けやすい」項目。</div>
+        <div style="font-size:0.68rem; color:var(--text-sub); margin-bottom:12px; line-height:1.6;">
+            スコア = WIN出現率 + LOSE欠如率の合算。<br>高いほど「あると勝ちやすく、ないと負けやすい」項目。
+        </div>
         <div id="cross-analysis-content"></div>
     </section>
 </div>
 
-<!-- Watchページ -->
+<!-- テーマトラッカーページ -->
 <div id="page-theme" class="page">
     <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
         <button onclick="openThemeModal()" style="padding:6px 14px; background:var(--theme-accent); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.78rem;">+ テーマ追加</button>
@@ -445,92 +592,115 @@
     <div id="theme-list"></div>
 </div>
 
-<!-- Funcページ（Screen + プロンプト） -->
+<!-- スクリーナーページ -->
+<div id="page-screen" class="page">
+  <div style="margin-bottom:12px;">
+    <div style="font-size:0.65rem; color:var(--text-sub); margin-bottom:8px; letter-spacing:0.05em;">RS(SPY比・パーセントランク) + Volume Spike + DCR%</div>
+    <textarea id="screen-ticker-input" placeholder="KLAC, GEV, NVDA, AAPL ..." rows="3"
+      style="font-family:monospace; font-size:0.82rem;"></textarea>
+    <div style="display:flex; flex-wrap:wrap; gap:5px; margin:8px 0;">
+      <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">RS10 &gt; 50%</span>
+      <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">RS21 &gt; 70%</span>
+      <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">Vol ×1.3</span>
+      <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">DCR &gt; 20%</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:6px; font-size:0.62rem; color:var(--text-sub); margin-bottom:8px;">
+      <div id="screen-spy-dot" style="width:6px;height:6px;border-radius:50%;background:#2a3f5f;flex-shrink:0;"></div>
+      <span id="screen-spy-text">SPY: 未取得</span>
+    </div>
+    <button id="screen-run-btn" onclick="startScreening()"
+      style="width:100%; padding:10px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
+      ▶ スクリーニング開始
+    </button>
+  </div>
+
+  <div id="screen-progress" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:12px;">
+    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+      <span style="font-size:0.62rem; color:var(--text-sub); letter-spacing:0.08em;">SCANNING</span>
+      <span id="screen-progress-count" style="font-size:0.62rem; font-weight:700; color:#22d3ee;">0 / 0</span>
+    </div>
+    <div style="height:3px; background:var(--border); border-radius:2px; overflow:hidden; margin-bottom:6px;">
+      <div id="screen-progress-bar" style="height:100%; background:#22d3ee; border-radius:2px; width:0%; transition:width 0.3s;"></div>
+    </div>
+    <div id="screen-progress-ticker" style="font-size:0.65rem; color:var(--text-sub); margin-bottom:6px;">待機中...</div>
+    <div id="screen-log" style="background:var(--input-bg); border:1px solid var(--border); border-radius:6px; padding:6px 10px; max-height:100px; overflow-y:auto; font-size:0.6rem; color:var(--text-sub); line-height:1.7; font-family:monospace;"></div>
+  </div>
+
+  <div id="screen-results" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <span style="font-size:0.65rem; font-weight:700; color:var(--text-sub); letter-spacing:0.1em; text-transform:uppercase;">Results</span>
+      <span id="screen-results-count" style="font-size:0.65rem; font-weight:700; color:var(--win-deep);">0 matches</span>
+    </div>
+    <div id="screen-results-body"></div>
+  </div>
+</div>
+
+<!-- プロンプトページ -->
 <div id="page-ai" class="page">
-    <!-- サブタブ -->
-    <div class="func-subtabs">
-        <button class="func-subtab screen-tab active" id="func-tab-screen" onclick="switchFuncTab('screen')">📡 Screen</button>
-        <button class="func-subtab" id="func-tab-prompt" onclick="switchFuncTab('prompt')">🤖 Prompt</button>
+    <div style="color:var(--ai-accent); display:flex; align-items:center; gap:5px; margin-bottom:10px; font-size:0.78rem; font-weight:800;">
+        <i data-lucide="bot" style="width:14px;"></i> プロンプトストック
     </div>
 
-    <!-- Screen サブページ -->
-    <div id="func-screen" class="func-subpage active">
-        <div style="font-size:0.65rem; color:var(--text-sub); margin-bottom:8px; letter-spacing:0.05em;">RS(SPY比・パーセントランク) + Volume Spike + DCR%</div>
-        <textarea id="screen-ticker-input" placeholder="KLAC, GEV, NVDA, AAPL ..." rows="3" style="font-family:monospace; font-size:0.82rem; margin-bottom:8px;"></textarea>
-        <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px;">
-            <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">RS10 &gt; 50%</span>
-            <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">RS21 &gt; 70%</span>
-            <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">Vol ×1.3</span>
-            <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">DCR &gt; 20%</span>
+    <!-- 利益率カリキュレーター -->
+    <section style="margin-bottom:10px;">
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:10px;">
+            <i data-lucide="calculator" style="width:14px; color:var(--ai-accent);"></i>
+            <span style="font-size:0.8rem; font-weight:800; color:var(--ai-accent);">利益率カリキュレーター</span>
         </div>
-        <div style="display:flex; align-items:center; gap:6px; font-size:0.62rem; color:var(--text-sub); margin-bottom:8px;">
-            <div id="screen-spy-dot" style="width:6px;height:6px;border-radius:50%;background:#2a3f5f;flex-shrink:0;transition:background 0.2s;"></div>
-            <span id="screen-spy-text">SPY: 未取得</span>
+        <div style="display:flex; gap:8px; margin-bottom:8px;">
+            <div style="flex:1;">
+                <div style="font-size:0.62rem; color:var(--text-sub); font-weight:700; margin-bottom:3px;">現在価格 ($)</div>
+                <input type="number" id="calc-entry" placeholder="例: 100.00" oninput="calcProfit()" style="font-size:0.9rem;">
+            </div>
+            <div style="flex:1;">
+                <div style="font-size:0.62rem; color:var(--text-sub); font-weight:700; margin-bottom:3px;">目標価格 ($)</div>
+                <input type="number" id="calc-target" placeholder="例: 130.00" oninput="calcProfit()" style="font-size:0.9rem;">
+            </div>
         </div>
-        <button id="screen-run-btn" onclick="startScreening()" style="width:100%; padding:10px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem; margin-bottom:12px;">▶ スクリーニング開始</button>
-        <div id="screen-progress" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:12px;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                <span style="font-size:0.62rem; color:var(--text-sub); letter-spacing:0.08em;">SCANNING</span>
-                <span id="screen-progress-count" style="font-size:0.62rem; font-weight:700; color:#22d3ee;">0 / 0</span>
+        <div id="calc-result" style="display:none; background:var(--input-bg); border-radius:8px; border:1px solid var(--border); padding:10px 14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.72rem; color:var(--text-sub); font-weight:600;">利益率</span>
+                <span id="calc-percent" style="font-size:1.6rem; font-weight:900;"></span>
             </div>
-            <div style="height:3px; background:var(--border); border-radius:2px; overflow:hidden; margin-bottom:6px;">
-                <div id="screen-progress-bar" style="height:100%; background:#22d3ee; border-radius:2px; width:0%; transition:width 0.3s;"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                <span style="font-size:0.72rem; color:var(--text-sub); font-weight:600;">差額</span>
+                <span id="calc-diff" style="font-size:0.9rem; font-weight:800;"></span>
             </div>
-            <div id="screen-progress-ticker" style="font-size:0.65rem; color:var(--text-sub); margin-bottom:6px;">待機中...</div>
-            <div id="screen-log" style="background:var(--input-bg); border:1px solid var(--border); border-radius:6px; padding:6px 10px; max-height:100px; overflow-y:auto; font-size:0.6rem; color:var(--text-sub); line-height:1.7; font-family:monospace;"></div>
         </div>
-        <div id="screen-results" style="display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <span style="font-size:0.65rem; font-weight:700; color:var(--text-sub); letter-spacing:0.1em; text-transform:uppercase;">Results</span>
-                <span id="screen-results-count" style="font-size:0.65rem; font-weight:700; color:var(--win-deep);">0 matches</span>
-            </div>
-            <div id="screen-results-body"></div>
+    </section>
+    <section>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">Final Check</span>
+            <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-1', this)">コピー</button>
         </div>
-    </div>
-
-    <!-- Prompt サブページ -->
-    <div id="func-prompt" class="func-subpage">
-        <div style="color:var(--ai-accent); display:flex; align-items:center; gap:5px; margin-bottom:10px; font-size:0.78rem; font-weight:800;">
-            <i data-lucide="bot" style="width:14px;"></i> プロンプトストック
+        <div class="prompt-container-static"><pre id="prompt-1">過去48時間以内の英語ポスト分析。アメリカ株　について、センチメントを分析せよ。テクニカルやfundamentals、ニュースなどの情報から、bullish/bearishを評価せよ。回答は日本語で、なるべく短く出力せよ。</pre></div>
+    </section>
+    <section>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">市場センチメント</span>
+            <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-2', this)">コピー</button>
         </div>
-        <section style="margin-bottom:10px;">
-            <div style="display:flex; align-items:center; gap:6px; margin-bottom:10px;">
-                <i data-lucide="calculator" style="width:14px; color:var(--ai-accent);"></i>
-                <span style="font-size:0.8rem; font-weight:800; color:var(--ai-accent);">利益率カリキュレーター</span>
-            </div>
-            <div style="display:flex; gap:8px; margin-bottom:8px;">
-                <div style="flex:1;"><div style="font-size:0.62rem; color:var(--text-sub); font-weight:700; margin-bottom:3px;">現在価格 ($)</div><input type="number" id="calc-entry" placeholder="例: 100.00" oninput="calcProfit()" style="font-size:0.9rem;"></div>
-                <div style="flex:1;"><div style="font-size:0.62rem; color:var(--text-sub); font-weight:700; margin-bottom:3px;">目標価格 ($)</div><input type="number" id="calc-target" placeholder="例: 130.00" oninput="calcProfit()" style="font-size:0.9rem;"></div>
-            </div>
-            <div id="calc-result" style="display:none; background:var(--input-bg); border-radius:8px; border:1px solid var(--border); padding:10px 14px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;"><span style="font-size:0.72rem; color:var(--text-sub); font-weight:600;">利益率</span><span id="calc-percent" style="font-size:1.6rem; font-weight:900;"></span></div>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;"><span style="font-size:0.72rem; color:var(--text-sub); font-weight:600;">差額</span><span id="calc-diff" style="font-size:0.9rem; font-weight:800;"></span></div>
-            </div>
-        </section>
-        <section>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;"><span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">Final Check</span><button class="copy-btn-static" onclick="copyStaticPrompt('prompt-1', this)">コピー</button></div>
-            <div class="prompt-container-static"><pre id="prompt-1">過去48時間以内の英語ポスト分析。アメリカ株　について、センチメントを分析せよ。テクニカルやfundamentals、ニュースなどの情報から、bullish/bearishを評価せよ。回答は日本語で、なるべく短く出力せよ。</pre></div>
-        </section>
-        <section>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;"><span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">市場センチメント</span><button class="copy-btn-static" onclick="copyStaticPrompt('prompt-2', this)">コピー</button></div>
-            <div class="prompt-container-static"><pre id="prompt-2">米国株センチメント評価。直近で重要な指標の発表（経済カレンダー）があれば教えて。</pre></div>
-        </section>
-        <section>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;"><span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4screener</span><button class="copy-btn-static" onclick="copyStaticPrompt('prompt-3', this)">コピー</button></div>
-            <div class="prompt-container-static"><pre id="prompt-3">// 「大文字のみ」「1〜5文字」の条件でティッカーだけを抽出
+        <div class="prompt-container-static"><pre id="prompt-2">米国株センチメント評価。直近で重要な指標の発表（経済カレンダー）があれば教えて。</pre></div>
+    </section>
+    <section>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4screener</span>
+            <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-3', this)">コピー</button>
+        </div>
+        <div class="prompt-container-static"><pre id="prompt-3">// 「大文字のみ」「1〜5文字」の条件でティッカーだけを抽出
 var elements = document.querySelectorAll('span[class*="tickerName-"], a[href*="/symbols/"]');
 var tickers = Array.from(elements)
     .map(el => el.innerText.split('\n')[0].trim())
-    .filter(t => /^[A-Z]{1,5}$/.test(t));
+    .filter(t => /^[A-Z]{1,5}$/.test(t)); // 英大文字1〜5文字のみに限定
+
 var result = [...new Set(tickers)].join(', ');
 console.log(result);
-copy(result);</pre></div>
-        </section>
-    </div>
+copy(result); // そのままクリップボードにコピー</pre></div>
+    </section>
 </div>
 
 <!-- テーマ作成モーダル -->
-<div id="theme-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:200; align-items:center; justify-content:center;">
+<div id="theme-overlay">
     <div class="theme-modal">
         <h3 id="theme-modal-title" style="margin-top:0; color:var(--text-main); font-size:0.95rem;">新規テーマ作成</h3>
         <input type="hidden" id="edit-theme-id">
@@ -573,41 +743,6 @@ copy(result);</pre></div>
 
 <div id="loading-toast">保存中...</div>
 
-<!-- BottomNavBar -->
-<nav class="bottom-nav">
-    <button class="nav-item active" id="nav-active" onclick="switchPage('active', this)">
-        <div class="nav-icon">
-            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-        </div>
-        <span class="nav-label">PF</span>
-    </button>
-    <button class="nav-item" id="nav-history" onclick="switchPage('history', this)">
-        <div class="nav-icon">
-            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        </div>
-        <span class="nav-label">Log</span>
-    </button>
-    <button class="nav-item nav-mc" id="nav-rank" onclick="switchPage('rank', this)">
-        <div class="nav-icon">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        </div>
-        <span class="nav-label">MC</span>
-    </button>
-    <button class="nav-item nav-watch" id="nav-theme" onclick="switchPage('theme', this)">
-        <div class="nav-icon">
-            <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        </div>
-        <span class="nav-label">Watch</span>
-    </button>
-    <button class="nav-item nav-func" id="nav-ai" onclick="switchPage('ai', this)">
-        <div class="nav-icon">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
-        </div>
-        <span class="nav-label">Func</span>
-    </button>
-</nav>
-
-
 <script>
 // ======== 共通設定 ========
 const TWELVE_DATA_API_KEY = "4745e87ea2404681a5c9fa6376aac35a"; 
@@ -615,41 +750,10 @@ const PERF_API_KEY = 'f550f672515b4cd6b4c2966f1e2cc0fb';
 const TRADE_API_URL = "/api";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbw8bphx9s_QhCLbgKbhkI1iAMu22EBIfsR0YVeEE4MoF0qYWcxyE9AKhm3yCzafO40_2g/exec";
 const SECTOR_GAS_URL = "https://script.google.com/macros/s/AKfycby1lo_XSLpA6OIFvX9MbyEqO6RzCWaSzSJuFtrKy6tuTZPEOjzBWfKxQ_7Fczd_fbV0/exec";
+
+// ======== Rank移植（コード1） ========
 const RANK_API_KEY = "4745e87ea2404681a5c9fa6376aac35a";
 
-// ======== BottomNav ページ切替 ========
-function switchPage(pageId, navBtn) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.getElementById('page-' + pageId).classList.add('active');
-    // navBtnが渡された場合はそれを、なければIDで探す
-    const btn = navBtn || document.getElementById('nav-' + pageId);
-    if (btn) btn.classList.add('active');
-    currentPage = pageId;
-    // ヘッダーボタン制御
-    const hBtn = document.getElementById('header-action-btn');
-    if (pageId === 'active') { hBtn.innerText = '+ 新規'; hBtn.style.visibility = 'visible'; }
-    else if (pageId === 'theme') { hBtn.innerText = '+ テーマ'; hBtn.style.visibility = 'visible'; }
-    else { hBtn.style.visibility = 'hidden'; }
-    if (pageId === 'cross') renderCrossAnalysis();
-    if (pageId === 'rank' && rankMarketData.length > 0) renderRankTable();
-    if (window.lucide) lucide.createIcons();
-}
-
-function headerAction() {
-    switchPage('entry');
-}
-
-// ======== Func サブタブ ========
-function switchFuncTab(tabId) {
-    document.querySelectorAll('.func-subtab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.func-subpage').forEach(p => p.classList.remove('active'));
-    document.getElementById('func-tab-' + tabId).classList.add('active');
-    document.getElementById('func-' + tabId).classList.add('active');
-    if (window.lucide) lucide.createIcons();
-}
-
-// ======== Rank データ ========
 const R2_TICKERS_MAIN = [
   "RSP","QQQ","IWM","QQQE",
   "XLK","XLV","XLF","XLE","XLI","XLY","XLC","XLP","XLU","XLB","XLRE",
@@ -662,37 +766,37 @@ const RANK_TICKERS = ["RSP","AIPO","POWR","ITA","BOAT","XOP","MOO","PEJ","TAN","
 const TICKER_INFO = {
     "RSP": { desc: "S&P500等ウェイト。", stocks: "S&P500全構成銘柄を均等保有" },
     "AIPO": { desc: "データセンター電力インフラ&冷却システム。", stocks: "VRT (Vertiv)、ETN (Eaton)、GEV" },
-    "POWR": { desc: "米国電力インフラ産業。", stocks: "ETN (イートン), VRT (バーティブ), HUBB (ハベル)" },
-    "ITA": { desc: "米国防衛・宇宙産業。", stocks: "RTX (レイセオン), LMT (ロッキード・マーチン), BA (ボーイング)" },
-    "BOAT": { desc: "世界の海運・船舶産業。", stocks: "Maersk, Hapag-Lloyd, ZIM" },
-    "XOP": { desc: "米国の石油・ガス探査・生産。", stocks: "OXY (オキシデンタル), EOG, DVN" },
-    "MOO": { desc: "農業ビジネス（アグリビジネス）。", stocks: "DE (ディア), CTVA (コルテバ), ZTS (ゾエティス)" },
-    "PEJ": { desc: "レジャー・エンターテインメント。", stocks: "DIS (ディズニー), MAR (マリオット), BKNG" },
-    "TAN": { desc: "太陽光発電。", stocks: "ENPH (エンフェーズ), SEDG (ソーラーエッジ)" },
-    "FAN": { desc: "風力発電。", stocks: "Vestas, Orsted, Siemens Gamesa" },
-    "ICLN": { desc: "クリーンエネルギー。", stocks: "ENPH, IBERDROLA, PLUG" },
-    "SMH": { desc: "半導体。", stocks: "NVDA (エヌビディア), TSM (台湾セミコンダクター), ASML" },
-    "XBI": { desc: "バイオテクノロジー。", stocks: "MRNA (モデルナ), GILD (ギリアド), VRTX" },
-    "SOXX": { desc: "米国上場半導体。", stocks: "AVGO (ブロードコム), TXN, ADI" },
-    "IYT": { desc: "米国輸送株。", stocks: "UNP (ユニオン・パシフィック), UPS, FDX (フェデックス)" },
-    "SLX": { desc: "鉄鋼セクター。", stocks: "NUE (ニューコア), RIO (リオティント), VALE" },
-    "LIT": { desc: "リチウム・電池技術。", stocks: "ALB (アルベマール), BYD, TSLA (テスラ)" },
-    "WOOD": { desc: "林業・木材。", stocks: "WY (ワイヤーハウザー), West Fraser" },
-    "ITB": { desc: "米国の住宅建設。", stocks: "DHI (DRホートン), LEN (レナー), HD (ホームデポ)" },
-    "IHI": { desc: "米国の医療機器。", stocks: "ABT (アボット), MDT (メドトロニック), ISRG" },
-    "SIL": { desc: "銀採掘。", stocks: "Wheaton Precious Metals, Pan American Silver" },
-    "XRT": { desc: "米国の小売セクター。", stocks: "AMZN, WMT, COST" },
-    "QTUM": { desc: "量子コンピューティングと機械学習。", stocks: "NVDA, MSFT, GOOGL" },
-    "BATT": { desc: "電池材料・供給網。", stocks: "CATL, LG Chem, TSLA" },
-    "KARS": { desc: "次世代車・EV。", stocks: "TSLA, BYD, NVDA" },
-    "GDX": { desc: "金鉱株。", stocks: "NEM (ニューモント), GOLD (バリック・ゴールド)" },
-    "KRE": { desc: "米国の地域銀行。", stocks: "FITB, RF, KEY" },
-    "URA": { desc: "ウラン採掘・核燃料。", stocks: "Cameco, Kazatomprom" },
-    "REMX": { desc: "希少金属（レアメタル・レアアース）。", stocks: "中国レアアース、MP Materials" },
-    "JETS": { desc: "航空業界。", stocks: "DAL (デルタ), UAL (ユナイテッド), LUV" },
-    "COPX": { desc: "銅採掘。", stocks: "FCX (フリーポート・マクモラン), Southern Copper" },
-    "DRIV": { desc: "自動運転・電気自動車。", stocks: "TSLA, NVDA, AAPL" },
-    "WGMI": { desc: "ビットコインマイニング。", stocks: "MARA (マラソン), RIOT" },
+    "POWR": { desc: "米国電力インフラ産業。送電網の近代化、変圧器、電力設備、グリッド管理技術を扱う企業で構成。", stocks: "ETN (イートン), VRT (バーティブ), HUBB (ハベル)" },
+    "ITA": { desc: "米国防衛・宇宙産業。軍用機、武器、防衛技術を扱う企業で構成。", stocks: "RTX (レイセオン), LMT (ロッキード・マーチン), BA (ボーイング)" },
+    "BOAT": { desc: "世界の海運・船舶産業。コンテナ船やタンカー、貨物輸送を含む。", stocks: "Maersk, Hapag-Lloyd, ZIM" },
+    "XOP": { desc: "米国の石油・ガス探査・生産。エネルギー上流部門に特化。", stocks: "OXY (オキシデンタル), EOG, DVN" },
+    "MOO": { desc: "農業ビジネス（アグリビジネス）。種子、肥料、農機、畜産など。", stocks: "DE (ディア), CTVA (コルテバ), ZTS (ゾエティス)" },
+    "PEJ": { desc: "レジャー・エンターテインメント。航空、ホテル、メディアなど。", stocks: "DIS (ディズニー), MAR (マリオット), BKNG" },
+    "TAN": { desc: "太陽光発電。ソーラーパネル製造、設置、技術開発など。", stocks: "ENPH (エンフェーズ), SEDG (ソーラーエッジ)" },
+    "FAN": { desc: "風力発電。風力タービン製造、発電所運営、部品メーカーなど。", stocks: "Vestas, Orsted, Siemens Gamesa" },
+    "ICLN": { desc: "クリーンエネルギー。太陽光、風力、水力を含む再生可能エネルギー全般。", stocks: "ENPH, IBERDROLA, PLUG" },
+    "SMH": { desc: "半導体。製造、設計、販売を行う主要な半導体企業。", stocks: "NVDA (エヌビディア), TSM (台湾セミコンダクター), ASML" },
+    "XBI": { desc: "バイオテクノロジー。中小型株を含むバイオ医薬品開発企業。", stocks: "MRNA (モデルナ), GILD (ギリアド), VRTX" },
+    "SOXX": { desc: "米国上場半導体。SMHに並ぶ代表的な半導体セクターETF。", stocks: "AVGO (ブロードコム), TXN, ADI" },
+    "IYT": { desc: "米国輸送株。鉄道、航空、トラック輸送、物流全般。", stocks: "UNP (ユニオン・パシフィック), UPS, FDX (フェデックス)" },
+    "SLX": { desc: "鉄鋼セクター。世界の鉄鋼生産、鉱山、リサイクル企業。", stocks: "NUE (ニューコア), RIO (リオティント), VALE" },
+    "LIT": { desc: "リチウム・電池技術。採掘から電池製造、EV向け供給網まで。", stocks: "ALB (アルベマール), BYD, TSLA (テスラ)" },
+    "WOOD": { desc: "林業・木材。木材生産、紙・パルプ、森林管理企業。", stocks: "WY (ワイヤーハウザー), West Fraser" },
+    "ITB": { desc: "米国の住宅建設。住宅建設業者、建材、リフォーム関連。", stocks: "DHI (DRホートン), LEN (レナー), HD (ホームデポ)" },
+    "IHI": { desc: "米国の医療機器。診断装置、外科手術機器、インプラントなど。", stocks: "ABT (アボット), MDT (メドトロニック), ISRG" },
+    "SIL": { desc: "銀採掘。銀鉱山の運営、探査を行う主要企業。", stocks: "Wheaton Precious Metals, Pan American Silver" },
+    "XRT": { desc: "米国の小売セクター。百貨店、アパレル、スーパー、専門店。", stocks: "AMZN, WMT, COST" },
+    "QTUM": { desc: "量子コンピューティングと機械学習。次世代計算技術に関連。", stocks: "NVDA, MSFT, GOOGL" },
+    "BATT": { desc: "電池材料、リチウム、コバルト等の供給網と電池技術。", stocks: "CATL, LG Chem, TSLA" },
+    "KARS": { desc: "次世代車・EV。電気自動車、自動運転技術、関連部品。", stocks: "TSLA, BYD, NVDA" },
+    "GDX": { desc: "金鉱株。世界の主要な産金会社で構成。", stocks: "NEM (ニューモント), GOLD (バリック・ゴールド)" },
+    "KRE": { desc: "米国の地域銀行。各州に拠点を置く中堅・地方銀行。", stocks: "FITB, RF, KEY" },
+    "URA": { desc: "ウラン採掘・核燃料。原子力発電に関わる供給網。", stocks: "Cameco, Kazatomprom" },
+    "REMX": { desc: "希少金属（レアメタル・レアアース）。ハイテク製品に必須の資源。", stocks: "中国レアアース、MP Materials" },
+    "JETS": { desc: "航空業界。航空会社、航空機メーカー、空港管理企業。", stocks: "DAL (デルタ), UAL (ユナイテッド), LUV" },
+    "COPX": { desc: "銅採掘。インフラや電気に不可欠な銅の生産企業。", stocks: "FCX (フリーポート・マクモラン), Southern Copper" },
+    "DRIV": { desc: "自動運転・電気自動車。ハードウェアからソフトウェアまで。", stocks: "TSLA, NVDA, AAPL" },
+    "WGMI": { desc: "ビットコインマイニング。仮想通貨の採掘業者と関連機器。", stocks: "MARA (マラソン), RIOT" },
     "CIBR": { desc: "サイバーセキュリティ関連産業。", stocks: "PANW, FTNT, CRWD" },
     "AIRR": { desc: "米国産業ルネサンス（再工業化）関連。", stocks: "FIX, STRL, MTZ" },
     "PAVE": { desc: "米国インフラ関連。", stocks: "URI (ユナイテッド・レンタルズ), ETN (イートン), NUE (ニューコア)" },
@@ -725,6 +829,7 @@ let rankCurrentSort = { key: 'day_change', asc: false };
 let r2ActiveFilters = [];
 let r2PinnedSymbol = null;
 
+// ===== コード1から移植: データ処理関数 =====
 function r2CalcSMA(closes, period) {
   if (closes.length < period) return null;
   return closes.slice(0, period).reduce((a, b) => a + b, 0) / period;
@@ -786,7 +891,8 @@ function r2CalcScore(data, vix = 0) {
     d.d5 !== null && d.d10 !== null && d.d21 !== null && d.d5 > d.d10 && d.d10 > d.d21
   ).length;
   const trend = (trendCount / n) * 20;
-  const vixPenalty = vix >= 140 ? 35 : vix >= 125 ? 26 : vix >= 115 ? 18 : vix >= 108 ? 11 : vix >= 103 ? 5 : vix >= 100 ? 1 : 0;
+  // vix = VIXY の SMA20比（%）。100% = SMA20と同値
+const vixPenalty = vix >= 140 ? 35 : vix >= 125 ? 26 : vix >= 115 ? 18 : vix >= 108 ? 11 : vix >= 103 ? 5 : vix >= 100 ? 1 : 0;
   return {
     total: Math.max(0, Math.round(breadth + momentum + trend - vixPenalty)),
     breadth: Math.round(breadth * 10) / 10,
@@ -823,6 +929,7 @@ function r2RenderAll(data) {
   const vix = parseFloat(localStorage.getItem('mcd_vix') || '0');
   const sc = r2CalcScore(data.filter(d => !d._isBtc), vix);
   r2DrawGauge(sc.total);
+
   const setBar = (barId, valId, val, max) => {
     const b = document.getElementById(barId);
     const v = document.getElementById(valId);
@@ -836,12 +943,15 @@ function r2RenderAll(data) {
   const vixValEl = document.getElementById('r2-val-vix');
   if (vixBarEl) vixBarEl.style.width = Math.min(sc.vixPenalty / 25 * 100, 100) + '%';
   if (vixValEl) {
-    const vixyCur = parseFloat(localStorage.getItem('mcd_vixy_cur') || '0');
-    vixValEl.innerText = sc.vixPenalty > 0
-      ? `-${sc.vixPenalty} (VIXY $${vixyCur.toFixed(2)} / SMA20比 ${sc.vixValue.toFixed(1)}%)`
-      : `なし (VIXY $${vixyCur.toFixed(2)} / SMA20比 ${sc.vixValue.toFixed(1)}%)`;
+    const vixyCur  = parseFloat(localStorage.getItem('mcd_vixy_cur')  || '0');
+const vixySma  = parseFloat(localStorage.getItem('mcd_vixy_sma20') || '0');
+vixValEl.innerText = sc.vixPenalty > 0
+  ? `-${sc.vixPenalty} (VIXY $${vixyCur.toFixed(2)} / SMA20比 ${sc.vixValue.toFixed(1)}%)`
+  : `なし (VIXY $${vixyCur.toFixed(2)} / SMA20比 ${sc.vixValue.toFixed(1)}%)`;
     vixValEl.style.color = sc.vixPenalty > 0 ? '#ef4444' : '#10b981';
   }
+
+  // 履歴
   const hist = JSON.parse(localStorage.getItem('mcd_score_history') || '[]');
   ['r2-h-now','r2-h-1','r2-h-2','r2-h-3'].forEach((id, i) => {
     const h = hist[i];
@@ -850,6 +960,8 @@ function r2RenderAll(data) {
     if (h && el) { el.innerText = h.score; el.style.color = r2CondLabel(h.score).color; }
     if (h && cel) { cel.innerText = h.cond + ' ' + h.date; cel.style.color = r2CondLabel(h.score).color; }
   });
+
+  // Breadth
   const n = data.length;
   const setBreadth = (valId, badgeId, count) => {
     const pct = (count / n * 100).toFixed(1);
@@ -868,6 +980,8 @@ function r2RenderAll(data) {
   setBreadth('r2-b-sma200', 'r2-b-sma200-badge', data.filter(d => d.aboveSma200).length);
   setBreadth('r2-b-2050',   'r2-b-2050-badge',   data.filter(d => d.sma20aboveSma50).length);
   setBreadth('r2-b-50200',  'r2-b-50200-badge',  data.filter(d => d.sma50aboveSma200).length);
+
+  // Performance
   const avg = arr => { const f = arr.filter(v => v !== null); return f.length ? f.reduce((a, b) => a + b, 0) / f.length : NaN; };
   const setPerf = (valId, badgeId, vals) => {
     const a = avg(vals);
@@ -886,6 +1000,8 @@ function r2RenderAll(data) {
   setPerf('r2-p-5d', 'r2-p-5d-badge', data.map(d => d.d5));
   setPerf('r2-p-10d','r2-p-10d-badge',data.map(d => d.d10));
   setPerf('r2-p-1m', 'r2-p-1m-badge', data.map(d => d.d21));
+
+  // Snapshot
   const grid = document.getElementById('r2-snapshot-grid');
   if (grid) {
     const snaps = R2_SNAPSHOT_TICKERS.map(sym => data.find(d => d.symbol === sym)).filter(Boolean);
@@ -894,8 +1010,8 @@ function r2RenderAll(data) {
       const chgStr = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
       const chgCol = chg >= 0 ? '#10b981' : '#ef4444';
       const emaBadge = d.aboveEma21
-        ? '<span style="font-size:0.55rem;font-weight:800;padding:1px 5px;border-radius:3px;background:#064e3b;color:#10b981;margin-left:4px;">EMA高</span>'
-        : '<span style="font-size:0.55rem;font-weight:800;padding:1px 5px;border-radius:3px;background:#7f1d1d;color:#ef4444;margin-left:4px;">EMA低</span>';
+        ? `<span style="font-size:0.55rem;font-weight:800;padding:1px 5px;border-radius:3px;background:#064e3b;color:#10b981;margin-left:4px;">EMA高</span>`
+        : `<span style="font-size:0.55rem;font-weight:800;padding:1px 5px;border-radius:3px;background:#7f1d1d;color:#ef4444;margin-left:4px;">EMA低</span>`;
       return `<div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px 12px;">
         <div style="font-size:0.6rem;color:#4a6080;">${d.symbol}${emaBadge}</div>
         <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px;">
@@ -906,6 +1022,8 @@ function r2RenderAll(data) {
       </div>`;
     }).join('');
   }
+
+  // 上位/下位5
   const sorted5d = [...data].filter(d => d.d5 !== null).sort((a, b) => b.d5 - a.d5);
   const setTB = (id, items) => {
     const el = document.getElementById(id);
@@ -920,56 +1038,80 @@ function r2RenderAll(data) {
   setTB('r2-bot5-list', sorted5d.slice(-5).reverse());
 }
 
+// ===== 更新処理 =====
 async function startRankUpdate() {
   const btn = document.getElementById('rank-update-btn');
   const statusEl = document.getElementById('rank-status');
-  if (btn) { if (btn.disabled) return; btn.disabled = true; btn.innerText = '更新中...'; }
+  if (btn) {
+    if (btn.disabled) return; // 実行中なら即リターン
+    btn.disabled = true;
+    btn.innerText = '更新中...';
+  }
+
+  // Phase1: メインETF（スコア計算用）
   const mainData = [];
   statusEl.innerText = 'VIXY取得中...';
   try {
     const vRes = await fetch(`https://api.twelvedata.com/time_series?symbol=VIXY&interval=1day&outputsize=25&apikey=${RANK_API_KEY}`);
     const vJson = await vRes.json();
     if (vJson.values && vJson.values.length >= 20) {
-      const cur = parseFloat(vJson.values[0].close);
-      const sma20 = vJson.values.slice(0, 20).reduce((a, v) => a + parseFloat(v.close), 0) / 20;
-      const ratio = (cur / sma20) * 100;
-      localStorage.setItem('mcd_vix', ratio.toString());
-      localStorage.setItem('mcd_vixy_cur', cur.toString());
-      localStorage.setItem('mcd_vixy_sma20', sma20.toFixed(2));
-    }
+  const cur = parseFloat(vJson.values[0].close);
+  const sma20 = vJson.values.slice(0, 20).reduce((a, v) => a + parseFloat(v.close), 0) / 20;
+  const ratio = (cur / sma20) * 100; // SMA20比（%）
+  localStorage.setItem('mcd_vix', ratio.toString());
+  localStorage.setItem('mcd_vixy_cur', cur.toString());
+  localStorage.setItem('mcd_vixy_sma20', sma20.toFixed(2));
+}
   } catch(e) { console.error('VIXY取得失敗', e); }
   await r2Sleep(8500);
+
   try {
-    const btcRes = await fetch(`https://api.twelvedata.com/time_series?symbol=BTC/USD&interval=1day&outputsize=5&apikey=${RANK_API_KEY}`);
-    const btcJson = await btcRes.json();
-    if (btcJson.values && btcJson.values.length >= 2) {
-      const btcD = btcJson.values;
-      const btcCur = parseFloat(btcD[0].close);
-      const btcD1 = ((btcCur - parseFloat(btcD[1].close)) / parseFloat(btcD[1].close)) * 100;
-      mainData.push({ symbol: 'BTC/USD', cur: btcCur, d1: btcD1, d5: null, d10: null, d21: null, aboveEma21: null, volPct: null, aboveSma10: false, aboveSma20: false, aboveSma50: false, aboveSma200: false, sma20aboveSma50: false, sma50aboveSma200: false, _isBtc: true });
-    }
-  } catch(e) { console.error('BTC取得失敗', e); }
-  await r2Sleep(8500);
-  for (let i = 0; i < R2_TICKERS_MAIN.length; i++) {
+  const btcRes = await fetch(`https://api.twelvedata.com/time_series?symbol=BTC/USD&interval=1day&outputsize=5&apikey=${RANK_API_KEY}`);
+  const btcJson = await btcRes.json();
+  if (btcJson.values && btcJson.values.length >= 2) {
+    const btcD = btcJson.values;
+    const btcCur = parseFloat(btcD[0].close);
+    const btcD1  = ((btcCur - parseFloat(btcD[1].close)) / parseFloat(btcD[1].close)) * 100;
+    mainData.push({
+      symbol: 'BTC/USD', cur: btcCur,
+      d1: btcD1, d5: null, d10: null, d21: null,
+      aboveEma21: null, volPct: null,
+      aboveSma10: false, aboveSma20: false, aboveSma50: false, aboveSma200: false,
+      sma20aboveSma50: false, sma50aboveSma200: false,
+      _isBtc: true  // スコア計算から除外するフラグ
+    });
+  }
+} catch(e) { console.error('BTC取得失敗', e); }
+await r2Sleep(8500);
+
+for (let i = 0; i < R2_TICKERS_MAIN.length; i++) {
     const sym = R2_TICKERS_MAIN[i];
     statusEl.innerText = `スコア計算用取得 ${i + 1}/${R2_TICKERS_MAIN.length}: ${sym}`;
     try {
       const res  = await fetch(`https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=210&apikey=${RANK_API_KEY}`);
       const json = await res.json();
-      if (json.status === 'error') { if (json.code === 429) { statusEl.innerText = 'レート制限 - 60秒待機中...'; await r2Sleep(60000); i--; continue; } throw new Error(json.message); }
+      if (json.status === 'error') {
+        if (json.code === 429) { statusEl.innerText = 'レート制限 - 60秒待機中...'; await r2Sleep(60000); i--; continue; }
+        throw new Error(json.message);
+      }
       mainData.push(r2ProcessValues(sym, json.values));
     } catch(e) { console.error(sym, e); }
     if (i < R2_TICKERS_MAIN.length - 1) await r2Sleep(8500);
   }
+
   r2AllData = mainData;
-  localStorage.setItem('mcd_etf_data', JSON.stringify(mainData));
-  const vix = parseFloat(localStorage.getItem('mcd_vix') || '0');
-  const sc = r2CalcScore(mainData.filter(d => !d._isBtc), vix);
+localStorage.setItem('mcd_etf_data', JSON.stringify(mainData));
+const vix = parseFloat(localStorage.getItem('mcd_vix') || '0');
+const scoreData = mainData.filter(d => !d._isBtc);
+const sc = r2CalcScore(scoreData, vix);
+  // 履歴保存
   let hist = JSON.parse(localStorage.getItem('mcd_score_history') || '[]');
   hist.unshift({ score: sc.total, cond: r2CondLabel(sc.total).text, date: new Date().toLocaleDateString('ja-JP') });
   if (hist.length > 10) hist = hist.slice(0, 4);
   localStorage.setItem('mcd_score_history', JSON.stringify(hist));
   r2RenderAll(mainData);
+
+  // Phase2: ランキング用ETF
   rankMarketData = [];
   for (let i = 0; i < RANK_TICKERS.length; i++) {
     const symbol = RANK_TICKERS[i];
@@ -977,14 +1119,25 @@ async function startRankUpdate() {
     try {
       const res  = await fetch(`https://api.twelvedata.com/time_series?symbol=${symbol}&interval=1day&outputsize=60&apikey=${RANK_API_KEY}`);
       const data = await res.json();
-      if (data.status === 'error') { if (data.code === 429) { statusEl.innerText = 'レート制限 - 60秒待機中...'; await r2Sleep(60000); i--; continue; } throw new Error(data.message); }
+      if (data.status === 'error') {
+        if (data.code === 429) { statusEl.innerText = 'レート制限 - 60秒待機中...'; await r2Sleep(60000); i--; continue; }
+        throw new Error(data.message);
+      }
       const v = data.values;
       const now = parseFloat(v[0].close);
       const closes = v.map(x => parseFloat(x.close));
       const sma50val = closes.slice(0, 50).reduce((a, b) => a + b, 0) / 50;
       const k = 2 / 22; let ema21val = closes.slice(0, 21).reduce((a, b) => a + b, 0) / 21;
       for (let j = 20; j >= 0; j--) ema21val = closes[j] * k + ema21val * (1 - k);
-      rankMarketData.push({ symbol, day_change: ((now - parseFloat(v[1].close)) / parseFloat(v[1].close)) * 100, five_day_change: ((now - parseFloat(v[5]?.close || v[v.length-1].close)) / parseFloat(v[5]?.close || v[v.length-1].close)) * 100, ten_day_change: ((now - parseFloat(v[10]?.close || v[v.length-1].close)) / parseFloat(v[10]?.close || v[v.length-1].close)) * 100, month_change: ((now - parseFloat(v[21]?.close || v[v.length-1].close)) / parseFloat(v[21]?.close || v[v.length-1].close)) * 100, above_ema21: now > ema21val, above_sma50: now > sma50val });
+      rankMarketData.push({
+        symbol,
+        day_change:      ((now - parseFloat(v[1].close))  / parseFloat(v[1].close))  * 100,
+        five_day_change: ((now - parseFloat(v[5]?.close  || v[v.length-1].close)) / parseFloat(v[5]?.close  || v[v.length-1].close)) * 100,
+        ten_day_change:  ((now - parseFloat(v[10]?.close || v[v.length-1].close)) / parseFloat(v[10]?.close || v[v.length-1].close)) * 100,
+        month_change:    ((now - parseFloat(v[21]?.close || v[v.length-1].close)) / parseFloat(v[21]?.close || v[v.length-1].close)) * 100,
+        above_ema21: now > ema21val,
+        above_sma50: now > sma50val,
+      });
       localStorage.setItem('market_perf_info', JSON.stringify(rankMarketData));
       renderRankTable();
     } catch(e) { console.error(e); }
@@ -995,6 +1148,7 @@ async function startRankUpdate() {
 }
 
 function r2Sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
 function r2SortBy(key) {
   rankCurrentSort.asc = (rankCurrentSort.key === key) ? !rankCurrentSort.asc : false;
   rankCurrentSort.key = key;
@@ -1011,7 +1165,10 @@ function r2ToggleFilter(f) {
 }
 function r2ClearFilters() {
   r2ActiveFilters = [];
-  ['r2-rf-5d10d','r2-rf-10d1m','r2-rf-ema21','r2-rf-sma50'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById('r2-rf-5d10d').classList.remove('active');
+  document.getElementById('r2-rf-10d1m').classList.remove('active');
+  document.getElementById('r2-rf-ema21').classList.remove('active');
+  document.getElementById('r2-rf-sma50').classList.remove('active');
   renderRankTable();
 }
 function toggleRankPin(symbol) {
@@ -1025,9 +1182,10 @@ function renderRankTable() {
   if (r2ActiveFilters.includes('5D>10D')) disp = disp.filter(d => d.five_day_change > d.ten_day_change);
   if (r2ActiveFilters.includes('10D>1M')) disp = disp.filter(d => d.ten_day_change  > d.month_change);
   if (r2ActiveFilters.includes('EMA21↑')) disp = disp.filter(d => d.above_ema21 === true);
-  if (r2ActiveFilters.includes('SMA50↑')) disp = disp.filter(d => d.above_sma50 === true);
+if (r2ActiveFilters.includes('SMA50↑')) disp = disp.filter(d => d.above_sma50 === true);
   disp.sort((a, b) => {
-    if (rankCurrentSort.key === 'symbol') return rankCurrentSort.asc ? a.symbol.localeCompare(b.symbol) : b.symbol.localeCompare(a.symbol);
+    if (rankCurrentSort.key === 'symbol')
+      return rankCurrentSort.asc ? a.symbol.localeCompare(b.symbol) : b.symbol.localeCompare(a.symbol);
     const av = a[rankCurrentSort.key] === true ? 1 : a[rankCurrentSort.key] === false ? 0 : (a[rankCurrentSort.key] ?? -9999);
     const bv = b[rankCurrentSort.key] === true ? 1 : b[rankCurrentSort.key] === false ? 0 : (b[rankCurrentSort.key] ?? -9999);
     return rankCurrentSort.asc ? av - bv : bv - av;
@@ -1040,18 +1198,32 @@ function renderRankTable() {
   const sortedD5 = [...rankMarketData].sort((a, b) => b.five_day_change - a.five_day_change);
   const rankMap = {};
   sortedD5.forEach((d, i) => rankMap[d.symbol] = i + 1);
+
   tbody.innerHTML = disp.map(item => {
     const isPinned = item.symbol === r2PinnedSymbol;
-    const fmt = v => { const cls = v >= 0 ? 'rank2-pos' : 'rank2-neg'; return `<span class="${cls}">${v >= 0 ? '+' : ''}${v.toFixed(2)}%</span>`; };
+    const fmt = v => {
+      const cls = v >= 0 ? 'rank2-pos' : 'rank2-neg';
+      return `<span class="${cls}">${v >= 0 ? '+' : ''}${v.toFixed(2)}%</span>`;
+    };
     const rank = rankMap[item.symbol];
     const rankPct = rank / total;
     const rankColor = rankPct <= 0.2 ? '#10b981' : rankPct <= 0.5 ? '#f59e0b' : '#ef4444';
-    const emaBadge = item.above_ema21 === undefined ? '<span style="color:#4a6080">--</span>' : item.above_ema21 ? '<span class="rank2-ema-pos">↑上</span>' : '<span class="rank2-ema-neg">↓下</span>';
-    const smaBadge = item.above_sma50 === undefined ? '<span style="color:#4a6080">--</span>' : item.above_sma50 ? '<span class="rank2-ema-pos">↑上</span>' : '<span class="rank2-ema-neg">↓下</span>';
+    const emaBadge = item.above_ema21 === undefined ? '<span style="color:#4a6080">--</span>'
+      : item.above_ema21 ? '<span class="rank2-ema-pos">↑上</span>' : '<span class="rank2-ema-neg">↓下</span>';
+    const smaBadge = item.above_sma50 === undefined ? '<span style="color:#4a6080">--</span>'
+      : item.above_sma50 ? '<span class="rank2-ema-pos">↑上</span>' : '<span class="rank2-ema-neg">↓下</span>';
     return `<tr style="${isPinned ? 'outline:2px solid #22d3ee;' : ''}">
-      <td><span class="rank2-ticker" onclick="showRankInfo('${item.symbol}')">${item.symbol}</span><span onclick="toggleRankPin('${item.symbol}')" style="cursor:pointer;margin-left:4px;font-size:0.75rem;opacity:${isPinned?1:0.3};">📌</span>${rank ? `<span class="rank2-badge" style="background:${rankColor}22;color:${rankColor};">#${rank}</span>` : ''}</td>
-      <td>${fmt(item.day_change)}</td><td>${fmt(item.five_day_change)}</td><td>${fmt(item.ten_day_change)}</td><td>${fmt(item.month_change)}</td>
-      <td>${emaBadge}</td><td>${smaBadge}</td>
+      <td>
+        <span class="rank2-ticker" onclick="showRankInfo('${item.symbol}')">${item.symbol}</span>
+        <span onclick="toggleRankPin('${item.symbol}')" style="cursor:pointer;margin-left:4px;font-size:0.75rem;opacity:${isPinned?1:0.3};"></span>
+        ${rank ? `<span class="rank2-badge" style="background:${rankColor}22;color:${rankColor};">#${rank}</span>` : ''}
+      </td>
+      <td>${fmt(item.day_change)}</td>
+      <td>${fmt(item.five_day_change)}</td>
+      <td>${fmt(item.ten_day_change)}</td>
+      <td>${fmt(item.month_change)}</td>
+      <td>${emaBadge}</td>
+      <td>${smaBadge}</td>
     </tr>`;
   }).join('');
 }
@@ -1067,7 +1239,10 @@ function jumpToRankSymbol() {
   const query = document.getElementById('rank-search-input').value.trim().toUpperCase();
   if (!query) return;
   const found = rankMarketData.find(d => d.symbol === query);
-  if (!found) { document.getElementById('rank-status').innerText = `"${query}" はデータがありません。更新を実行してください。`; return; }
+  if (!found) {
+    document.getElementById('rank-status').innerText = `"${query}" はデータがありません。更新を実行してください。`;
+    return;
+  }
   renderRankTable();
   document.querySelectorAll('#rank-table-body tr').forEach(row => {
     const cell = row.querySelector('.rank2-ticker');
@@ -1080,7 +1255,9 @@ function jumpToRankSymbol() {
   });
 }
 
-const positiveItems = ["RS=100%","RS21>63緑","RS10>21緑","RS=all緑","テーマ=緑","10D>1M","Break-Out","反発","雲上抜け","21>50>200","出来高","GC","ATH","MMS=8","O'Neil","MAup","Perf=緑","Rank"];
+const positiveItems = [
+    "RS=100%","RS21>63緑","RS10>21緑","RS=all緑","テーマ=緑","10D>1M","Break-Out","反発","雲上抜け",
+    "21>50>200","出来高","GC","ATH","MMS=8","O'Neil","MAup","Perf=緑","Rank"];
 const negativeItems = ["RS","出来高","21EMAlow","3α","抵抗","HH-LH","ATR%50","2α","CH","<50SMA"];
 const themeItems = ["1M>30","10D>1M","1M>2M","2M>3M","1M>2M>3M","ALL緑","1D=赤","5D=赤","成長"];
 
@@ -1089,6 +1266,27 @@ let themes = [];
 let currentHistoryFilter = 'win';
 let currentPage = 'active';
 
+// ======== ページ切替 ========
+function switchPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(`page-${pageId}`).classList.add('active');
+    const tab = document.getElementById(`tab-${pageId}`);
+    if(tab) tab.classList.add('active');
+    currentPage = pageId;
+    const btn = document.getElementById('header-action-btn');
+btn.textContent = '+ 新規';
+btn.style.color = 'var(--primary)';
+    if (pageId === 'cross') renderCrossAnalysis();
+    if (pageId === 'rank' && rankMarketData.length > 0) renderRankTable();
+    if(window.lucide) lucide.createIcons();
+}
+
+function headerAction() {
+    switchPage('entry');
+}
+
+// ======== トレード機能 ========
 async function refreshPrice(id, symbol, entryPrice) {
     const btn = document.querySelector(`#refresh-btn-${id}`);
     const display = document.querySelector(`#pl-display-${id}`);
@@ -1128,8 +1326,14 @@ async function loadTrades() {
 function renderEntryChecks() {
     const pos = document.getElementById('entry-check-grid-positive');
     const neg = document.getElementById('entry-check-grid-negative');
-    pos.innerHTML = positiveItems.map((item,i) => `<label class="check-box" id="label-pos-${i}"><input type="checkbox" class="entry-check-positive" value="${item}" onchange="this.parentElement.classList.toggle('checked',this.checked)">${item}</label>`).join('');
-    neg.innerHTML = negativeItems.map((item,i) => `<label class="check-box negative" id="label-neg-${i}"><input type="checkbox" class="entry-check-negative" value="${item}" onchange="this.parentElement.classList.toggle('checked',this.checked)">${item}</label>`).join('');
+    pos.innerHTML = positiveItems.map((item,i) => `
+        <label class="check-box" id="label-pos-${i}">
+            <input type="checkbox" class="entry-check-positive" value="${item}" onchange="this.parentElement.classList.toggle('checked',this.checked)">
+            ${item}</label>`).join('');
+    neg.innerHTML = negativeItems.map((item,i) => `
+        <label class="check-box negative" id="label-neg-${i}">
+            <input type="checkbox" class="entry-check-negative" value="${item}" onchange="this.parentElement.classList.toggle('checked',this.checked)">
+            ${item}</label>`).join('');
 }
 
 async function registerTrade() {
@@ -1141,8 +1345,16 @@ async function registerTrade() {
     if (!nameEl.value || !priceEl.value) return alert('銘柄名と価格を入力してください');
     if (!confirm("RSP>21, LL-HL, Chandelier：OK?")) return;
     const now = new Date();
-    const jstDate = new Intl.DateTimeFormat('ja-JP', { year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Asia/Tokyo' }).format(now);
-    const newTrade = { id: Date.now().toString(), name: nameEl.value.toUpperCase(), price: priceEl.value, appliedItems: Array.from(posChecked).map(el=>el.value), negativeItems: Array.from(negChecked).map(el=>el.value), memo: memoEl.value.trim(), date: jstDate };
+    const jstDate = new Intl.DateTimeFormat('ja-JP', {
+        year:'numeric',month:'2-digit',day:'2-digit',
+        hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Asia/Tokyo'
+    }).format(now);
+    const newTrade = {
+        id: Date.now().toString(), name: nameEl.value.toUpperCase(), price: priceEl.value,
+        appliedItems: Array.from(posChecked).map(el=>el.value),
+        negativeItems: Array.from(negChecked).map(el=>el.value),
+        memo: memoEl.value.trim(), date: jstDate
+    };
     try {
         await fetch(TRADE_API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newTrade)});
         nameEl.value=''; priceEl.value=''; memoEl.value='';
@@ -1164,6 +1376,18 @@ function toggleEdit(id) {
     if(window.lucide) lucide.createIcons();
 }
 
+function toggleItemEdit(id) {
+    const grid = document.getElementById(`edit-grid-${id}`);
+    grid.style.display = grid.style.display === 'block' ? 'none' : 'block';
+}
+
+async function saveItemEdit(id) {
+    const pos = Array.from(document.querySelectorAll(`.edit-item-check-positive-${id}:checked`)).map(cb=>cb.value);
+    const neg = Array.from(document.querySelectorAll(`.edit-item-check-negative-${id}:checked`)).map(cb=>cb.value);
+    await updateTradeData(id,{applied_items:JSON.stringify(pos),negative_items:JSON.stringify(neg)});
+    document.getElementById(`edit-grid-${id}`).style.display='none';
+}
+
 async function updateTradeData(id, data) {
     try {
         await fetch(TRADE_API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:"update",id,...data})});
@@ -1174,7 +1398,11 @@ async function updateTradeData(id, data) {
 function setHistoryFilter(type) { currentHistoryFilter = type; renderTrades(); }
 
 async function setTradeResult(id, result) {
-    if (result === 'watch') { if (!confirm('監視継続としてLogに移動しますか？')) return; await updateTradeData(id, { result: 'watch', final_pl: '' }); return; }
+    if (result === 'watch') {
+        if (!confirm('監視継続としてLogに移動しますか？')) return;
+        await updateTradeData(id, { result: 'watch', final_pl: '' });
+        return;
+    }
     if (!confirm(`${result.toUpperCase()}で確定しますか？`)) return;
     const plDisplay = document.querySelector(`#pl-display-${id}`);
     const finalPL = plDisplay ? plDisplay.innerText.replace(/[()]/g,'') : "";
@@ -1192,19 +1420,33 @@ function renderTrades() {
     const historyCont = document.getElementById('history-container');
     const winTrades = trades.filter(t=>t.result==='win');
     const loseTrades = trades.filter(t=>t.result==='lose');
+
     document.getElementById('count-win').innerText = winTrades.length;
     document.getElementById('count-lose').innerText = loseTrades.length;
     document.getElementById('box-win').className = `summary-box ${currentHistoryFilter==='win'?'active-win':''}`;
     document.getElementById('box-lose').className = `summary-box ${currentHistoryFilter==='lose'?'active-lose':''}`;
+
     const activeCards = trades.filter(t=>!t.result).map(t=>renderCard(t)).join('');
-    const watchCards = trades.filter(t=>t.result==='watch').map(t => { const cardHtml = renderCard(t); return cardHtml.replace('<div class="trade-card"', '<div class="trade-card" style="border-color:#b45309;background:linear-gradient(135deg,#1e293b 0%,#2d1a00 100%);"'); }).join('');
-    const watchSection = watchCards ? `<div style="font-size:0.68rem;font-weight:800;color:#f59e0b;margin:10px 0 5px;padding:0 2px;">👁 監視継続中</div><div class="active-grid">${watchCards}</div>` : '';
-    activeCont.innerHTML = (activeCards || watchCards) ? `${activeCards ? `<div class="active-grid">${activeCards}</div>` : ''}${watchSection}` : '<p style="text-align:center;color:#475569;padding:20px 0;font-size:0.8rem;">取引中の銘柄はありません</p>';
+    const watchCards = trades.filter(t=>t.result==='watch').map(t => {
+        const cardHtml = renderCard(t);
+        return cardHtml.replace('<div class="trade-card"', '<div class="trade-card" style="border-color:#b45309;background:linear-gradient(135deg,#1e293b 0%,#2d1a00 100%);"');
+    }).join('');
+    const watchSection = watchCards
+        ? `<div style="font-size:0.68rem;font-weight:800;color:#f59e0b;margin:10px 0 5px;padding:0 2px;">👁 監視継続中</div>
+           <div class="active-grid">${watchCards}</div>`
+        : '';
+    activeCont.innerHTML = (activeCards || watchCards)
+        ? `${activeCards ? `<div class="active-grid">${activeCards}</div>` : ''}${watchSection}`
+        : '<p style="text-align:center;color:#475569;padding:20px 0;font-size:0.8rem;">取引中の銘柄はありません</p>';
     const filtered = currentHistoryFilter==='win' ? winTrades : loseTrades;
     const historyCards = filtered.map(t=>renderCard(t)).join('');
-    historyCont.innerHTML = historyCards ? `<div class="active-grid">${historyCards}</div>` : `<p style="text-align:center;color:#475569;padding:20px 0;font-size:0.8rem;">${currentHistoryFilter.toUpperCase()}の履歴はありません</p>`;
+    historyCont.innerHTML = historyCards
+        ? `<div class="active-grid">${historyCards}</div>`
+        : `<p style="text-align:center;color:#475569;padding:20px 0;font-size:0.8rem;">${currentHistoryFilter.toUpperCase()}の履歴はありません</p>`;
+
     if(currentHistoryFilter==='win') renderAnalysis(winTrades,positiveItems,'WIN項目分析','var(--win-deep)');
     else renderAnalysis(loseTrades,negativeItems,'LOSE項目分析','var(--lose-deep)');
+
     if(window.lucide) lucide.createIcons();
 }
 
@@ -1214,22 +1456,63 @@ function renderAnalysis(filteredTrades, itemsList, title, baseColor) {
     const cnt = document.getElementById('analysis-content');
     if(filteredTrades.length===0){sec.style.display='none';return;}
     sec.style.display='block'; ttl.innerText=title; ttl.style.color=baseColor;
+
     const counts = {};
     itemsList.forEach(item=>counts[item]=0);
-    filteredTrades.forEach(trade=>{ const items = currentHistoryFilter==='win' ? trade.appliedItems : trade.negativeItems; items.forEach(item=>{ if(counts[item]!==undefined) counts[item]++; }); });
+    filteredTrades.forEach(trade=>{
+        const items = currentHistoryFilter==='win' ? trade.appliedItems : trade.negativeItems;
+        items.forEach(item=>{ if(counts[item]!==undefined) counts[item]++; });
+    });
     const total = filteredTrades.length;
-    const stats = Object.entries(counts).map(([item,count])=>({item,count,percentage:parseFloat(((count/total)*100).toFixed(1))})).filter(s=>s.percentage>40).sort((a,b)=>b.percentage-a.percentage);
-    const existingHtml = stats.map(stat=>{ const color = stat.percentage>=80 ? baseColor : stat.percentage>=50 ? '#f59e0b' : 'var(--text-sub)'; return `<div style="margin-bottom:5px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;"><span style="font-size:0.68rem;font-weight:700;color:white;">${stat.item}</span><span style="font-size:0.68rem;font-weight:800;color:${color};">${stat.percentage}% <span style="color:var(--text-sub);font-weight:400;">${stat.count}/${total}</span></span></div><div class="progress-bg"><div style="background:${color};height:100%;width:${stat.percentage}%;transition:width 0.3s;"></div></div></div>`; }).join('') || '<p style="font-size:0.72rem;color:var(--text-sub);">40%を超える項目はありません</p>';
+    const stats = Object.entries(counts)
+        .map(([item,count])=>({item,count,percentage:parseFloat(((count/total)*100).toFixed(1))}))
+        .filter(s=>s.percentage>40).sort((a,b)=>b.percentage-a.percentage);
+    const existingHtml = stats.map(stat=>{
+        const color = stat.percentage>=80 ? baseColor : stat.percentage>=50 ? '#f59e0b' : 'var(--text-sub)';
+        return `<div style="margin-bottom:5px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
+                <span style="font-size:0.68rem;font-weight:700;color:white;">${stat.item}</span>
+                <span style="font-size:0.68rem;font-weight:800;color:${color};">${stat.percentage}% <span style="color:var(--text-sub);font-weight:400;">${stat.count}/${total}</span></span>
+            </div>
+            <div class="progress-bg"><div style="background:${color};height:100%;width:${stat.percentage}%;transition:width 0.3s;"></div></div>
+        </div>`;
+    }).join('') || '<p style="font-size:0.72rem;color:var(--text-sub);">40%を超える項目はありません</p>';
+
     let missingHtml = '';
     if (currentHistoryFilter === 'lose') {
         const winTrades = trades.filter(t => t.result === 'win');
         const winTotal = winTrades.length;
-        const qualifiedItems = winTotal > 0 ? positiveItems.filter(item => { const winCount = winTrades.filter(t => t.appliedItems.includes(item)).length; return (winCount / winTotal) * 100 > 40; }) : [];
+        const qualifiedItems = winTotal > 0
+            ? positiveItems.filter(item => {
+                const winCount = winTrades.filter(t => t.appliedItems.includes(item)).length;
+                return (winCount / winTotal) * 100 > 40;
+            })
+            : [];
         const missingCounts = {};
         qualifiedItems.forEach(item => missingCounts[item] = 0);
-        filteredTrades.forEach(trade => { qualifiedItems.forEach(item => { if (!trade.appliedItems.includes(item)) missingCounts[item]++; }); });
-        const missingStats = Object.entries(missingCounts).map(([item, count]) => ({ item, count, percentage: parseFloat(((count / total) * 100).toFixed(1)) })).sort((a, b) => b.percentage - a.percentage);
-        missingHtml = `<hr style="border:none;border-top:1px solid var(--border);margin:12px 0;"><div style="font-size:0.72rem;font-weight:800;color:var(--lose-deep);margin-bottom:8px;">⚠ LOSE時の不足ポジティブ項目</div>${missingStats.map(stat => { const color = stat.percentage >= 80 ? 'var(--lose-deep)' : stat.percentage >= 50 ? '#f59e0b' : 'var(--text-sub)'; return `<div style="margin-bottom:5px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;"><span style="font-size:0.68rem;font-weight:700;color:white;">${stat.item}</span><span style="font-size:0.68rem;font-weight:800;color:${color};">欠如${stat.percentage}% <span style="color:var(--text-sub);font-weight:400;">${stat.count}/${total}</span></span></div><div class="progress-bg"><div style="background:${color};height:100%;width:${stat.percentage}%;transition:width 0.3s;"></div></div></div>`; }).join('')}`;
+        filteredTrades.forEach(trade => {
+            qualifiedItems.forEach(item => {
+                if (!trade.appliedItems.includes(item)) missingCounts[item]++;
+            });
+        });
+        const missingStats = Object.entries(missingCounts)
+            .map(([item, count]) => ({ item, count, percentage: parseFloat(((count / total) * 100).toFixed(1)) }))
+            .sort((a, b) => b.percentage - a.percentage);
+        missingHtml = `
+            <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">
+            <div style="font-size:0.72rem;font-weight:800;color:var(--lose-deep);margin-bottom:8px;">
+                ⚠ LOSE時の不足ポジティブ項目
+            </div>
+            ${missingStats.map(stat => {
+                const color = stat.percentage >= 80 ? 'var(--lose-deep)' : stat.percentage >= 50 ? '#f59e0b' : 'var(--text-sub)';
+                return `<div style="margin-bottom:5px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
+                        <span style="font-size:0.68rem;font-weight:700;color:white;">${stat.item}</span>
+                        <span style="font-size:0.68rem;font-weight:800;color:${color};">欠如${stat.percentage}% <span style="color:var(--text-sub);font-weight:400;">${stat.count}/${total}</span></span>
+                    </div>
+                    <div class="progress-bg"><div style="background:${color};height:100%;width:${stat.percentage}%;transition:width 0.3s;"></div></div>
+                </div>`;
+            }).join('')}`;
     }
     cnt.innerHTML = existingHtml + missingHtml;
 }
@@ -1238,9 +1521,15 @@ function renderCrossAnalysis() {
     const cnt = document.getElementById('cross-analysis-content');
     const winTrades = trades.filter(t => t.result === 'win');
     const loseTrades = trades.filter(t => t.result === 'lose');
-    if (winTrades.length === 0 || loseTrades.length === 0) { cnt.innerHTML = '<p style="font-size:0.78rem; color:var(--text-sub); text-align:center; padding:20px 0;">WIN・LOSEどちらも1件以上必要です</p>'; return; }
+
+    if (winTrades.length === 0 || loseTrades.length === 0) {
+        cnt.innerHTML = '<p style="font-size:0.78rem; color:var(--text-sub); text-align:center; padding:20px 0;">WIN・LOSEどちらも1件以上必要です</p>';
+        return;
+    }
+
     const winTotal = winTrades.length;
     const loseTotal = loseTrades.length;
+
     const stats = positiveItems.map(item => {
         const winCount  = winTrades.filter(t => t.appliedItems.includes(item)).length;
         const loseMissCount = loseTrades.filter(t => !t.appliedItems.includes(item)).length;
@@ -1249,40 +1538,102 @@ function renderCrossAnalysis() {
         const score     = parseFloat((winRate + loseMissRate).toFixed(1));
         return { item, winRate, winCount, loseMissRate, loseMissCount, score };
     }).sort((a, b) => b.score - a.score);
+
     cnt.innerHTML = stats.map((s, i) => {
         const scoreColor = s.score >= 150 ? '#ef4444' : s.score >= 100 ? '#f59e0b' : 'var(--text-sub)';
         const rank = i + 1;
-        return `<div style="margin-bottom:10px; padding:10px; background:var(--input-bg); border-radius:8px; border:1px solid ${s.score >= 150 ? '#7f1d1d' : s.score >= 100 ? '#451a03' : 'var(--border)'};"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;"><div style="display:flex; align-items:center; gap:6px;"><span style="font-size:0.62rem; font-weight:900; color:${scoreColor}; background:${s.score>=150?'#7f1d1d':s.score>=100?'#451a03':'#334155'}; padding:1px 5px; border-radius:3px;">#${rank}</span><span style="font-size:0.82rem; font-weight:900; color:white;">${s.item}</span></div><span style="font-size:1rem; font-weight:900; color:${scoreColor};">SCORE ${s.score}</span></div><div style="display:flex; gap:6px;"><div style="flex:1;"><div style="font-size:0.58rem; color:var(--win-deep); font-weight:800; margin-bottom:2px;">WIN出現率</div><div style="display:flex; justify-content:space-between; margin-bottom:2px;"><span style="font-size:0.68rem; color:var(--win-deep); font-weight:800;">${s.winRate}%</span><span style="font-size:0.62rem; color:var(--text-sub);">${s.winCount}/${winTotal}</span></div><div class="progress-bg"><div style="background:var(--win-deep); height:100%; width:${s.winRate}%; transition:width 0.3s;"></div></div></div><div style="flex:1;"><div style="font-size:0.58rem; color:var(--lose-deep); font-weight:800; margin-bottom:2px;">LOSE欠如率</div><div style="display:flex; justify-content:space-between; margin-bottom:2px;"><span style="font-size:0.68rem; color:var(--lose-deep); font-weight:800;">${s.loseMissRate}%</span><span style="font-size:0.62rem; color:var(--text-sub);">${s.loseMissCount}/${loseTotal}</span></div><div class="progress-bg"><div style="background:var(--lose-deep); height:100%; width:${s.loseMissRate}%; transition:width 0.3s;"></div></div></div></div></div>`;
+        return `
+        <div style="margin-bottom:10px; padding:10px; background:var(--input-bg); border-radius:8px; border:1px solid ${s.score >= 150 ? '#7f1d1d' : s.score >= 100 ? '#451a03' : 'var(--border)'};">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="font-size:0.62rem; font-weight:900; color:${scoreColor}; background:${s.score>=150?'#7f1d1d':s.score>=100?'#451a03':'#334155'}; padding:1px 5px; border-radius:3px;">#${rank}</span>
+                    <span style="font-size:0.82rem; font-weight:900; color:white;">${s.item}</span>
+                </div>
+                <span style="font-size:1rem; font-weight:900; color:${scoreColor};">SCORE ${s.score}</span>
+            </div>
+            <div style="display:flex; gap:6px;">
+                <div style="flex:1;">
+                    <div style="font-size:0.58rem; color:var(--win-deep); font-weight:800; margin-bottom:2px;">WIN出現率</div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                        <span style="font-size:0.68rem; color:var(--win-deep); font-weight:800;">${s.winRate}%</span>
+                        <span style="font-size:0.62rem; color:var(--text-sub);">${s.winCount}/${winTotal}</span>
+                    </div>
+                    <div class="progress-bg"><div style="background:var(--win-deep); height:100%; width:${s.winRate}%; transition:width 0.3s;"></div></div>
+                </div>
+                <div style="flex:1;">
+                    <div style="font-size:0.58rem; color:var(--lose-deep); font-weight:800; margin-bottom:2px;">LOSE欠如率</div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                        <span style="font-size:0.68rem; color:var(--lose-deep); font-weight:800;">${s.loseMissRate}%</span>
+                        <span style="font-size:0.62rem; color:var(--text-sub);">${s.loseMissCount}/${loseTotal}</span>
+                    </div>
+                    <div class="progress-bg"><div style="background:var(--lose-deep); height:100%; width:${s.loseMissRate}%; transition:width 0.3s;"></div></div>
+                </div>
+            </div>
+        </div>`;
     }).join('');
 }
 
 function renderCard(t) {
-    const isOld = (() => { if (t.result) return false; if (!t.date) return false; const entryDate = new Date(t.date.replace(/\//g, '-').replace(' ', 'T')); const diffDays = (Date.now() - entryDate.getTime()) / (1000 * 60 * 60 * 24); return diffDays >= 3; })();
-    const allTags = [...t.appliedItems.map(item=>`<span class="tag">${item}</span>`),...t.negativeItems.map(item=>`<span class="tag negative">${item}</span>`)].join('');
-    return `<div class="trade-card" style="${isOld ? 'border-color:#b45309; background:linear-gradient(135deg,#1e293b 0%,#1c1408 100%);' : ''}">
-        <div class="card-top"><div class="stock-info">
-            <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${t.name}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;"><span class="stock-name" style="color:var(--primary);text-decoration:underline;">${t.name}</span></a>
-            <span class="stock-price-label">$${Number(t.price).toLocaleString()}</span>
-            <div id="pl-display-${t.id}" style="display:inline-flex;align-items:center;"></div>
-            ${isOld ? '<span style="font-size:0.58rem;font-weight:900;background:#92400e;color:#fcd34d;padding:1px 5px;border-radius:3px;border:1px solid #b45309;">⏰ 3日超</span>' : ''}
-            ${t.result ? `<span class="result-badge ${t.result}-badge">${t.result === 'watch' ? '👁 監視中' : t.result.toUpperCase()}</span>${t.final_pl?`<span style="font-size:0.68rem;font-weight:800;color:${t.result==='win'?'var(--win-deep)':t.result==='watch'?'var(--theme-accent)':'var(--lose-deep)'};">${t.final_pl}</span>`:''})` : ''}
-        </div>
-        <div class="card-actions">
-            ${!t.result ? `<button id="refresh-btn-${t.id}" class="edit-btn" onclick="refreshPrice('${t.id}','${t.name}',${t.price})" title="価格更新"><i data-lucide="refresh-cw" style="width:10px;"></i></button>` : ''}
-            <button class="edit-btn" onclick="toggleItemEdit('${t.id}')" title="項目編集"><i data-lucide="settings-2" style="width:10px;"></i></button>
-            <button class="edit-btn" id="edit-btn-${t.id}" onclick="toggleEdit('${t.id}')">メモ</button>
-            <button class="del-btn" onclick="deleteTrade('${t.id}')"><i data-lucide="x" style="width:12px;"></i></button>
-        </div></div>
-        ${allTags ? `<div class="tag-row">${allTags}</div>` : ''}
-        <div id="memo-text-${t.id}" class="memo-area" contenteditable="false">${t.memo||'メモを追加'}</div>
-        ${!t.result ? `<div class="res-actions"><button class="btn-win" onclick="setTradeResult('${t.id}','win')">WIN</button><button class="btn-lose" onclick="setTradeResult('${t.id}','lose')">LOSE</button><button style="background:#92400e;color:#fcd34d;border:none;border-radius:5px;font-weight:800;cursor:pointer;font-size:0.72rem;padding:5px;" onclick="setTradeResult('${t.id}','watch')">👁 監視</button></div>`
-        : t.result === 'watch' ? `<div style="display:flex;gap:5px;margin-top:5px;"><button class="btn-win" style="flex:1;" onclick="setTradeResult('${t.id}','win')">WIN確定</button><button class="btn-lose" style="flex:1;" onclick="setTradeResult('${t.id}','lose')">LOSE確定</button></div><div style="font-size:0.58rem;color:#475569;margin-top:3px;">${t.date}</div>`
-        : `<div style="font-size:0.58rem;color:#475569;margin-top:3px;">${t.date}</div>`}
-    </div>`;
+    const isOld = (() => {
+        if (t.result) return false;
+        if (!t.date) return false;
+        const entryDate = new Date(t.date.replace(/\//g, '-').replace(' ', 'T'));
+        const diffDays = (Date.now() - entryDate.getTime()) / (1000 * 60 * 60 * 24);
+        return diffDays >= 3;
+    })();
+    const allTags = [
+        ...t.appliedItems.map(item=>`<span class="tag">${item}</span>`),
+        ...t.negativeItems.map(item=>`<span class="tag negative">${item}</span>`)
+    ].join('');
+
+    return `
+        <div class="trade-card" style="${isOld ? 'border-color:#b45309; background:linear-gradient(135deg,#1e293b 0%,#1c1408 100%);' : ''}">
+            <div class="card-top">
+                <div class="stock-info">
+                    <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${t.name}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
+                        <span class="stock-name" style="color:var(--primary);text-decoration:underline;">${t.name}</span>
+                    </a>
+                    <span class="stock-price-label">$${Number(t.price).toLocaleString()}</span>
+                    <div id="pl-display-${t.id}" style="display:inline-flex;align-items:center;"></div>
+                    ${isOld ? `<span style="font-size:0.58rem;font-weight:900;background:#92400e;color:#fcd34d;padding:1px 5px;border-radius:3px;border:1px solid #b45309;">⏰ 3日超</span>` : ''}
+                    ${t.result ? `<span class="result-badge ${t.result}-badge">${t.result === 'watch' ? '👁 監視中' : t.result.toUpperCase()}</span>${t.final_pl?`<span style="font-size:0.68rem;font-weight:800;color:${t.result==='win'?'var(--win-deep)':t.result==='watch'?'var(--theme-accent)':'var(--lose-deep)'};">${t.final_pl}</span>`:''}` : ''}
+                </div>
+                <div class="card-actions">
+                    ${!t.result ? `<button id="refresh-btn-${t.id}" class="edit-btn" onclick="refreshPrice('${t.id}','${t.name}',${t.price})" title="価格更新"><i data-lucide="refresh-cw" style="width:10px;"></i></button>` : ''}
+                    <button class="edit-btn" onclick="toggleItemEdit('${t.id}')" title="項目編集"><i data-lucide="settings-2" style="width:10px;"></i></button>
+                    <button class="edit-btn" id="edit-btn-${t.id}" onclick="toggleEdit('${t.id}')">メモ</button>
+                    <button class="del-btn" onclick="deleteTrade('${t.id}')"><i data-lucide="x" style="width:12px;"></i></button>
+                </div>
+            </div>
+            ${allTags ? `<div class="tag-row">${allTags}</div>` : ''}
+            <div id="memo-text-${t.id}" class="memo-area" contenteditable="false">${t.memo||'メモを追加'}</div>
+            ${!t.result
+    ? `<div class="res-actions">
+        <button class="btn-win" onclick="setTradeResult('${t.id}','win')">WIN</button>
+        <button class="btn-lose" onclick="setTradeResult('${t.id}','lose')">LOSE</button>
+        <button style="background:#92400e;color:#fcd34d;border:none;border-radius:5px;font-weight:800;cursor:pointer;font-size:0.72rem;padding:5px;" onclick="setTradeResult('${t.id}','watch')">👁 監視</button>
+      </div>`
+    : t.result === 'watch'
+        ? `<div style="display:flex;gap:5px;margin-top:5px;">
+            <button class="btn-win" style="flex:1;" onclick="setTradeResult('${t.id}','win')">WIN確定</button>
+            <button class="btn-lose" style="flex:1;" onclick="setTradeResult('${t.id}','lose')">LOSE確定</button>
+           </div>
+           <div style="font-size:0.58rem;color:#475569;margin-top:3px;">${t.date}</div>`
+        : `<div style="font-size:0.58rem;color:#475569;margin-top:3px;">${t.date}</div>`
+}
+        </div>`;
 }
 
+// ======== セクタ取得 ========
 async function fetchSectorDataByTicker(ticker) {
-    try { const response = await fetch(`${SECTOR_GAS_URL}?ticker=${encodeURIComponent(ticker)}`); const data = await response.json(); return data; } catch(e) { return {}; }
+    try {
+        const response = await fetch(`${SECTOR_GAS_URL}?ticker=${encodeURIComponent(ticker)}`);
+        const data = await response.json();
+        return data;
+    } catch(e) {
+        console.error('セクタ取得エラー:', e);
+        return {};
+    }
 }
 
 window.addEventListener('click', (event) => {
@@ -1292,74 +1643,169 @@ window.addEventListener('click', (event) => {
     if (event.target === themeOverlay) closeThemeModal();
 });
 
+// ======== 項目編集モーダル ========
 let itemEditTargetId = null;
+
 function toggleItemEdit(id) {
     itemEditTargetId = id;
     const trade = trades.find(t => t.id === id);
     if (!trade) return;
+
     document.getElementById('item-edit-modal-title').innerText = `${trade.name} ― 項目編集`;
-    document.getElementById('item-edit-modal-pos').innerHTML = positiveItems.map(item => `<label class="check-box ${trade.appliedItems.includes(item) ? 'checked' : ''}"><input type="checkbox" class="modal-item-pos" value="${item}" ${trade.appliedItems.includes(item) ? 'checked' : ''} onchange="this.parentElement.classList.toggle('checked',this.checked)">${item}</label>`).join('');
-    document.getElementById('item-edit-modal-neg').innerHTML = negativeItems.map(item => `<label class="check-box negative ${trade.negativeItems.includes(item) ? 'checked' : ''}"><input type="checkbox" class="modal-item-neg" value="${item}" ${trade.negativeItems.includes(item) ? 'checked' : ''} onchange="this.parentElement.classList.toggle('checked',this.checked)">${item}</label>`).join('');
+
+    document.getElementById('item-edit-modal-pos').innerHTML = positiveItems.map(item => `
+        <label class="check-box ${trade.appliedItems.includes(item) ? 'checked' : ''}">
+            <input type="checkbox" class="modal-item-pos" value="${item}"
+                ${trade.appliedItems.includes(item) ? 'checked' : ''}
+                onchange="this.parentElement.classList.toggle('checked',this.checked)">
+            ${item}</label>`).join('');
+
+    document.getElementById('item-edit-modal-neg').innerHTML = negativeItems.map(item => `
+        <label class="check-box negative ${trade.negativeItems.includes(item) ? 'checked' : ''}">
+            <input type="checkbox" class="modal-item-neg" value="${item}"
+                ${trade.negativeItems.includes(item) ? 'checked' : ''}
+                onchange="this.parentElement.classList.toggle('checked',this.checked)">
+            ${item}</label>`).join('');
+
     document.getElementById('item-edit-modal').classList.add('open');
     if (window.lucide) lucide.createIcons();
 }
-function closeItemEditModal() { document.getElementById('item-edit-modal').classList.remove('open'); itemEditTargetId = null; }
+
+function closeItemEditModal() {
+    document.getElementById('item-edit-modal').classList.remove('open');
+    itemEditTargetId = null;
+}
+
 async function saveItemEditModal() {
     if (!itemEditTargetId) return;
     const pos = Array.from(document.querySelectorAll('.modal-item-pos:checked')).map(cb => cb.value);
     const neg = Array.from(document.querySelectorAll('.modal-item-neg:checked')).map(cb => cb.value);
-    await updateTradeData(itemEditTargetId, { applied_items: JSON.stringify(pos), negative_items: JSON.stringify(neg) });
+    await updateTradeData(itemEditTargetId, {
+        applied_items: JSON.stringify(pos),
+        negative_items: JSON.stringify(neg)
+    });
     closeItemEditModal();
 }
 
+// ======== テーマ機能 ========
 async function loadThemes() {
     const list = document.getElementById('theme-list');
     list.innerHTML='<p style="text-align:center;color:var(--text-sub);margin-top:30px;font-size:0.78rem;">同期中...</p>';
-    try { const response = await fetch(GAS_URL); themes = await response.json(); renderThemes(); }
-    catch(e) { list.innerHTML='<p style="text-align:center;color:#ef4444;margin-top:30px;font-size:0.78rem;">読み込みに失敗しました。</p>'; }
+    try {
+        const response = await fetch(GAS_URL);
+        themes = await response.json();
+        renderThemes();
+    } catch(e) {
+        list.innerHTML='<p style="text-align:center;color:#ef4444;margin-top:30px;font-size:0.78rem;">読み込みに失敗しました。</p>';
+    }
 }
+
 async function saveThemes() {
     const toast = document.getElementById('loading-toast');
     toast.style.display='block'; renderThemes();
-    try { await fetch(GAS_URL,{method:"POST",body:JSON.stringify(themes)}); toast.style.display='none'; }
-    catch(e){ alert("データの保存に失敗しました。"); toast.style.display='none'; }
+    try {
+        await fetch(GAS_URL,{method:"POST",body:JSON.stringify(themes)});
+        toast.style.display='none';
+    } catch(e){ alert("データの保存に失敗しました。"); toast.style.display='none'; }
 }
+
 function openThemeModal(themeId=null) {
     const grid = document.getElementById('theme-check-grid');
+    const modalTitle = document.getElementById('theme-modal-title');
     const nameInput = document.getElementById('theme-name-input');
     const editIdInput = document.getElementById('edit-theme-id');
     let selectedTags = [];
-    if(themeId){ const theme = themes.find(t=>t.id===themeId); document.getElementById('theme-modal-title').innerText="テーマの編集"; nameInput.value=theme.name; editIdInput.value=themeId; selectedTags=theme.tags; }
-    else { document.getElementById('theme-modal-title').innerText="新規テーマ作成"; nameInput.value=''; editIdInput.value=''; }
-    grid.innerHTML = themeItems.map(item=>{ const isChecked = selectedTags.includes(item); return `<label class="theme-check-box check-box ${isChecked?'checked':''}"><input type="checkbox" value="${item}" ${isChecked?'checked':''} onchange="this.parentElement.classList.toggle('checked',this.checked)">${item}</label>`; }).join('');
+    if(themeId){
+        const theme = themes.find(t=>t.id===themeId);
+        modalTitle.innerText="テーマの編集"; nameInput.value=theme.name;
+        editIdInput.value=themeId; selectedTags=theme.tags;
+    } else {
+        modalTitle.innerText="新規テーマ作成"; nameInput.value=''; editIdInput.value='';
+    }
+    grid.innerHTML = themeItems.map(item=>{
+        const isChecked = selectedTags.includes(item);
+        return `<label class="theme-check-box check-box ${isChecked?'checked':''}">
+            <input type="checkbox" value="${item}" ${isChecked?'checked':''} onchange="this.parentElement.classList.toggle('checked',this.checked)">
+            ${item}</label>`;
+    }).join('');
     document.getElementById('theme-overlay').style.display='flex';
 }
+
 function closeThemeModal(){ document.getElementById('theme-overlay').style.display='none'; }
+
 function handleThemeSave() {
     const name = document.getElementById('theme-name-input').value;
     const editId = document.getElementById('edit-theme-id').value;
     const checks = Array.from(document.querySelectorAll('#theme-check-grid input:checked')).map(el=>el.value);
     if(!name) return alert("テーマ名を入力してください");
-    if(editId){ const theme = themes.find(t=>t.id==editId); theme.name=name; theme.tags=checks; }
-    else { const now = new Date(); themes.push({id:Date.now(),name,date:`${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`,tags:checks,stocks:[]}); }
+    if(editId){
+        const theme = themes.find(t=>t.id==editId);
+        theme.name=name; theme.tags=checks;
+    } else {
+        const now = new Date();
+        themes.push({id:Date.now(),name,date:`${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`,tags:checks,stocks:[]});
+    }
     saveThemes(); closeThemeModal();
 }
-function addThemeStock(themeId) { const symbol = prompt("追加するティッカーシンボルを入力:"); if(symbol){ themes.find(t=>t.id===themeId).stocks.push(symbol.toUpperCase()); saveThemes(); } }
-function removeThemeStock(themeId, index) { if(confirm("銘柄を削除しますか？")){ themes.find(t=>t.id===themeId).stocks.splice(index,1); saveThemes(); } }
-function deleteTheme(id) { if(confirm("このテーマを削除しますか？")){ themes=themes.filter(t=>t.id!==id); saveThemes(); } }
+
+function addThemeStock(themeId) {
+    const symbol = prompt("追加するティッカーシンボルを入力:");
+    if(symbol){ themes.find(t=>t.id===themeId).stocks.push(symbol.toUpperCase()); saveThemes(); }
+}
+function removeThemeStock(themeId, index) {
+    if(confirm("銘柄を削除しますか？")){ themes.find(t=>t.id===themeId).stocks.splice(index,1); saveThemes(); }
+}
+function deleteTheme(id) {
+    if(confirm("このテーマを削除しますか？")){ themes=themes.filter(t=>t.id!==id); saveThemes(); }
+}
+
 function renderThemes() {
     const list = document.getElementById('theme-list');
     const sorted = [...themes].sort((a, b) => b.id - a.id);
-    list.innerHTML = sorted.map(theme=>`<div class="theme-card"><div class="theme-card-top"><div style="min-width:0;flex:1;"><div style="display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;"><h2 class="theme-title">${theme.name}</h2><span class="theme-date">${theme.date}</span></div><div class="theme-tag-row" style="margin-top:3px;">${theme.tags.map(tag=>`<span class="theme-tag"># ${tag}</span>`).join('')}</div></div><div style="display:flex;gap:2px;flex-shrink:0;align-items:center;"><button onclick="copyTheme(${theme.id})" style="padding:3px 8px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem;" id="copy-theme-btn-${theme.id}">📋</button><button class="btn-ghost" onclick="openThemeModal(${theme.id})"><i data-lucide="edit-3" style="width:13px;"></i></button><button class="btn-ghost" onclick="deleteTheme(${theme.id})"><i data-lucide="trash-2" style="width:13px;"></i></button></div></div><div class="stock-list">${theme.stocks.map((s,i)=>`<div class="stock-badge"><a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${s}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:var(--primary);">${s}</a><span onclick="removeThemeStock(${theme.id},${i})" style="cursor:pointer;color:#64748b;margin-left:2px;font-size:0.65rem;">✕</span></div>`).join('')}<button onclick="addThemeStock(${theme.id})" style="border:1px dashed #475569;background:none;border-radius:14px;padding:2px 10px;color:#94a3b8;font-size:0.68rem;font-weight:bold;cursor:pointer;">+ 追加</button></div></div>`).join('');
-    if(themes.length===0){ list.innerHTML='<p style="text-align:center;color:var(--text-sub);margin-top:30px;font-size:0.78rem;">テーマが登録されていません。</p>'; }
+    list.innerHTML = sorted.map(theme=>`
+        <div class="theme-card">
+            <div class="theme-card-top">
+                <div style="min-width:0;flex:1;">
+                    <div style="display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;">
+                        <h2 class="theme-title">${theme.name}</h2>
+                        <span class="theme-date">${theme.date}</span>
+                    </div>
+                    <div class="theme-tag-row" style="margin-top:3px;">
+                        ${theme.tags.map(tag=>`<span class="theme-tag"># ${tag}</span>`).join('')}
+                    </div>
+                </div>
+                <div style="display:flex;gap:2px;flex-shrink:0;align-items:center;">
+                    <button onclick="copyTheme(${theme.id})" style="padding:3px 8px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem;" id="copy-theme-btn-${theme.id}">📋</button>
+                    <button class="btn-ghost" onclick="openThemeModal(${theme.id})"><i data-lucide="edit-3" style="width:13px;"></i></button>
+                    <button class="btn-ghost" onclick="deleteTheme(${theme.id})"><i data-lucide="trash-2" style="width:13px;"></i></button>
+                </div>
+            </div>
+            <div class="stock-list">
+                ${theme.stocks.map((s,i)=>`
+    <div class="stock-badge">
+        <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${s}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:var(--primary);">${s}</a>
+        <span onclick="removeThemeStock(${theme.id},${i})" style="cursor:pointer;color:#64748b;margin-left:2px;font-size:0.65rem;">✕</span>
+    </div>`).join('')}
+                <button onclick="addThemeStock(${theme.id})" style="border:1px dashed #475569;background:none;border-radius:14px;padding:2px 10px;color:#94a3b8;font-size:0.68rem;font-weight:bold;cursor:pointer;">+ 追加</button>
+            </div>
+        </div>`).join('');
+    if(themes.length===0){
+        list.innerHTML='<p style="text-align:center;color:var(--text-sub);margin-top:30px;font-size:0.78rem;">テーマが登録されていません。</p>';
+    }
     if(window.lucide) lucide.createIcons();
 }
 
+// ======== プロンプトコピー ========
 function copyStaticPrompt(elementId, btn) {
     const text = document.getElementById(elementId).innerText;
-    navigator.clipboard.writeText(text).then(()=>{ const orig = btn.innerText; btn.innerText="完了！"; btn.classList.add('copied'); setTimeout(()=>{ btn.innerText=orig; btn.classList.remove('copied'); },2000); });
+    navigator.clipboard.writeText(text).then(()=>{
+        const orig = btn.innerText;
+        btn.innerText="完了！"; btn.classList.add('copied');
+        setTimeout(()=>{ btn.innerText=orig; btn.classList.remove('copied'); },2000);
+    });
 }
 
+// ======== 価格自動取得 ========
 async function autoFetchPrice() {
     const ticker = document.getElementById('stock-name').value.trim().toUpperCase();
     const priceEl = document.getElementById('entry-price');
@@ -1369,19 +1815,28 @@ async function autoFetchPrice() {
     statusEl.innerText = '取得中...';
     priceEl.value = '';
     perfArea.style.display = 'none';
+
     try {
         const res = await fetch(`https://api.twelvedata.com/time_series?symbol=${ticker}&interval=1day&outputsize=50&apikey=${PERF_API_KEY}`);
         const data = await res.json();
         if (data.status === 'error') throw new Error(data.message);
+
         const values = data.values;
         const price = parseFloat(values[0].close);
         priceEl.value = price.toFixed(2);
         statusEl.innerText = '✓';
         statusEl.style.color = 'var(--win-deep)';
+
         const cur = price;
         const gp = idx => values[idx] ? parseFloat(values[idx].close) : null;
         const calc = (c, p) => p ? (((c - p) / p) * 100).toFixed(2) : null;
-        const setEp = (id, val) => { const el = document.getElementById(id); if (!val) { el.innerText = '--'; el.style.color = 'var(--text-sub)'; return; } const n = parseFloat(val); el.innerText = (n >= 0 ? '+' : '') + val + '%'; el.style.color = n >= 0 ? 'var(--win-deep)' : 'var(--lose-deep)'; };
+        const setEp = (id, val) => {
+            const el = document.getElementById(id);
+            if (!val) { el.innerText = '--'; el.style.color = 'var(--text-sub)'; return; }
+            const n = parseFloat(val);
+            el.innerText = (n >= 0 ? '+' : '') + val + '%';
+            el.style.color = n >= 0 ? 'var(--win-deep)' : 'var(--lose-deep)';
+        };
         document.getElementById('entry-perf-symbol').innerText = `${ticker}  $${cur.toFixed(2)}`;
         setEp('ep-today', calc(cur, gp(1)));
         setEp('ep-5d',    calc(cur, gp(5)));
@@ -1389,6 +1844,7 @@ async function autoFetchPrice() {
         setEp('ep-1m',    calc(cur, gp(21)));
         setEp('ep-2m',    calc(cur, gp(42)));
         perfArea.style.display = 'block';
+
         fetchSectorDataByTicker(ticker).then(d => {
             document.getElementById('ep-name').innerText     = d.name     || '--';
             document.getElementById('ep-industry').innerText = d.industry || '--';
@@ -1396,19 +1852,25 @@ async function autoFetchPrice() {
             document.getElementById('ep-etf').innerText      = d.etf      || '--';
             document.getElementById('ep-rank-etf').innerText = d.rank_etf || '--';
         });
+
     } catch(e) {
-        statusEl.innerText = '✗'; statusEl.style.color = 'var(--lose-deep)';
-        priceEl.removeAttribute('readonly'); priceEl.placeholder = '手動入力';
+        statusEl.innerText = '✗';
+        statusEl.style.color = 'var(--lose-deep)';
+        priceEl.removeAttribute('readonly');
+        priceEl.placeholder = '手動入力';
     }
 }
 
 function clearAutoPrice() {
     const priceEl = document.getElementById('entry-price');
-    priceEl.value = ''; priceEl.setAttribute('readonly', true); priceEl.placeholder = '取得中...';
+    priceEl.value = '';
+    priceEl.setAttribute('readonly', true);
+    priceEl.placeholder = '取得中...';
     document.getElementById('price-status').innerText = '';
     document.getElementById('entry-perf-area').style.display = 'none';
 }
 
+// ======== カリキュレーター ========
 function calcProfit() {
     const entry = parseFloat(document.getElementById('calc-entry').value);
     const target = parseFloat(document.getElementById('calc-target').value);
@@ -1425,14 +1887,23 @@ function calcProfit() {
     resultEl.style.display = 'block';
 }
 
+// ======== Twitterコピー機能 ========
 function copyPF() {
     const active = trades.filter(t => !t.result);
     const watch  = trades.filter(t => t.result === 'watch');
     let lines = [];
-    if (active.length > 0) { lines.push('Watchlist'); active.forEach(t => lines.push(`・$${t.name}`)); }
-    if (watch.length > 0) { if (lines.length > 0) lines.push(''); lines.push('👁 監視中'); watch.forEach(t => lines.push(`・$${t.name}`)); }
+    if (active.length > 0) {
+        lines.push('Watchlist');
+        active.forEach(t => lines.push(`・$${t.name}`));
+    }
+    if (watch.length > 0) {
+        if (lines.length > 0) lines.push('');
+        lines.push('👁 監視中');
+        watch.forEach(t => lines.push(`・$${t.name}`));
+    }
     if (lines.length === 0) { alert('銘柄が登録されていません'); return; }
-    navigator.clipboard.writeText(lines.join('\n')).then(() => {
+    const text = lines.join('\n');
+    navigator.clipboard.writeText(text).then(() => {
         const btn = document.getElementById('copy-pf-btn');
         btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
         setTimeout(() => { btn.innerText = '📋 コピー'; btn.style.background = '#334155'; }, 2000);
@@ -1442,7 +1913,9 @@ function copyPF() {
 function copyMC() {
     const scoreEl = document.getElementById('r2-gauge-score');
     const condEl  = document.getElementById('r2-gauge-cond');
-    const text = `🇺🇸 米国株マーケットトレンド\nスコア：${scoreEl ? scoreEl.innerText : '--'}\nセンチメント：${condEl ? condEl.innerText : '--'}`;
+    const score   = scoreEl ? scoreEl.innerText : '--';
+    const cond    = condEl  ? condEl.innerText  : '--';
+    const text = `🇺🇸 米国株マーケットトレンド\nスコア：${score}\nセンチメント：${cond}`;
     navigator.clipboard.writeText(text).then(() => {
         const btn = document.getElementById('copy-mc-btn');
         btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
@@ -1453,10 +1926,15 @@ function copyMC() {
 function copyTheme(themeId) {
     const theme = themes.find(t => t.id === themeId);
     if (!theme) return;
-    let lines = [theme.name];
-    if (theme.stocks.length > 0) theme.stocks.forEach(s => lines.push(`・$${s}`));
-    else lines.push('（銘柄未登録）');
-    navigator.clipboard.writeText(lines.join('\n')).then(() => {
+    let lines = [];
+    lines.push(`${theme.name}`);
+    if (theme.stocks.length > 0) {
+        theme.stocks.forEach(s => lines.push(`・$${s}`));
+    } else {
+        lines.push('（銘柄未登録）');
+    }
+    const text = lines.join('\n');
+    navigator.clipboard.writeText(text).then(() => {
         const btn = document.getElementById(`copy-theme-btn-${themeId}`);
         btn.innerText = '✅'; btn.style.background = '#064e3b';
         setTimeout(() => { btn.innerText = '📋'; btn.style.background = '#334155'; }, 2000);
@@ -1471,7 +1949,7 @@ let screenSpyMap = null;
 function screenAddLog(msg, type = '') {
   const area = document.getElementById('screen-log');
   const line = document.createElement('div');
-  if (type === 'match') { line.style.color = 'var(--win-deep)'; line.style.fontWeight = '700'; }
+  if (type === 'match') line.style.color = 'var(--win-deep)', line.style.fontWeight = '700';
   if (type === 'err')   line.style.color = 'var(--lose-deep)';
   if (type === 'skip')  line.style.color = '#2a3f5f';
   line.innerText = msg;
@@ -1484,6 +1962,8 @@ function screenSetSpyStatus(state, text) {
   const txt = document.getElementById('screen-spy-text');
   const colors = { ok: 'var(--win-deep)', err: 'var(--lose-deep)', loading: '#22d3ee' };
   dot.style.background = colors[state] || '#2a3f5f';
+  if (state === 'loading') dot.style.animation = 'spyPulse 1s infinite';
+  else dot.style.animation = '';
   txt.innerText = text;
 }
 
@@ -1521,7 +2001,7 @@ function screenPercentRank(values, length) {
 function screenRsClass(v) {
   if (isNaN(v)) return 'color:var(--text-sub)';
   if (v >= 80) return 'color:var(--win-deep)';
-  if (v >= 50) return 'color:var(--theme-accent)';
+  if (v >= 50) return 'color:var(--warn)';
   return 'color:var(--text-sub)';
 }
 
@@ -1529,29 +2009,34 @@ async function screenTicker(symbol) {
   const values = await screenFetchTimeSeries(symbol, 252);
   const closes = values.map(d => parseFloat(d.close));
   const sClose = closes[0];
-  const ratios = values.filter(d => screenSpyMap[d.datetime] !== undefined).map(d => parseFloat(d.close) / screenSpyMap[d.datetime]);
+  const ratios = values.filter(d => screenSpyMap[d.datetime] !== undefined)
+    .map(d => parseFloat(d.close) / screenSpyMap[d.datetime]);
   const rs10 = screenPercentRank(ratios, 10);
   const rs21 = screenPercentRank(ratios, 21);
   const volumes = values.map(d => parseInt(d.volume));
   const vol50Avg = volumes.slice(0, 50).reduce((s, v) => s + v, 0) / 50;
-  const hasVolSpike = values.slice(0, 10).some(d => parseFloat(d.close) > parseFloat(d.open) && parseInt(d.volume) > vol50Avg * 1.3);
+  const hasVolSpike = values.slice(0, 10).some(d =>
+    parseFloat(d.close) > parseFloat(d.open) && parseInt(d.volume) > vol50Avg * 1.3
+  );
   const h0 = parseFloat(values[0].high), l0 = parseFloat(values[0].low);
   const dcr = (h0 - l0) > 0 ? ((sClose - l0) / (h0 - l0)) * 100 : NaN;
-  return { symbol, price: sClose, rs10, rs21, hasVolSpike, dcr, match: rs10 > 50 && rs21 > 70 && hasVolSpike && !isNaN(dcr) && dcr > 20 };
+  return { symbol, price: sClose, rs10, rs21, hasVolSpike, dcr,
+    match: rs10 > 50 && rs21 > 70 && hasVolSpike && !isNaN(dcr) && dcr > 20 };
 }
 
 function screenAppendCard(r) {
   const body = document.getElementById('screen-results-body');
   const div = document.createElement('div');
-  div.innerHTML = `<div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;border-left:3px solid var(--win-deep);display:flex;align-items:center;justify-content:space-between;gap:8px;">
-    <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${r.symbol}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;min-width:55px;">
-      <span style="font-size:0.88rem;font-weight:900;color:var(--perf-accent);text-decoration:underline;">${r.symbol}</span>
-    </a>
-    <span style="font-size:0.72rem;color:var(--text-sub);">$${r.price.toFixed(2)}</span>
-    <span style="font-size:0.72rem;font-weight:700;${screenRsClass(r.rs10)}">R10:${isNaN(r.rs10)?'N/A':r.rs10.toFixed(0)}%</span>
-    <span style="font-size:0.72rem;font-weight:700;${screenRsClass(r.rs21)}">R21:${isNaN(r.rs21)?'N/A':r.rs21.toFixed(0)}%</span>
-    <span style="font-size:0.72rem;font-weight:700;color:${r.hasVolSpike?'var(--win-deep)':'var(--text-sub)'};">${r.hasVolSpike?'VOL✓':'VOL✗'}</span>
-  </div>`;
+  div.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;border-left:3px solid var(--win-deep);display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${r.symbol}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;min-width:55px;">
+        <span style="font-size:0.88rem;font-weight:900;color:#22d3ee;text-decoration:underline;">${r.symbol}</span>
+      </a>
+      <span style="font-size:0.72rem;color:var(--text-sub);">$${r.price.toFixed(2)}</span>
+      <span style="font-size:0.72rem;font-weight:700;${screenRsClass(r.rs10)}">R10:${isNaN(r.rs10)?'N/A':r.rs10.toFixed(0)}%</span>
+      <span style="font-size:0.72rem;font-weight:700;${screenRsClass(r.rs21)}">R21:${isNaN(r.rs21)?'N/A':r.rs21.toFixed(0)}%</span>
+      <span style="font-size:0.72rem;font-weight:700;color:${r.hasVolSpike?'var(--win-deep)':'var(--text-sub)'};">${r.hasVolSpike?'VOL✓':'VOL✗'}</span>
+    </div>`;
   body.appendChild(div.firstElementChild);
 }
 
@@ -1559,15 +2044,22 @@ async function startScreening() {
   const input = document.getElementById('screen-ticker-input').value;
   const tickers = [...new Set(input.split(/[\s,]+/).map(t => t.trim().toUpperCase()).filter(Boolean))];
   if (tickers.length === 0) return;
+
   const btn = document.getElementById('screen-run-btn');
   btn.disabled = true; btn.innerText = '... 実行中';
   document.getElementById('screen-log').innerHTML = '';
   document.getElementById('screen-results-body').innerHTML = '';
   document.getElementById('screen-results').style.display = 'none';
   document.getElementById('screen-progress').style.display = 'block';
+
   const spyOk = await screenEnsureSpy();
-  if (!spyOk) { btn.disabled = false; btn.innerText = '▶ スクリーニング開始'; screenAddLog('SPY取得失敗のため中断', 'err'); return; }
+  if (!spyOk) {
+    btn.disabled = false; btn.innerText = '▶ スクリーニング開始';
+    screenAddLog('SPY取得失敗のため中断', 'err');
+    return;
+  }
   await new Promise(r => setTimeout(r, SCREEN_DELAY));
+
   let matchCount = 0;
   for (let i = 0; i < tickers.length; i++) {
     const sym = tickers[i];
@@ -1575,6 +2067,7 @@ async function startScreening() {
     document.getElementById('screen-progress-bar').style.width = pct + '%';
     document.getElementById('screen-progress-count').innerText = `${i} / ${tickers.length}`;
     document.getElementById('screen-progress-ticker').innerText = `スキャン中: ${sym}`;
+
     try {
       const result = await screenTicker(sym);
       if (result.match) {
@@ -1586,13 +2079,19 @@ async function startScreening() {
       } else {
         screenAddLog(`— skip  ${sym}  R10:${isNaN(result.rs10)?'N/A':result.rs10.toFixed(1)}%  R21:${isNaN(result.rs21)?'N/A':result.rs21.toFixed(1)}%`, 'skip');
       }
-    } catch(e) { screenAddLog(`✗ error  ${sym}  ${e.message}`, 'err'); }
+    } catch(e) {
+      screenAddLog(`✗ error  ${sym}  ${e.message}`, 'err');
+    }
     if (i < tickers.length - 1) await new Promise(r => setTimeout(r, SCREEN_DELAY));
   }
+
   document.getElementById('screen-progress-bar').style.width = '100%';
   document.getElementById('screen-progress-count').innerText = `${tickers.length} / ${tickers.length}`;
   document.getElementById('screen-progress-ticker').innerText = '完了';
-  if (matchCount === 0) { document.getElementById('screen-results').style.display = 'block'; document.getElementById('screen-results-body').innerHTML = '<div style="text-align:center;color:var(--text-sub);padding:20px;font-size:0.75rem;">条件に合致する銘柄はありませんでした</div>'; }
+  if (matchCount === 0) {
+    document.getElementById('screen-results').style.display = 'block';
+    document.getElementById('screen-results-body').innerHTML = '<div style="text-align:center;color:var(--text-sub);padding:20px;font-size:0.75rem;">条件に合致する銘柄はありませんでした</div>';
+  }
   btn.disabled = false; btn.innerText = '▶ スクリーニング開始';
 }
 
@@ -1602,7 +2101,11 @@ window.onload = () => {
     loadTrades();
     loadThemes();
     const savedMain = localStorage.getItem('mcd_etf_data');
-    if (savedMain) { try { r2RenderAll(JSON.parse(savedMain)); } catch(e) {} } else { r2DrawGauge(0); }
+    if (savedMain) {
+        try { r2RenderAll(JSON.parse(savedMain)); } catch(e) {}
+    } else {
+        r2DrawGauge(0);
+    }
     if (rankMarketData.length > 0) renderRankTable();
     if (window.lucide) lucide.createIcons();
 };
