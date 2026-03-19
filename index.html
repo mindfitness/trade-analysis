@@ -2124,6 +2124,31 @@ function screenAppendCard(r) {
   body.appendChild(div.firstElementChild);
 }
 
+function screenRegisterToWatch(result) {
+  const typeKey  = result.matchType === 'vcs' ? 'VCS' : 'RS';
+  const existing = themes.find(t => t.name === typeKey);
+
+  if (existing) {
+    if (existing.stocks.includes(result.symbol)) {
+      screenAddLog(`  → Watch登録スキップ（重複）: ${result.symbol} [${typeKey}]`, 'skip');
+      return;
+    }
+    existing.stocks.push(result.symbol);
+  } else {
+    const now = new Date();
+    themes.push({
+  id: Date.now(),
+  name: typeKey,
+  date: `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`,
+  tags: [typeKey === 'RS' ? 'RS条件' : 'VCS>60'],
+  stocks: [result.symbol]
+});
+  }
+
+  saveThemes();
+  screenAddLog(`  → Watch登録完了 [${typeKey}]: ${result.symbol}`, 'match');
+}
+    
 async function startScreening() {
   const input = document.getElementById('screen-ticker-input').value;
   const tickers = [...new Set(input.split(/[\s,]+/).map(t => t.trim().toUpperCase()).filter(Boolean))];
@@ -2156,13 +2181,15 @@ async function startScreening() {
       const result = await screenTicker(sym);
       if (result.match) {
         matchCount++;
-        const vcsStr = isNaN(result.vcs) ? 'N/A' : result.vcs.toFixed(1);
-const typeLabel = result.matchType === 'vcs' ? '[VCS]' : '[RS]';
-screenAddLog(`✓ MATCH ${typeLabel}  ${sym}  R10:${isNaN(result.rs10)?'N/A':result.rs10.toFixed(1)}%  R21:${isNaN(result.rs21)?'N/A':result.rs21.toFixed(1)}%  VCS:${vcsStr}`, 'match');
+        const vcsStr    = isNaN(result.vcs) ? 'N/A' : result.vcs.toFixed(1);
+        const typeLabel = result.matchType === 'vcs' ? '[VCS]' : '[RS]';
+        screenAddLog(`✓ MATCH ${typeLabel}  ${sym}  R10:${isNaN(result.rs10)?'N/A':result.rs10.toFixed(1)}%  R21:${isNaN(result.rs21)?'N/A':result.rs21.toFixed(1)}%  VCS:${vcsStr}`, 'match');
         document.getElementById('screen-results').style.display = 'block';
         document.getElementById('screen-results-count').innerText = `${matchCount} match${matchCount !== 1 ? 'es' : ''}`;
         screenAppendCard(result);
-      } else {
+        screenRegisterToWatch(result);
+      }
+        else {
         screenAddLog(`— skip  ${sym}  R10:${isNaN(result.rs10)?'N/A':result.rs10.toFixed(1)}%  R21:${isNaN(result.rs21)?'N/A':result.rs21.toFixed(1)}%`, 'skip');
       }
     } catch(e) {
