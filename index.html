@@ -2178,7 +2178,11 @@ function screenRegisterToWatch(result) {
     
 async function startScreening() {
   const input = document.getElementById('screen-ticker-input').value;
-  const tickers = [...new Set(input.split(/[\s,]+/).map(t => t.trim().toUpperCase()).filter(Boolean))];
+  const tickers = [...new Set(
+  input.split(/[\s,\n]+/)
+    .map(t => t.trim().replace(/^\$/, '').toUpperCase())
+    .filter(t => /^[A-Z]{1,5}$/.test(t))
+)];
   if (tickers.length === 0) return;
 
   const btn = document.getElementById('screen-run-btn');
