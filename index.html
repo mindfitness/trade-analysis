@@ -638,17 +638,28 @@
       <div id="screen-spy-dot" style="width:6px;height:6px;border-radius:50%;background:#2a3f5f;flex-shrink:0;"></div>
       <span id="screen-spy-text">SPY: 未取得</span>
     </div>
-    <div style="display:flex; gap:6px;">
-  <button id="screen-run-btn" onclick="startScreening('rs')"
-    style="flex:1; padding:10px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
-    ▶ RS+VCS
-  </button>
-  <button id="screen-vcs-btn" onclick="startScreening('vcs')"
-    style="flex:1; padding:10px; background:#7c3aed; color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
-    ▶ VCSのみ
-  </button>
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none;">
+        <div id="save-toggle" onclick="toggleSaveToWatch()"
+            style="width:36px; height:20px; border-radius:10px; background:#334155; border:1px solid var(--border);
+                   position:relative; transition:background 0.2s; cursor:pointer; flex-shrink:0;">
+            <div id="save-toggle-knob"
+                style="width:14px; height:14px; border-radius:50%; background:#94a3b8;
+                       position:absolute; top:2px; left:2px; transition:all 0.2s;"></div>
+        </div>
+        <span id="save-toggle-label" style="font-size:0.68rem; color:var(--text-sub); font-weight:700;">Watchに保存しない</span>
+    </label>
 </div>
-  </div>
+<div style="display:flex; gap:6px;">
+  <button id="screen-run-btn" onclick="startScreening('rs')"
+  style="flex:1; padding:10px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
+  ▶ RS+VCS
+</button>
+<button id="screen-vcs-btn" onclick="startScreening('vcs')"
+  style="flex:1; padding:10px; background:#7c3aed; color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
+  ▶ VCSのみ
+</button>
+</div>
 
   <div id="screen-progress" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:12px;">
     <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
@@ -1989,9 +2000,30 @@ function copyTheme(themeId) {
 
 // ======== スクリーナー ========
 const SCREEN_API_KEY = 'f550f672515b4cd6b4c2966f1e2cc0fb';
+let screenSaveToWatch = false;
 const SCREEN_DELAY = 10000;
 let screenSpyMap = null;
 
+function toggleSaveToWatch() {
+    screenSaveToWatch = !screenSaveToWatch;
+    const track = document.getElementById('save-toggle');
+    const knob  = document.getElementById('save-toggle-knob');
+    const label = document.getElementById('save-toggle-label');
+    if (screenSaveToWatch) {
+        track.style.background = 'var(--win-deep)';
+        knob.style.background  = 'white';
+        knob.style.left        = '18px';
+        label.style.color      = 'var(--win-deep)';
+        label.textContent      = 'Watchに保存する';
+    } else {
+        track.style.background = '#334155';
+        knob.style.background  = '#94a3b8';
+        knob.style.left        = '2px';
+        label.style.color      = 'var(--text-sub)';
+        label.textContent      = 'Watchに保存しない';
+    }
+}
+    
 function screenAddLog(msg, type = '') {
   const area = document.getElementById('screen-log');
   const line = document.createElement('div');
@@ -2309,7 +2341,7 @@ if (duplicatesRemoved > 0) {
         document.getElementById('screen-results').style.display = 'block';
         document.getElementById('screen-results-count').innerText = `${matchCount} match${matchCount !== 1 ? 'es' : ''}`;
         screenAppendCard(result);
-        screenRegisterToWatch(result);
+        if (screenSaveToWatch) screenRegisterToWatch(result);
       } else {
         skipCount++;
         screenAddLog(`— skip  ${sym}  R10:${isNaN(result.rs10)?'N/A':result.rs10.toFixed(1)}%  R21:${isNaN(result.rs21)?'N/A':result.rs21.toFixed(1)}%`, 'skip');
