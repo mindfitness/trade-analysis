@@ -638,10 +638,16 @@
       <div id="screen-spy-dot" style="width:6px;height:6px;border-radius:50%;background:#2a3f5f;flex-shrink:0;"></div>
       <span id="screen-spy-text">SPY: 未取得</span>
     </div>
-    <button id="screen-run-btn" onclick="startScreening()"
-      style="width:100%; padding:10px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
-      ▶ スクリーニング開始
-    </button>
+    <div style="display:flex; gap:6px;">
+  <button id="screen-run-btn" onclick="startScreening('rs')"
+    style="flex:1; padding:10px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
+    ▶ RS+VCS
+  </button>
+  <button id="screen-vcs-btn" onclick="startScreening('vcs')"
+    style="flex:1; padding:10px; background:#7c3aed; color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
+    ▶ VCSのみ
+  </button>
+</div>
   </div>
 
   <div id="screen-progress" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:12px;">
@@ -2209,7 +2215,7 @@ function screenRegisterToWatch(result) {
   screenAddLog(`  → Watch登録完了 [${typeKey}]: ${result.symbol}`, 'match');
 }
     
-async function startScreening() {
+async function startScreening(mode = 'rs') {
   const input = document.getElementById('screen-ticker-input').value;
   const tickers = [...new Set(
   input.split(/[\s,\n]+/)
@@ -2225,8 +2231,11 @@ if (duplicatesRemoved > 0) {
 }
   if (tickers.length === 0) return;
 
-  const btn = document.getElementById('screen-run-btn');
-  btn.disabled = true; btn.innerText = '... 実行中';
+  const btn    = document.getElementById('screen-run-btn');
+  const vcsBtn = document.getElementById('screen-vcs-btn');
+  btn.disabled = true; vcsBtn.disabled = true;
+  btn.innerText = mode === 'vcs' ? '▶ RS+VCS' : '... 実行中';
+  vcsBtn.innerText = mode === 'vcs' ? '... 実行中' : '▶ VCSのみ';
   document.getElementById('screen-log').innerHTML = '';
   document.getElementById('screen-results-body').innerHTML = '';
   document.getElementById('screen-skip-body').innerHTML = '';
@@ -2236,7 +2245,9 @@ if (duplicatesRemoved > 0) {
 
   const spyOk = await screenEnsureSpy();
   if (!spyOk) {
-    btn.disabled = false; btn.innerText = '▶ スクリーニング開始';
+    btn.disabled = false; vcsBtn.disabled = false;
+    btn.innerText = '▶ RS+VCS';
+    vcsBtn.innerText = '▶ VCSのみ';
     screenAddLog('SPY取得失敗のため中断', 'err');
     return;
   }
@@ -2253,7 +2264,12 @@ if (duplicatesRemoved > 0) {
 
     try {
       const result = await screenTicker(sym);
-      if (result.match) {
+      const isMatch = mode === 'vcs'
+        ? (!isNaN(result.vcs) && result.vcs >= 60)
+        : result.match;
+      const matchType = mode === 'vcs' ? 'vcs' : result.matchType;
+      result.matchType = matchType;
+      if (isMatch) {
         matchCount++;
         const vcsStr    = isNaN(result.vcs) ? 'N/A' : result.vcs.toFixed(1);
         const typeLabel = result.matchType === 'vcs' ? '[VCS]' : '[RS]';
@@ -2282,7 +2298,9 @@ if (duplicatesRemoved > 0) {
     document.getElementById('screen-results').style.display = 'block';
     document.getElementById('screen-results-body').innerHTML = '<div style="text-align:center;color:var(--text-sub);padding:20px;font-size:0.75rem;">条件に合致する銘柄はありませんでした</div>';
   }
-  btn.disabled = false; btn.innerText = '▶ スクリーニング開始';
+  btn.disabled = false; vcsBtn.disabled = false;
+  btn.innerText = '▶ RS+VCS';
+  vcsBtn.innerText = '▶ VCSのみ';
 }
 
 // ======== Screen サブタブ切替 ========
