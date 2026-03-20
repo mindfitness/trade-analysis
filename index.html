@@ -2216,6 +2216,13 @@ async function startScreening() {
     .map(t => t.trim().replace(/^\$/, '').toUpperCase())
     .filter(t => /^[A-Z]{1,5}$/.test(t))
 )];
+if (tickers.length === 0) return;
+const dedupedCount = input.split(/[\s,\n]+/).map(t => t.trim().replace(/^\$/, '').toUpperCase()).filter(t => /^[A-Z]{1,5}$/.test(t)).length;
+const duplicatesRemoved = dedupedCount - tickers.length;
+if (duplicatesRemoved > 0) {
+  document.getElementById('screen-ticker-input').value = tickers.join(', ');
+  screenAddLog(`重複除外: ${duplicatesRemoved}件 → ${tickers.length}件でスキャン開始`, 'skip');
+}
   if (tickers.length === 0) return;
 
   const btn = document.getElementById('screen-run-btn');
