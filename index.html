@@ -1974,13 +1974,12 @@ function copyTheme(themeId) {
     const theme = themes.find(t => t.id === themeId);
     if (!theme) return;
     let lines = [];
-    lines.push(`${theme.name}`);
     if (theme.stocks.length > 0) {
-        theme.stocks.forEach(s => lines.push(`・$${s}`));
+        theme.stocks.forEach(s => lines.push(s));
     } else {
         lines.push('（銘柄未登録）');
     }
-    const text = lines.join('\n');
+    const text = lines.join(', ');
     navigator.clipboard.writeText(text).then(() => {
         const btn = document.getElementById(`copy-theme-btn-${themeId}`);
         btn.innerText = '✅'; btn.style.background = '#064e3b';
