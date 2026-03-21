@@ -632,6 +632,8 @@
       <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">RS10 &gt; 50%</span>
       <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">RS21 &gt; 60%</span>
       <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">Vol ×1.3</span>
+      <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">HH</span>
+        
 
     </div>
     <div style="display:flex; align-items:center; gap:6px; font-size:0.62rem; color:var(--text-sub); margin-bottom:8px;">
@@ -2168,7 +2170,8 @@ async function screenTicker(symbol) {
   const h0 = parseFloat(values[0].high), l0 = parseFloat(values[0].low);
   const vcs = screenCalcVCS(values);
 
-  const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike;
+  const isHH = parseFloat(values[0].high) > parseFloat(values[1].high);
+const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH;
   const vcsCondition = !isNaN(vcs) && vcs >= 60;
 
   return { symbol, price: sClose, rs10, rs21, hasVolSpike, vcs,
