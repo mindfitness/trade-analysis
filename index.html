@@ -688,11 +688,12 @@
     </div>
     <div id="screen-skip-body"></div>
   </div><!-- /screen-skip-section -->
-  </div><!-- /screen-subtab-screen -->
+  </div><!-- /screen-subtab-screen (screen本体の外側div も閉じる) -->
+  </div><!-- /screen-ticker入力エリア -->
 
-  <!-- Func サブタブ本体（旧page-ai の中身をそのまま移植） -->
-  <div id="screen-subtab-func" style="display:none;">
-    <div style="color:var(--ai-accent); display:flex; align-items:center; gap:5px; margin-bottom:10px; font-size:0.78rem; font-weight:800;">
+  <!-- Func サブタブ本体 -->
+  <div id="screen-subtab-func" style="display:none; padding-bottom: 24px;">
+    <div style="color:var(--ai-accent); display:flex; align-items:center; gap:5px; margin-bottom:10px; font-size:0.78rem; font-weight:800; padding-top:4px;">
         <i data-lucide="bot" style="width:14px;"></i> プロンプトストック
     </div>
 
