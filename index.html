@@ -2430,12 +2430,12 @@ function renderEntryScore(trade) {
         return `<span style="font-size:0.58rem;color:#475569;font-weight:700;">Score: --</span>`;
     }
     const score = sc.total;
-    const color = score >= 80
+    const color = score >= 70
         ? 'var(--win-deep)'
         : score >= 40
         ? '#f59e0b'
         : 'var(--lose-deep)';
-    const bg = score >= 80
+    const bg = score >= 70
         ? '#064e3b'
         : score >= 40
         ? '#451a03'
