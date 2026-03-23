@@ -1459,11 +1459,6 @@ async function updateTradeData(id, data) {
 function setHistoryFilter(type) { currentHistoryFilter = type; renderTrades(); }
 
 async function setTradeResult(id, result) {
-    if (result === 'watch') {
-        if (!confirm('監視継続としてLogに移動しますか？')) return;
-        await updateTradeData(id, { result: 'watch', final_pl: '' });
-        return;
-    }
     if (!confirm(`${result.toUpperCase()}で確定しますか？`)) return;
     const plDisplay = document.querySelector(`#pl-display-${id}`);
     const finalPL = plDisplay ? plDisplay.innerText.replace(/[()]/g,'') : "";
@@ -1488,16 +1483,8 @@ function renderTrades() {
     document.getElementById('box-lose').className = `summary-box ${currentHistoryFilter==='lose'?'active-lose':''}`;
 
     const activeCards = trades.filter(t=>!t.result).map(t=>renderCard(t)).join('');
-    const watchCards = trades.filter(t=>t.result==='watch').map(t => {
-        const cardHtml = renderCard(t);
-        return cardHtml.replace('<div class="trade-card"', '<div class="trade-card" style="border-color:#b45309;background:linear-gradient(135deg,#1e293b 0%,#2d1a00 100%);"');
-    }).join('');
-    const watchSection = watchCards
-        ? `<div style="font-size:0.68rem;font-weight:800;color:#f59e0b;margin:10px 0 5px;padding:0 2px;">👁 監視継続中</div>
-           <div class="active-grid">${watchCards}</div>`
-        : '';
-    activeCont.innerHTML = (activeCards || watchCards)
-        ? `${activeCards ? `<div class="active-grid">${activeCards}</div>` : ''}${watchSection}`
+    activeCont.innerHTML = activeCards
+        ? `<div class="active-grid">${activeCards}</div>`
         : '<p style="text-align:center;color:#475569;padding:20px 0;font-size:0.8rem;">取引中の銘柄はありません</p>';
     const filtered = currentHistoryFilter==='win' ? winTrades : loseTrades;
     const historyCards = filtered.map(t=>renderCard(t)).join('');
@@ -1655,7 +1642,8 @@ function renderCard(t) {
                         <span class="stock-name" style="color:var(--primary);text-decoration:underline;">${t.name}</span>
                     </a>
                     <span class="stock-price-label">$${Number(t.price).toLocaleString()}</span>
-                    <div id="pl-display-${t.id}" style="display:inline-flex;align-items:center;"></div>
+${renderEntryScore(t)}
+<div id="pl-display-${t.id}" style="display:inline-flex;align-items:center;"></div>
                     ${isOld ? `<span style="font-size:0.58rem;font-weight:900;background:#92400e;color:#fcd34d;padding:1px 5px;border-radius:3px;border:1px solid #b45309;">⏰ 3日超</span>` : ''}
                     ${t.result ? `<span class="result-badge ${t.result}-badge">${t.result === 'watch' ? '👁 監視中' : t.result.toUpperCase()}</span>${t.final_pl?`<span style="font-size:0.68rem;font-weight:800;color:${t.result==='win'?'var(--win-deep)':t.result==='watch'?'var(--theme-accent)':'var(--lose-deep)'};">${t.final_pl}</span>`:''}` : ''}
                 </div>
@@ -1672,15 +1660,8 @@ function renderCard(t) {
     ? `<div class="res-actions">
         <button class="btn-win" onclick="setTradeResult('${t.id}','win')">WIN</button>
         <button class="btn-lose" onclick="setTradeResult('${t.id}','lose')">LOSE</button>
-        <button style="background:#92400e;color:#fcd34d;border:none;border-radius:5px;font-weight:800;cursor:pointer;font-size:0.72rem;padding:5px;" onclick="setTradeResult('${t.id}','watch')">👁 監視</button>
       </div>`
-    : t.result === 'watch'
-        ? `<div style="display:flex;gap:5px;margin-top:5px;">
-            <button class="btn-win" style="flex:1;" onclick="setTradeResult('${t.id}','win')">WIN確定</button>
-            <button class="btn-lose" style="flex:1;" onclick="setTradeResult('${t.id}','lose')">LOSE確定</button>
-           </div>
-           <div style="font-size:0.58rem;color:#475569;margin-top:3px;">${t.date}</div>`
-        : `<div style="font-size:0.58rem;color:#475569;margin-top:3px;">${t.date}</div>`
+    : `<div style="font-size:0.58rem;color:#475569;margin-top:3px;">${t.date}</div>`
 }
         </div>`;
 }
@@ -2386,6 +2367,91 @@ function switchScreenSubtab(tab) {
 
     if (window.lucide) lucide.createIcons();
 }
+
+// ======== エントリースコアリング ========
+function calcEntryScore(trade) {
+    const winTrades  = trades.filter(t => t.result === 'win');
+    const loseTrades = trades.filter(t => t.result === 'lose');
+    if (winTrades.length < 3 || loseTrades.length < 3) return null;
+
+    const winTotal  = winTrades.length;
+    const loseTotal = loseTrades.length;
+
+    // --- 軸① WIN項目分析 (33点満点) ---
+    // WIN履歴で出現率>40%のポジティブ項目リストを算出
+    const winPosRates = {};
+    positiveItems.forEach(item => {
+        const cnt = winTrades.filter(t => t.appliedItems.includes(item)).length;
+        winPosRates[item] = cnt / winTotal;
+    });
+    // エントリーのポジティブ項目が高出現率項目とどれだけ一致するか
+    const highWinItems = positiveItems.filter(item => winPosRates[item] > 0.4);
+    let axis1 = 0;
+    if (highWinItems.length > 0) {
+        const matched = trade.appliedItems.filter(item => highWinItems.includes(item)).length;
+        axis1 = (matched / highWinItems.length) * 33;
+    }
+
+    // --- 軸② LOSE項目分析 (33点満点) ---
+    // LOSE履歴で出現率>40%の懸念項目（エントリーに含まれると減点）
+    const losNegRates = {};
+    negativeItems.forEach(item => {
+        const cnt = loseTrades.filter(t => t.negativeItems.includes(item)).length;
+        losNegRates[item] = cnt / loseTotal;
+    });
+    const highLoseItems = negativeItems.filter(item => losNegRates[item] > 0.4);
+    let axis2 = 33; // 懸念なければ満点
+    if (highLoseItems.length > 0) {
+        const danger = trade.negativeItems.filter(item => highLoseItems.includes(item)).length;
+        axis2 = Math.max(0, 33 - (danger / highLoseItems.length) * 33);
+    }
+
+    // --- 軸③ WIN×LOSE差別化スコア (34点満点) ---
+    // cross分析のスコア上位項目をどれだけ持っているか
+    const crossScores = positiveItems.map(item => {
+        const winRate     = (winTrades.filter(t => t.appliedItems.includes(item)).length / winTotal) * 100;
+        const loseMissRate = (loseTrades.filter(t => !t.appliedItems.includes(item)).length / loseTotal) * 100;
+        return { item, score: winRate + loseMissRate };
+    });
+    const topCross = crossScores.filter(s => s.score >= 100).map(s => s.item);
+    let axis3 = 0;
+    if (topCross.length > 0) {
+        const matched = trade.appliedItems.filter(item => topCross.includes(item)).length;
+        axis3 = (matched / topCross.length) * 34;
+    }
+
+    const total = Math.round(axis1 + axis2 + axis3);
+    return { total, axis1: Math.round(axis1), axis2: Math.round(axis2), axis3: Math.round(axis3) };
+}
+
+function renderEntryScore(trade) {
+    const sc = calcEntryScore(trade);
+    if (!sc) {
+        return `<span style="font-size:0.58rem;color:#475569;font-weight:700;">Score: --</span>`;
+    }
+    const score = sc.total;
+    const color = score >= 70
+        ? 'var(--win-deep)'
+        : score >= 40
+        ? '#f59e0b'
+        : 'var(--lose-deep)';
+    const bg = score >= 70
+        ? '#064e3b'
+        : score >= 40
+        ? '#451a03'
+        : '#7f1d1d';
+    return `<span style="
+        font-size:0.65rem;
+        font-weight:900;
+        color:${color};
+        background:${bg};
+        border:1px solid ${color};
+        border-radius:4px;
+        padding:1px 6px;
+        white-space:nowrap;
+    ">Score ${score}</span>`;
+}
+
 // ======== 初期化 ========
 window.onload = () => {
     renderEntryChecks();
