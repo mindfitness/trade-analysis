@@ -2431,15 +2431,15 @@ function renderEntryScore(trade) {
     }
     const score = sc.total;
     const color = score >= 80
-        ? 'var(--win-deep)'
-        : score >= 40
-        ? '#f59e0b'
-        : 'var(--lose-deep)';
-    const bg = score >= 80
-        ? '#064e3b'
-        : score >= 40
-        ? '#451a03'
-        : '#7f1d1d';
+    ? 'var(--win-deep)'
+    : score >= 60
+    ? '#f59e0b'
+    : 'var(--lose-deep)';
+const bg = score >= 80
+    ? '#064e3b'
+    : score >= 60
+    ? '#451a03'
+    : '#7f1d1d';
     return `<span style="
         font-size:0.65rem;
         font-weight:900;
