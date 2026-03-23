@@ -2377,51 +2377,28 @@ function calcEntryScore(trade) {
     const winTotal  = winTrades.length;
     const loseTotal = loseTrades.length;
 
-    // --- 軸① WIN項目分析 (33点満点) ---
-    // WIN履歴で出現率>40%のポジティブ項目リストを算出
-    const winPosRates = {};
-    positiveItems.forEach(item => {
-        const cnt = winTrades.filter(t => t.appliedItems.includes(item)).length;
-        winPosRates[item] = cnt / winTotal;
-    });
-    // エントリーのポジティブ項目が高出現率項目とどれだけ一致するか
-    const highWinItems = positiveItems.filter(item => winPosRates[item] > 0.4);
-    let axis1 = 0;
-    if (highWinItems.length > 0) {
-        const matched = trade.appliedItems.filter(item => highWinItems.includes(item)).length;
-        axis1 = (matched / highWinItems.length) * 30;
-    }
-
-    // --- 軸② LOSE欠如項目分析 (30点満点) ---
-    // LOSE時に欠如率>40%のポジティブ項目＝負けを防ぐ必須項目
-    const loseMissRates = {};
-    positiveItems.forEach(item => {
-        const cnt = loseTrades.filter(t => !t.appliedItems.includes(item)).length;
-        loseMissRates[item] = cnt / loseTotal;
-    });
-    const highMissItems = positiveItems.filter(item => loseMissRates[item] > 0.4);
-    let axis2 = 0;
-    if (highMissItems.length > 0) {
-        const matched = trade.appliedItems.filter(item => highMissItems.includes(item)).length;
-        axis2 = (matched / highMissItems.length) * 30;
-    }
-
-    // --- 軸③ WIN×LOSE差別化スコア (34点満点) ---
-    // cross分析のスコア上位項目をどれだけ持っているか
+    // WIN×LOSE差別化スコアを全ポジティブ項目で算出
     const crossScores = positiveItems.map(item => {
-        const winRate     = (winTrades.filter(t => t.appliedItems.includes(item)).length / winTotal) * 100;
+        const winRate      = (winTrades.filter(t => t.appliedItems.includes(item)).length / winTotal) * 100;
         const loseMissRate = (loseTrades.filter(t => !t.appliedItems.includes(item)).length / loseTotal) * 100;
         return { item, score: winRate + loseMissRate };
     });
-    const topCross = crossScores.filter(s => s.score >= 100).map(s => s.item);
-    let axis3 = 0;
-    if (topCross.length > 0) {
-        const matched = trade.appliedItems.filter(item => topCross.includes(item)).length;
-        axis3 = (matched / topCross.length) * 40;
-    }
 
-    const total = Math.round(axis1 + axis2 + axis3);
-    return { total, axis1: Math.round(axis1), axis2: Math.round(axis2), axis3: Math.round(axis3) };
+    // 全項目中の最大スコア（正規化の基準）
+    const maxScore = Math.max(...crossScores.map(s => s.score));
+    if (maxScore === 0) return null;
+
+    // エントリーでチェックした項目のスコアのみ抽出
+    const checkedScores = crossScores.filter(s => trade.appliedItems.includes(s.item));
+
+    // チェック項目が0件の場合は0点
+    if (checkedScores.length === 0) return { total: 0 };
+
+    // 加重平均 ÷ 最大値 × 100 で0〜100点化
+    const avgScore = checkedScores.reduce((sum, s) => sum + s.score, 0) / checkedScores.length;
+    const total = Math.round((avgScore / maxScore) * 100);
+
+    return { total };
 }
 
 function renderEntryScore(trade) {
