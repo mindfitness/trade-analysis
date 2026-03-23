@@ -2392,18 +2392,18 @@ function calcEntryScore(trade) {
         axis1 = (matched / highWinItems.length) * 30;
     }
 
-    // --- 軸② LOSE項目分析 (33点満点) ---
-    // LOSE履歴で出現率>40%の懸念項目（エントリーに含まれると減点）
-    const losNegRates = {};
-    negativeItems.forEach(item => {
-        const cnt = loseTrades.filter(t => t.negativeItems.includes(item)).length;
-        losNegRates[item] = cnt / loseTotal;
+    // --- 軸② LOSE欠如項目分析 (30点満点) ---
+    // LOSE時に欠如率>40%のポジティブ項目＝負けを防ぐ必須項目
+    const loseMissRates = {};
+    positiveItems.forEach(item => {
+        const cnt = loseTrades.filter(t => !t.appliedItems.includes(item)).length;
+        loseMissRates[item] = cnt / loseTotal;
     });
-    const highLoseItems = negativeItems.filter(item => losNegRates[item] > 0.4);
-    let axis2 = 30; // 懸念なければ満点
-    if (highLoseItems.length > 0) {
-        const danger = trade.negativeItems.filter(item => highLoseItems.includes(item)).length;
-        axis2 = Math.max(0, 30 - (danger / highLoseItems.length) * 30);
+    const highMissItems = positiveItems.filter(item => loseMissRates[item] > 0.4);
+    let axis2 = 0;
+    if (highMissItems.length > 0) {
+        const matched = trade.appliedItems.filter(item => highMissItems.includes(item)).length;
+        axis2 = (matched / highMissItems.length) * 30;
     }
 
     // --- 軸③ WIN×LOSE差別化スコア (34点満点) ---
