@@ -223,6 +223,16 @@
   .rank2-ema-pos { color: #10b981; }
   .rank2-ema-neg { color: #ef4444; }
 
+  /* ===== EMA21スコア ===== */
+  .ema21-score-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 900;
+  }
+  .ema21-score-green  { background: #064e3b; color: #10b981; border: 1px solid #10b981; }
+  .ema21-score-yellow { background: #451a03; color: #f59e0b; border: 1px solid #f59e0b; }
+  .ema21-score-red    { background: #7f1d1d; color: #ef4444; border: 1px solid #ef4444; }
+  
+
     /* PF画面 PC2列レイアウト */
 @media (min-width: 600px) {
     #active-container {
@@ -538,7 +548,13 @@
     </div>
 
     <div class="rank2-section">
-      <div class="rank2-title">ETF ランキング</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div class="rank2-title" style="margin-bottom:0;">ETF ランキング</div>
+        <div id="ema21-score-wrap" style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:0.62rem; color:#4a6080; font-weight:700;">EMA21↑</span>
+          <span id="ema21-score-badge" class="ema21-score-badge ema21-score-red">-- / -- &nbsp;(--%)</span>
+        </div>
+      </div>
       <div style="display:flex;gap:8px;margin-bottom:8px;">
         <input type="text" id="rank-search-input" placeholder="ETF検索 (例: SMH)"
           style="flex:1;padding:5px 10px;background:#1a2234;border:1px solid #2a3f5f;border-radius:6px;color:#e2e8f0;font-size:0.78rem;text-transform:uppercase;"
@@ -1238,6 +1254,19 @@ function toggleRankPin(symbol) {
 function renderRankTable() {
   const tbody = document.getElementById('rank-table-body');
   if (!tbody) return;
+
+  // ===== EMA21スコア集計 =====
+  const ema21Badge = document.getElementById('ema21-score-badge');
+  if (ema21Badge && rankMarketData.length > 0) {
+    const total  = rankMarketData.length;
+    const above  = rankMarketData.filter(d => d.above_ema21 === true).length;
+    const pct    = Math.round((above / total) * 100);
+    ema21Badge.textContent = `${above} / ${total}  (${pct}%)`;
+    ema21Badge.className = 'ema21-score-badge ' +
+      (pct >= 60 ? 'ema21-score-green' : pct >= 40 ? 'ema21-score-yellow' : 'ema21-score-red');
+  }
+  // =====
+
   let disp = [...rankMarketData];
   if (r2ActiveFilters.includes('5D>10D')) disp = disp.filter(d => d.five_day_change > d.ten_day_change);
   if (r2ActiveFilters.includes('10D>1M')) disp = disp.filter(d => d.ten_day_change  > d.month_change);
