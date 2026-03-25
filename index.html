@@ -2439,10 +2439,10 @@ function calcEntryScore(trade) {
     const winTotal  = winTrades.length;
     const loseTotal = loseTrades.length;
 
-    // --- 軸① WIN項目重み付きスコア (40点満点) ---
+    // --- 軸① WIN項目重み付きスコア・傾斜配点 (40点満点) ---
 const winWeights = positiveItems.map(item => {
     const cnt = winTrades.filter(t => t.appliedItems.includes(item)).length;
-    return { item, score: cnt / winTotal * 100 };
+    return { item, score: Math.pow(cnt / winTotal * 100, 1.5) };
 });
 const totalWinWeight = winWeights.reduce((sum, s) => sum + s.score, 0);
 let axis1 = 0;
@@ -2453,16 +2453,20 @@ if (totalWinWeight > 0) {
     axis1 = (matchedWinWeight / totalWinWeight) * 40;
 }
 
-// --- 軸② WIN×LOSE重み付きスコア (60点満点) ---
+// --- 軸② WIN×LOSE重み付きスコア・傾斜配点 (60点満点) ---
 const crossScores = positiveItems.map(item => {
     const winRate      = (winTrades.filter(t =>  t.appliedItems.includes(item)).length / winTotal)  * 100;
     const loseMissRate = (loseTrades.filter(t => !t.appliedItems.includes(item)).length / loseTotal) * 100;
     return { item, score: winRate + loseMissRate };
 });
-const totalWeight = crossScores.reduce((sum, s) => sum + s.score, 0);
+const amplified = crossScores.map(s => ({
+    item: s.item,
+    score: Math.pow(s.score, 1.5)
+}));
+const totalWeight = amplified.reduce((sum, s) => sum + s.score, 0);
 let axis2 = 0;
 if (totalWeight > 0) {
-    const matchedWeight = crossScores
+    const matchedWeight = amplified
         .filter(s => trade.appliedItems.includes(s.item))
         .reduce((sum, s) => sum + s.score, 0);
     axis2 = (matchedWeight / totalWeight) * 60;
