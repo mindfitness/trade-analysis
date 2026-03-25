@@ -272,6 +272,21 @@
 </head>
 <body>
 
+<div id="auth-screen" style="
+    position:fixed; top:0; left:0; width:100%; height:100%;
+    background:#0f172a; z-index:9999;
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px;">
+    <div style="color:white; font-size:1.1rem; font-weight:900;">🔒 Trade Analysis</div>
+    <input type="password" id="auth-input" placeholder="パスワードを入力"
+        style="padding:10px 16px; border-radius:8px; border:1px solid #334155;
+               background:#1e293b; color:white; font-size:1rem; width:220px; text-align:center;"
+        onkeydown="if(event.key==='Enter') checkAuth()">
+    <button onclick="checkAuth()"
+        style="padding:8px 24px; background:#3b82f6; color:white; border:none;
+               border-radius:8px; font-weight:800; cursor:pointer;">入力</button>
+    <div id="auth-error" style="color:#ef4444; font-size:0.75rem; display:none;">パスワードが違います</div>
+</div>
+
 <header>
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <h1 style="margin:0; font-size:1.05rem; font-weight:900; color:white;">Trade Analysis</h1>
@@ -820,6 +835,26 @@ copy(result); //</pre></div>
 <div id="loading-toast">保存中...</div>
 
 <script>
+// ===== パスワード認証 =====
+const AUTH_PASS = '20250901';
+
+function checkAuth() {
+    const input = document.getElementById('auth-input').value;
+    if (input === AUTH_PASS) {
+        sessionStorage.setItem('auth', '1');
+        document.getElementById('auth-screen').style.display = 'none';
+    } else {
+        document.getElementById('auth-error').style.display = 'block';
+        document.getElementById('auth-input').value = '';
+    }
+}
+
+// ページ読み込み時にチェック
+if (sessionStorage.getItem('auth') !== '1') {
+    window.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('auth-screen').style.display = 'flex';
+    });
+}
 // ======== 共通設定 ========
 const TWELVE_DATA_API_KEY = "4745e87ea2404681a5c9fa6376aac35a"; 
 const PERF_API_KEY = 'f550f672515b4cd6b4c2966f1e2cc0fb';
