@@ -2478,14 +2478,14 @@ function renderEntryScore(trade) {
         return `<span style="font-size:0.58rem;color:#475569;font-weight:700;">Score: --</span>`;
     }
     const score = sc.total;
-    const color = score >= 70
+    const color = score >= 65
     ? 'var(--win-deep)'
-    : score >= 50
+    : score >= 45
     ? '#f59e0b'
     : 'var(--lose-deep)';
-const bg = score >= 70
+const bg = score >= 65
     ? '#064e3b'
-    : score >= 50
+    : score >= 45
     ? '#451a03'
     : '#7f1d1d';
     return `<span style="
