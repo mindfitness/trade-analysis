@@ -835,12 +835,11 @@ copy(result); //</pre></div>
 <div id="loading-toast">保存中...</div>
 
 <script>
-    
-const AUTH_PASS = '0901';
-
+// ======== 認証 ========
+const _c = btoa('0901');
 function checkAuth() {
     const input = document.getElementById('auth-input').value;
-    if (input === AUTH_PASS) {
+    if (btoa(input) === _c) {
         sessionStorage.setItem('auth', '1');
         document.getElementById('auth-screen').style.display = 'none';
     } else {
@@ -848,13 +847,12 @@ function checkAuth() {
         document.getElementById('auth-input').value = '';
     }
 }
-
-// ページ読み込み時にチェック
 if (sessionStorage.getItem('auth') !== '1') {
     window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('auth-screen').style.display = 'flex';
     });
 }
+
 // ======== 共通設定 ========
 const TWELVE_DATA_API_KEY = "4745e87ea2404681a5c9fa6376aac35a"; 
 const PERF_API_KEY = 'f550f672515b4cd6b4c2966f1e2cc0fb';
