@@ -2451,7 +2451,7 @@ function calcEntryScore(trade) {
     let axis1 = 0;
     if (highWinItems.length > 0) {
         const matched = trade.appliedItems.filter(item => highWinItems.includes(item)).length;
-        axis1 = (matched / highWinItems.length) * 33;
+        axis1 = (matched / highWinItems.length) * 20;
     }
 
     // --- 軸② LOSE項目分析 (33点満点) ---
@@ -2462,10 +2462,10 @@ function calcEntryScore(trade) {
         losNegRates[item] = cnt / loseTotal;
     });
     const highLoseItems = negativeItems.filter(item => losNegRates[item] > 0.4);
-    let axis2 = 33; // 懸念なければ満点
+    let axis2 = 20; // 懸念なければ満点
     if (highLoseItems.length > 0) {
         const danger = trade.negativeItems.filter(item => highLoseItems.includes(item)).length;
-        axis2 = Math.max(0, 33 - (danger / highLoseItems.length) * 33);
+        axis2 = Math.max(0, 20 - (danger / highLoseItems.length) * 20);
     }
 
     // --- 軸③ WIN×LOSE差別化スコア (34点満点) ---
@@ -2479,7 +2479,7 @@ function calcEntryScore(trade) {
     let axis3 = 0;
     if (topCross.length > 0) {
         const matched = trade.appliedItems.filter(item => topCross.includes(item)).length;
-        axis3 = (matched / topCross.length) * 34;
+        axis3 = (matched / topCross.length) * 60;
     }
 
     const total = Math.round(axis1 + axis2 + axis3);
