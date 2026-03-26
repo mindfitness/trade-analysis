@@ -730,39 +730,40 @@
   <!-- Func サブタブ本体 -->
   <div id="screen-subtab-func" style="display:none; padding-bottom: 24px;">
 
-   <section>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4TT</span>
-            <div style="display:flex; align-items:center; gap:6px;">
-                <div style="display:flex; background:#334155; border-radius:6px; padding:2px; gap:2px;">
-                    <button id="tt-btn-1d" onclick="switchTTMode('1d')"
-                        style="padding:2px 10px; border:none; border-radius:4px; font-size:0.62rem; font-weight:800; cursor:pointer; background:var(--ai-accent); color:white;">
-                        1D
-                    </button>
-                    <button id="tt-btn-5d" onclick="switchTTMode('5d')"
-                        style="padding:2px 10px; border:none; border-radius:4px; font-size:0.62rem; font-weight:800; cursor:pointer; background:transparent; color:var(--text-sub);">
-                        5D
-                    </button>
-                </div>
-                <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-2', this)">コピー</button>
+    <section style="margin-bottom:10px;">
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:10px;">
+            <i data-lucide="git-merge" style="width:14px; color:var(--perf-accent);"></i>
+            <span style="font-size:0.8rem; font-weight:800; color:var(--perf-accent);">Ticker Intersect</span>
+        </div>
+        <div style="font-size:0.62rem; color:var(--text-sub); margin-bottom:8px; line-height:1.6;">
+            2つのリストに共通する銘柄を抽出します
+        </div>
+        <div style="margin-bottom:6px;">
+            <div style="font-size:0.62rem; color:var(--text-sub); font-weight:700; margin-bottom:3px;">リスト A</div>
+            <textarea id="intersect-a" placeholder="NVDA, AAPL, MSFT ..." rows="3"
+                style="font-family:monospace; font-size:0.82rem; resize:vertical;"></textarea>
+        </div>
+        <div style="margin-bottom:8px;">
+            <div style="font-size:0.62rem; color:var(--text-sub); font-weight:700; margin-bottom:3px;">リスト B</div>
+            <textarea id="intersect-b" placeholder="AAPL, GOOGL, NVDA ..." rows="3"
+                style="font-family:monospace; font-size:0.82rem; resize:vertical;"></textarea>
+        </div>
+        <button onclick="runIntersect()"
+            style="width:100%; padding:8px; background:var(--perf-accent); color:#0f172a; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem; margin-bottom:8px;">
+            ▶ 共通銘柄を抽出
+        </button>
+        <div id="intersect-result" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span id="intersect-result-label" style="font-size:0.65rem; font-weight:700; color:var(--perf-accent); letter-spacing:0.08em;"></span>
+                <button id="intersect-copy-btn" onclick="copyIntersect()"
+                    style="padding:3px 10px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem;">
+                    📋 コピー
+                </button>
+            </div>
+            <div id="intersect-result-body"
+                style="background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-family:monospace; font-size:0.78rem; color:#22d3ee; line-height:1.8; word-break:break-all;">
             </div>
         </div>
-        <div class="prompt-container-static"><pre id="prompt-2">fetch('/api/theme-ranking?force_reload=1')
-  .then(r => r.json())
-  .then(data => {
-    const top10 = data.all_themes
-      .filter(t => t.related)  // relatedがあるテーマのみ
-      .sort((a, b) => b['1日'] - a['1日'])
-      .slice(0, 10);
-    
-    const tickers = top10.flatMap(t => t.related.split(','));
-    const unique = [...new Set(tickers)];
-    const result = unique.join(', ');
-    
-    console.log('✅ 全銘柄（手動でコピーしてください）:');
-    console.log(result);
-    top10.forEach((t, i) => console.log(`${i+1}位 ${t.name}(1D:${(t['1日']*100).toFixed(1)}%): ${t.related}`));
-  });</pre></div>
     </section>
 
     <div style="color:var(--ai-accent); display:flex; align-items:center; gap:5px; margin-bottom:10px; font-size:0.78rem; font-weight:800; padding-top:4px;">
@@ -810,18 +811,19 @@
         <div class="prompt-container-static"><pre id="prompt-2">fetch('/api/theme-ranking?force_reload=1')
   .then(r => r.json())
   .then(data => {
-    const top10 = data.all_themes
-      .filter(t => t.related)  // relatedがあるテーマのみ
-      .sort((a, b) => b['1日'] - a['1日'])
-      .slice(0, 10);
+    const themes = data.all_themes.filter(t => t.related);
+    const top35_1d = new Set(themes.sort((a, b) => b['1日'] - a['1日']).slice(0, 35).map(t => t.name));
+    const top35_5d = new Set(themes.sort((a, b) => b['5日'] - a['5日']).slice(0, 35).map(t => t.name));
     
-    const tickers = top10.flatMap(t => t.related.split(','));
+    const both = themes.filter(t => top35_1d.has(t.name) && top35_5d.has(t.name));
+    
+    const tickers = both.flatMap(t => t.related.split(','));
     const unique = [...new Set(tickers)];
     const result = unique.join(', ');
     
-    console.log('✅ 全銘柄（手動でコピーしてください）:');
+    console.log(`✅ 1D・5D両方top35: ${both.length}テーマ / 全銘柄（手動でコピーしてください）:`);
     console.log(result);
-    top10.forEach((t, i) => console.log(`${i+1}位 ${t.name}(1D:${(t['1日']*100).toFixed(1)}%): ${t.related}`));
+    both.forEach((t, i) => console.log(`${i+1}. ${t.name}  1D:${(t['1日']*100).toFixed(1)}%  5D:${(t['5日']*100).toFixed(1)}%  → ${t.related}`));
   });</pre></div>
     </section>
     <section>
@@ -2181,55 +2183,6 @@ function copyIntersect() {
         btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
         setTimeout(() => { btn.innerText = '📋 コピー'; btn.style.background = '#334155'; }, 2000);
     });
-}
-
-// ======== 4TT モード切替 ========
-const TT_PROMPTS = {
-    '1d': `fetch('/api/theme-ranking?force_reload=1')
-  .then(r => r.json())
-  .then(data => {
-    const top10 = data.all_themes
-      .filter(t => t.related)  // relatedがあるテーマのみ
-      .sort((a, b) => b['1日'] - a['1日'])
-      .slice(0, 10);
-    
-    const tickers = top10.flatMap(t => t.related.split(','));
-    const unique = [...new Set(tickers)];
-    const result = unique.join(', ');
-    
-    console.log('✅ 全銘柄（手動でコピーしてください）:');
-    console.log(result);
-    top10.forEach((t, i) => console.log(\`\${i+1}位 \${t.name}(1D:\${(t['1日']*100).toFixed(1)}%): \${t.related}\`));
-  });`,
-    '5d': `fetch('/api/theme-ranking?force_reload=1')
-  .then(r => r.json())
-  .then(data => {
-    const top10 = data.all_themes
-      .filter(t => t.related)  // relatedがあるテーマのみ
-      .sort((a, b) => b['5日'] - a['5日'])
-      .slice(0, 10);
-    
-    const tickers = top10.flatMap(t => t.related.split(','));
-    const unique = [...new Set(tickers)];
-    const result = unique.join(', ');
-    
-    console.log('✅ 全銘柄（手動でコピーしてください）:');
-    console.log(result);
-    top10.forEach((t, i) => console.log(\`\${i+1}位 \${t.name}(5D:\${(t['5日']*100).toFixed(1)}%): \${t.related}\`));
-  });`
-};
-
-function switchTTMode(mode) {
-    document.getElementById('prompt-2').innerText = TT_PROMPTS[mode];
-    const btn1d = document.getElementById('tt-btn-1d');
-    const btn5d = document.getElementById('tt-btn-5d');
-    if (mode === '1d') {
-        btn1d.style.background = 'var(--ai-accent)'; btn1d.style.color = 'white';
-        btn5d.style.background = 'transparent';      btn5d.style.color = 'var(--text-sub)';
-    } else {
-        btn5d.style.background = 'var(--ai-accent)'; btn5d.style.color = 'white';
-        btn1d.style.background = 'transparent';      btn1d.style.color = 'var(--text-sub)';
-    }
 }
 
 // ======== スクリーナー ========
