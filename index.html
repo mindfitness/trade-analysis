@@ -772,19 +772,17 @@
   .then(r => r.json())
   .then(data => {
     const top10 = data.all_themes
-      .filter(t => t.rank >= 1 && t.rank <= 10)
-      .sort((a, b) => a.rank - b.rank);
+      .filter(t => t.related)  // relatedがあるテーマのみ
+      .sort((a, b) => b['1日'] - a['1日'])
+      .slice(0, 10);
     
     const tickers = top10.flatMap(t => t.related.split(','));
     const unique = [...new Set(tickers)];
     const result = unique.join(', ');
     
-    navigator.clipboard.writeText(result).then(() => {
-      console.log('✅ クリップボードにコピーしました！');
-    });
-    
-    top10.forEach(t => console.log(`${t.rank}位 ${t.name}: ${t.related}`));
-    console.log('\n全銘柄:', result);
+    console.log('✅ 全銘柄（手動でコピーしてください）:');
+    console.log(result);
+    top10.forEach((t, i) => console.log(`${i+1}位 ${t.name}(1D:${(t['1日']*100).toFixed(1)}%): ${t.related}`));
   });</pre></div>
     </section>
     <section>
