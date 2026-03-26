@@ -765,10 +765,27 @@
     </section>
     <section>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">市場センチメント</span>
+            <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4TT</span>
             <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-2', this)">コピー</button>
         </div>
-        <div class="prompt-container-static"><pre id="prompt-2">米国株センチメント評価。直近で重要な指標の発表（経済カレンダー）があれば教えて。</pre></div>
+        <div class="prompt-container-static"><pre id="prompt-2">fetch('/api/theme-ranking?force_reload=1')
+  .then(r => r.json())
+  .then(data => {
+    const top10 = data.all_themes
+      .filter(t => t.rank >= 1 && t.rank <= 10)
+      .sort((a, b) => a.rank - b.rank);
+    
+    const tickers = top10.flatMap(t => t.related.split(','));
+    const unique = [...new Set(tickers)];
+    const result = unique.join(', ');
+    
+    navigator.clipboard.writeText(result).then(() => {
+      console.log('✅ クリップボードにコピーしました！');
+    });
+    
+    top10.forEach(t => console.log(`${t.rank}位 ${t.name}: ${t.related}`));
+    console.log('\n全銘柄:', result);
+  });</pre></div>
     </section>
     <section>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
