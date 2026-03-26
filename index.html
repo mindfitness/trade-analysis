@@ -729,6 +729,43 @@
 
   <!-- Func サブタブ本体 -->
   <div id="screen-subtab-func" style="display:none; padding-bottom: 24px;">
+
+    <section style="margin-bottom:10px;">
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:10px;">
+            <i data-lucide="git-merge" style="width:14px; color:var(--perf-accent);"></i>
+            <span style="font-size:0.8rem; font-weight:800; color:var(--perf-accent);">Ticker Intersect</span>
+        </div>
+        <div style="font-size:0.62rem; color:var(--text-sub); margin-bottom:8px; line-height:1.6;">
+            2つのリストに共通する銘柄を抽出します
+        </div>
+        <div style="margin-bottom:6px;">
+            <div style="font-size:0.62rem; color:var(--text-sub); font-weight:700; margin-bottom:3px;">リスト A</div>
+            <textarea id="intersect-a" placeholder="NVDA, AAPL, MSFT ..." rows="3"
+                style="font-family:monospace; font-size:0.82rem; resize:vertical;"></textarea>
+        </div>
+        <div style="margin-bottom:8px;">
+            <div style="font-size:0.62rem; color:var(--text-sub); font-weight:700; margin-bottom:3px;">リスト B</div>
+            <textarea id="intersect-b" placeholder="AAPL, GOOGL, NVDA ..." rows="3"
+                style="font-family:monospace; font-size:0.82rem; resize:vertical;"></textarea>
+        </div>
+        <button onclick="runIntersect()"
+            style="width:100%; padding:8px; background:var(--perf-accent); color:#0f172a; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem; margin-bottom:8px;">
+            ▶ 共通銘柄を抽出
+        </button>
+        <div id="intersect-result" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span id="intersect-result-label" style="font-size:0.65rem; font-weight:700; color:var(--perf-accent); letter-spacing:0.08em;"></span>
+                <button id="intersect-copy-btn" onclick="copyIntersect()"
+                    style="padding:3px 10px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem;">
+                    📋 コピー
+                </button>
+            </div>
+            <div id="intersect-result-body"
+                style="background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-family:monospace; font-size:0.78rem; color:#22d3ee; line-height:1.8; word-break:break-all;">
+            </div>
+        </div>
+    </section>
+
     <div style="color:var(--ai-accent); display:flex; align-items:center; gap:5px; margin-bottom:10px; font-size:0.78rem; font-weight:800; padding-top:4px;">
         <i data-lucide="bot" style="width:14px;"></i> プロンプトストック
     </div>
@@ -803,6 +840,8 @@ var result = [...new Set(tickers)].join(', ');
 console.log(result);
 copy(result); //</pre></div>
     </section>
+ 
+
   </div><!-- /screen-subtab-func -->
 
 </div><!-- /page-screen -->
@@ -2092,6 +2131,54 @@ function copyScreenResults() {
     const text = lines.join(', ');
     navigator.clipboard.writeText(text).then(() => {
         const btn = document.getElementById('copy-screen-results-btn');
+        btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
+        setTimeout(() => { btn.innerText = '📋 コピー'; btn.style.background = '#334155'; }, 2000);
+    });
+}
+
+// ======== Ticker Intersect ========
+function parseTickers(raw) {
+    return [...new Set(
+        raw.split(/[\s,\n\r\t\/|;]+/)
+            .map(t => t.trim().replace(/^\$/, '').toUpperCase())
+            .filter(t => /^[A-Z]{1,6}$/.test(t))
+    )];
+}
+
+function runIntersect() {
+    const rawA = document.getElementById('intersect-a').value;
+    const rawB = document.getElementById('intersect-b').value;
+    const setA = parseTickers(rawA);
+    const setB = new Set(parseTickers(rawB));
+    const common = setA.filter(t => setB.has(t));
+
+    const resultEl  = document.getElementById('intersect-result');
+    const labelEl   = document.getElementById('intersect-result-label');
+    const bodyEl    = document.getElementById('intersect-result-body');
+
+    resultEl.style.display = 'block';
+
+    if (common.length === 0) {
+        labelEl.innerText = '共通銘柄: 0件';
+        labelEl.style.color = 'var(--lose-deep)';
+        bodyEl.style.color  = 'var(--text-sub)';
+        bodyEl.innerText    = '共通する銘柄はありませんでした';
+        document.getElementById('intersect-copy-btn').style.display = 'none';
+        return;
+    }
+
+    labelEl.innerText = `共通銘柄: ${common.length}件`;
+    labelEl.style.color = 'var(--perf-accent)';
+    bodyEl.style.color  = '#22d3ee';
+    bodyEl.innerText    = common.join(', ');
+    document.getElementById('intersect-copy-btn').style.display = 'inline-block';
+}
+
+function copyIntersect() {
+    const text = document.getElementById('intersect-result-body').innerText;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('intersect-copy-btn');
         btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
         setTimeout(() => { btn.innerText = '📋 コピー'; btn.style.background = '#334155'; }, 2000);
     });
