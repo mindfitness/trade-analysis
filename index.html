@@ -707,9 +707,12 @@
   </div>
 
   <div id="screen-results" style="display:none;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
       <span style="font-size:0.65rem; font-weight:700; color:var(--text-sub); letter-spacing:0.1em; text-transform:uppercase;">Results</span>
-      <span id="screen-results-count" style="font-size:0.65rem; font-weight:700; color:var(--win-deep);">0 matches</span>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span id="screen-results-count" style="font-size:0.65rem; font-weight:700; color:var(--win-deep);">0 matches</span>
+        <button id="copy-screen-results-btn" onclick="copyScreenResults()" style="padding:3px 10px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 コピー</button>
+      </div>
     </div>
     <div id="screen-results-body"></div>
   </div>
@@ -2077,6 +2080,23 @@ function copyTheme(themeId) {
     });
 }
 
+// ======== スクリーニング結果コピー ========
+function copyScreenResults() {
+    const cards = document.querySelectorAll('#screen-results-body > div');
+    if (cards.length === 0) return;
+    const lines = Array.from(cards).map(card => {
+        const ticker = card.querySelector('a span')?.innerText?.trim() || '';
+        return ticker ? `$${ticker}` : null;
+    }).filter(Boolean);
+    if (lines.length === 0) return;
+    const text = lines.join(', ');
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copy-screen-results-btn');
+        btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
+        setTimeout(() => { btn.innerText = '📋 コピー'; btn.style.background = '#334155'; }, 2000);
+    });
+}
+
 // ======== スクリーナー ========
 const SCREEN_API_KEY = 'f550f672515b4cd6b4c2966f1e2cc0fb';
 let screenSaveToWatch = false;
@@ -2279,6 +2299,7 @@ function screenAppendCard(r) {
       <span style="font-size:0.72rem;font-weight:700;color:${vcsColor};">VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}</span>
     </div>`;
   body.appendChild(div.firstElementChild);
+  document.getElementById('copy-screen-results-btn').style.display = 'inline-block';
 }
 
 // 既存のscreenAppendCard関数の直後に追加
