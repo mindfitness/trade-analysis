@@ -724,6 +724,19 @@
     </div>
     <div id="screen-skip-body"></div>
   </div><!-- /screen-skip-section -->
+
+  <div id="screen-error-section" style="display:none; margin-top:12px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <span style="font-size:0.65rem; font-weight:700; color:var(--lose-deep); letter-spacing:0.1em; text-transform:uppercase;">⚠ Fetch Error</span>
+      <span id="screen-error-count" style="font-size:0.65rem; font-weight:700; color:var(--lose-deep);">0 errors</span>
+    </div>
+    <div id="screen-error-body" style="background:var(--input-bg); border:1px solid #7f1d1d; border-radius:8px; padding:8px 12px; font-family:monospace; font-size:0.72rem; color:#f87171; line-height:2;"></div>
+    <button onclick="retryErrors()" id="retry-errors-btn"
+      style="margin-top:8px; width:100%; padding:7px; background:#7f1d1d; border:1px solid #991b1b; color:#fca5a5; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.75rem;">
+      🔄 エラー銘柄を再試行
+    </button>
+  </div><!-- /screen-error-section -->
+
   </div><!-- /screen-subtab-screen (screen本体の外側div も閉じる) -->
   </div><!-- /screen-ticker入力エリア -->
 
@@ -805,7 +818,7 @@
     </section>
     <section>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4TT</span>
+            <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4TT(Alt+T/O)</span>
             <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-2', this)">コピー</button>
         </div>
         <div class="prompt-container-static"><pre id="prompt-2">fetch('/api/theme-ranking?force_reload=1')
@@ -828,7 +841,7 @@
     </section>
     <section>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4screener</span>
+            <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4TV(Alt+S)</span>
             <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-3', this)">コピー</button>
         </div>
         <div class="prompt-container-static"><pre id="prompt-3">//
@@ -2187,8 +2200,9 @@ function copyIntersect() {
 
 // ======== スクリーナー ========
 const SCREEN_API_KEY = 'f550f672515b4cd6b4c2966f1e2cc0fb';
+const SCREEN_API_KEY_2 = '10f03734e47d4c5fb02dd591d7928e8c';
 let screenSaveToWatch = false;
-const SCREEN_DELAY = 10000;
+const SCREEN_DELAY = 7000;
 let screenSpyMap = null;
 
 function toggleSaveToWatch() {
@@ -2245,7 +2259,13 @@ async function screenEnsureSpy() {
   if (screenSpyMap) return true;
   screenSetSpyStatus('loading', 'SPY: 取得中...');
   try {
-    const values = await screenFetchTimeSeries('SPY', 252);
+    // SPY取得はAPI2を使い、API1のレート枠を温存
+    const url = `https://api.twelvedata.com/time_series?symbol=SPY&interval=1day&outputsize=252&apikey=${SCREEN_API_KEY_2}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    if (json.status === 'error') throw new Error(json.message);
+    if (!json.values || json.values.length === 0) throw new Error('No data');
+    const values = json.values;
     screenSpyMap = {};
     values.forEach(d => { screenSpyMap[d.datetime] = parseFloat(d.close); });
     screenSetSpyStatus('ok', `SPY: 取得済み (${values.length}日分)`);
@@ -2363,6 +2383,46 @@ const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH;
     match: rsCondition || vcsCondition };
 }
 
+// APIキーを指定できるscreenTickerのラッパー
+async function screenTickerWithKey(symbol, apiKey) {
+  const values = await (async () => {
+    const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=1day&outputsize=252&apikey=${apiKey}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    if (json.status === 'error') {
+      const err = new Error(json.message);
+      err._sym = symbol;
+      throw err;
+    }
+    if (!json.values || json.values.length === 0) {
+      const err = new Error('No data');
+      err._sym = symbol;
+      throw err;
+    }
+    return json.values;
+  })();
+
+  const closes = values.map(d => parseFloat(d.close));
+  const sClose = closes[0];
+  const ratios = values.filter(d => screenSpyMap[d.datetime] !== undefined)
+    .map(d => parseFloat(d.close) / screenSpyMap[d.datetime]);
+  const rs10 = screenPercentRank(ratios, 10);
+  const rs21 = screenPercentRank(ratios, 21);
+  const volumes = values.map(d => parseInt(d.volume));
+  const vol50Avg = volumes.slice(0, 50).reduce((s, v) => s + v, 0) / 50;
+  const hasVolSpike = values.slice(0, 10).some(d =>
+    parseFloat(d.close) > parseFloat(d.open) && parseInt(d.volume) > vol50Avg * 1.3
+  );
+  const isHH = parseFloat(values[0].high) > parseFloat(values[1].high);
+  const vcs = screenCalcVCS(values);
+  const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH;
+  const vcsCondition = !isNaN(vcs) && vcs >= 60;
+
+  return { symbol, price: sClose, rs10, rs21, hasVolSpike, vcs,
+    matchType: rsCondition ? 'rs' : vcsCondition ? 'vcs' : null,
+    match: rsCondition || vcsCondition };
+}
+
 function screenAppendCard(r) {
   const body = document.getElementById('screen-results-body');
   const div = document.createElement('div');
@@ -2467,8 +2527,22 @@ function screenRegisterToWatch(result) {
   screenAddLog(`  → Watch登録完了 [RS]: ${result.symbol}`, 'match');
 }
     
+let _screenErrorTickers = [];
+
+async function retryErrors() {
+  if (_screenErrorTickers.length === 0) return;
+  const syms = _screenErrorTickers.map(e => e.sym).join(', ');
+  document.getElementById('screen-ticker-input').value = syms;
+  _screenErrorTickers = [];
+  document.getElementById('screen-error-section').style.display = 'none';
+  await startScreening(document.getElementById('screen-run-btn').disabled ? 'rs' : 'vcs');
+}
+    
 async function startScreening(mode = 'rs') {
   _rsWatchResetDone = false;
+  _screenErrorTickers = [];
+  document.getElementById('screen-error-body').innerHTML = '';
+  document.getElementById('screen-error-section').style.display = 'none';
   const input = document.getElementById('screen-ticker-input').value;
   const tickers = [...new Set(
   input.split(/[\s,\n]+/)
@@ -2504,19 +2578,41 @@ if (duplicatesRemoved > 0) {
     screenAddLog('SPY取得失敗のため中断', 'err');
     return;
   }
-  await new Promise(r => setTimeout(r, SCREEN_DELAY));
+  // SPY後の待機を削除
 
   let matchCount = 0;
   let skipCount = 0;
-  for (let i = 0; i < tickers.length; i++) {
-    const sym = tickers[i];
+  const API_KEYS = [SCREEN_API_KEY, SCREEN_API_KEY_2];
+
+  // 2件ずつペアで処理
+  for (let i = 0; i < tickers.length; i += 2) {
+    const pair = [tickers[i], tickers[i + 1]].filter(Boolean);
     const pct = Math.round((i / tickers.length) * 100);
     document.getElementById('screen-progress-bar').style.width = pct + '%';
     document.getElementById('screen-progress-count').innerText = `${i} / ${tickers.length}`;
-    document.getElementById('screen-progress-ticker').innerText = `スキャン中: ${sym}`;
+    document.getElementById('screen-progress-ticker').innerText = `スキャン中: ${pair.join(' + ')}`;
 
-    try {
-      const result = await screenTicker(sym);
+    // 2件を同時リクエスト（各キーを割り当て）
+    const results = [];
+for (const [idx, sym] of pair.entries()) {
+  try {
+    const result = await screenTickerWithKey(sym, API_KEYS[idx]);
+    results.push({ status: 'fulfilled', value: result });
+  } catch(e) {
+    e._sym = sym;
+    results.push({ status: 'rejected', reason: e });
+  }
+}
+
+    for (const [idx, res] of results.entries()) {
+      if (res.status === 'rejected') {
+        const sym = res.reason?._sym || pair[idx];
+        _screenErrorTickers.push({ sym, msg: res.reason?.message || 'Unknown error' });
+        screenAddLog(`✗ error  ${sym}  ${res.reason?.message}`, 'err');
+        continue;
+      }
+      const result = res.value;
+      const sym = result.symbol;
       const isMatch = mode === 'vcs'
         ? (!isNaN(result.vcs) && result.vcs >= 60)
         : result.match;
@@ -2538,15 +2634,25 @@ if (duplicatesRemoved > 0) {
         document.getElementById('screen-skip-count').innerText = `${skipCount} skipped`;
         screenAppendSkipCard(result);
       }
-    } catch(e) {
-      screenAddLog(`✗ error  ${sym}  ${e.message}`, 'err');
     }
-    if (i < tickers.length - 1) await new Promise(r => setTimeout(r, SCREEN_DELAY));
+
+    if (i + 2 < tickers.length) await new Promise(r => setTimeout(r, SCREEN_DELAY));
   }
 
   document.getElementById('screen-progress-bar').style.width = '100%';
   document.getElementById('screen-progress-count').innerText = `${tickers.length} / ${tickers.length}`;
   document.getElementById('screen-progress-ticker').innerText = '完了';
+
+  // エラー銘柄まとめ表示
+  if (_screenErrorTickers.length > 0) {
+    const sec = document.getElementById('screen-error-section');
+    const body = document.getElementById('screen-error-body');
+    document.getElementById('screen-error-count').innerText = `${_screenErrorTickers.length} errors`;
+    body.innerHTML = _screenErrorTickers.map(e =>
+      `<div><span style="color:#fca5a5;font-weight:900;">${e.sym}</span> <span style="color:#64748b;font-size:0.65rem;">— ${e.msg}</span></div>`
+    ).join('');
+    sec.style.display = 'block';
+  }
   if (matchCount === 0) {
     document.getElementById('screen-results').style.display = 'block';
     document.getElementById('screen-results-body').innerHTML = '<div style="text-align:center;color:var(--text-sub);padding:20px;font-size:0.75rem;">条件に合致する銘柄はありませんでした</div>';
