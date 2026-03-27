@@ -724,19 +724,6 @@
     </div>
     <div id="screen-skip-body"></div>
   </div><!-- /screen-skip-section -->
-
-  <div id="screen-error-section" style="display:none; margin-top:12px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-      <span style="font-size:0.65rem; font-weight:700; color:var(--lose-deep); letter-spacing:0.1em; text-transform:uppercase;">⚠ Fetch Error</span>
-      <span id="screen-error-count" style="font-size:0.65rem; font-weight:700; color:var(--lose-deep);">0 errors</span>
-    </div>
-    <div id="screen-error-body" style="background:var(--input-bg); border:1px solid #7f1d1d; border-radius:8px; padding:8px 12px; font-family:monospace; font-size:0.72rem; color:#f87171; line-height:2;"></div>
-    <button onclick="retryErrors()" id="retry-errors-btn"
-      style="margin-top:8px; width:100%; padding:7px; background:#7f1d1d; border:1px solid #991b1b; color:#fca5a5; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.75rem;">
-      🔄 エラー銘柄を再試行
-    </button>
-  </div><!-- /screen-error-section -->
-
   </div><!-- /screen-subtab-screen (screen本体の外側div も閉じる) -->
   </div><!-- /screen-ticker入力エリア -->
 
@@ -818,7 +805,7 @@
     </section>
     <section>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4TT(Alt+T/O)</span>
+            <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4TT</span>
             <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-2', this)">コピー</button>
         </div>
         <div class="prompt-container-static"><pre id="prompt-2">fetch('/api/theme-ranking?force_reload=1')
@@ -841,7 +828,7 @@
     </section>
     <section>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4TV(Alt+S)</span>
+            <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4screener</span>
             <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-3', this)">コピー</button>
         </div>
         <div class="prompt-container-static"><pre id="prompt-3">//
@@ -2480,22 +2467,8 @@ function screenRegisterToWatch(result) {
   screenAddLog(`  → Watch登録完了 [RS]: ${result.symbol}`, 'match');
 }
     
-let _screenErrorTickers = [];
-
-async function retryErrors() {
-  if (_screenErrorTickers.length === 0) return;
-  const syms = _screenErrorTickers.map(e => e.sym).join(', ');
-  document.getElementById('screen-ticker-input').value = syms;
-  _screenErrorTickers = [];
-  document.getElementById('screen-error-section').style.display = 'none';
-  await startScreening(document.getElementById('screen-run-btn').disabled ? 'rs' : 'vcs');
-}
-    
 async function startScreening(mode = 'rs') {
   _rsWatchResetDone = false;
-  _screenErrorTickers = [];
-  document.getElementById('screen-error-body').innerHTML = '';
-  document.getElementById('screen-error-section').style.display = 'none';
   const input = document.getElementById('screen-ticker-input').value;
   const tickers = [...new Set(
   input.split(/[\s,\n]+/)
@@ -2566,7 +2539,6 @@ if (duplicatesRemoved > 0) {
         screenAppendSkipCard(result);
       }
     } catch(e) {
-      _screenErrorTickers.push({ sym, msg: e.message });
       screenAddLog(`✗ error  ${sym}  ${e.message}`, 'err');
     }
     if (i < tickers.length - 1) await new Promise(r => setTimeout(r, SCREEN_DELAY));
@@ -2575,17 +2547,6 @@ if (duplicatesRemoved > 0) {
   document.getElementById('screen-progress-bar').style.width = '100%';
   document.getElementById('screen-progress-count').innerText = `${tickers.length} / ${tickers.length}`;
   document.getElementById('screen-progress-ticker').innerText = '完了';
-
-  // エラー銘柄まとめ表示
-  if (_screenErrorTickers.length > 0) {
-    const sec = document.getElementById('screen-error-section');
-    const body = document.getElementById('screen-error-body');
-    document.getElementById('screen-error-count').innerText = `${_screenErrorTickers.length} errors`;
-    body.innerHTML = _screenErrorTickers.map(e =>
-      `<div><span style="color:#fca5a5;font-weight:900;">${e.sym}</span> <span style="color:#64748b;font-size:0.65rem;">— ${e.msg}</span></div>`
-    ).join('');
-    sec.style.display = 'block';
-  }
   if (matchCount === 0) {
     document.getElementById('screen-results').style.display = 'block';
     document.getElementById('screen-results-body').innerHTML = '<div style="text-align:center;color:var(--text-sub);padding:20px;font-size:0.75rem;">条件に合致する銘柄はありませんでした</div>';
