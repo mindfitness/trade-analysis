@@ -565,10 +565,12 @@
     <div class="rank2-section">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
         <div class="rank2-title" style="margin-bottom:0;">ETF ランキング</div>
-        <div id="ema21-score-wrap" style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:0.62rem; color:#4a6080; font-weight:700;">EMA21↑</span>
-          <span id="ema21-score-badge" class="ema21-score-badge ema21-score-red">-- / -- &nbsp;(--%)</span>
-        </div>
+       <div id="ema21-score-wrap" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+  <span style="font-size:0.62rem; color:#4a6080; font-weight:700;">EMA21↑</span>
+  <span id="ema21-score-badge" class="ema21-score-badge ema21-score-red">-- / -- &nbsp;(--%)</span>
+  <span style="font-size:0.62rem; color:#4a6080; font-weight:700;">SMA50↑</span>
+  <span id="sma50-score-badge" class="ema21-score-badge ema21-score-red">-- / -- &nbsp;(--%)</span>
+</div>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:8px;">
         <input type="text" id="rank-search-input" placeholder="ETF検索 (例: SMH)"
@@ -1359,7 +1361,7 @@ function renderRankTable() {
   const tbody = document.getElementById('rank-table-body');
   if (!tbody) return;
 
-  // ===== EMA21スコア集計 =====
+ // ===== EMA21 / SMA50スコア集計 =====
   const ema21Badge = document.getElementById('ema21-score-badge');
   if (ema21Badge && rankMarketData.length > 0) {
     const total  = rankMarketData.length;
@@ -1367,6 +1369,15 @@ function renderRankTable() {
     const pct    = Math.round((above / total) * 100);
     ema21Badge.textContent = `${above} / ${total}  (${pct}%)`;
     ema21Badge.className = 'ema21-score-badge ' +
+      (pct >= 60 ? 'ema21-score-green' : pct >= 40 ? 'ema21-score-yellow' : 'ema21-score-red');
+  }
+  const sma50Badge = document.getElementById('sma50-score-badge');
+  if (sma50Badge && rankMarketData.length > 0) {
+    const total  = rankMarketData.length;
+    const above  = rankMarketData.filter(d => d.above_sma50 === true).length;
+    const pct    = Math.round((above / total) * 100);
+    sma50Badge.textContent = `${above} / ${total}  (${pct}%)`;
+    sma50Badge.className = 'ema21-score-badge ' +
       (pct >= 60 ? 'ema21-score-green' : pct >= 40 ? 'ema21-score-yellow' : 'ema21-score-red');
   }
   // =====
