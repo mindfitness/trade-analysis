@@ -634,9 +634,10 @@
 
 <!-- テーマトラッカーページ -->
 <div id="page-theme" class="page">
-    <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
-        <button onclick="openThemeModal()" style="padding:6px 14px; background:var(--theme-accent); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.78rem;">+ テーマ追加</button>
-    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+    <button id="watch-refresh-all-btn" onclick="refreshAllThemePerf()" style="padding:6px 14px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:8px; font-weight:800; cursor:pointer; font-size:0.78rem;">📊 一括更新</button>
+    <button onclick="openThemeModal()" style="padding:6px 14px; background:var(--theme-accent); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.78rem;">+ テーマ追加</button>
+</div>
     <div id="theme-list"></div>
 </div>
 
@@ -928,6 +929,7 @@ if (sessionStorage.getItem('auth') !== '1') {
 
 // ======== 共通設定 ========
 const TWELVE_DATA_API_KEY = "4745e87ea2404681a5c9fa6376aac35a"; 
+const WATCH_PERF_API_KEY = "47ad088398004b0b9f76f2c3993438eb"; // 
 const PERF_API_KEY = 'f550f672515b4cd6b4c2966f1e2cc0fb';
 const TRADE_API_URL = "/api";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbw8bphx9s_QhCLbgKbhkI1iAMu22EBIfsR0YVeEE4MoF0qYWcxyE9AKhm3yCzafO40_2g/exec";
@@ -1961,41 +1963,125 @@ function deleteTheme(id) {
     if(confirm("このテーマを削除しますか？")){ themes=themes.filter(t=>t.id!==id); saveThemes(); }
 }
 
+// テーマごとの騰落率キャッシュ: { [themeId]: { pct: number|null, loading: bool, updatedAt: string } }
+const themePerfCache = {};
+
+function renderThemePerfBadge(themeId) {
+    const cache = themePerfCache[themeId];
+    if (!cache) {
+        return `<span id="theme-perf-badge-${themeId}" style="font-size:0.62rem;color:var(--text-sub);">--</span>`;
+    }
+    if (cache.loading) {
+        return `<span id="theme-perf-badge-${themeId}" style="font-size:0.62rem;color:#22d3ee;">取得中...</span>`;
+    }
+    if (cache.pct === null) {
+        return `<span id="theme-perf-badge-${themeId}" style="font-size:0.62rem;color:var(--text-sub);">--</span>`;
+    }
+    const pct = cache.pct;
+    const color = pct > 0 ? 'var(--win-deep)' : pct < 0 ? 'var(--lose-deep)' : 'var(--text-sub)';
+    const bg    = pct > 0 ? '#064e3b' : pct < 0 ? '#7f1d1d' : '#334155';
+    const sign  = pct > 0 ? '+' : '';
+    const time  = cache.updatedAt ? `<span style="font-size:0.55rem;color:#475569;margin-left:4px;">${cache.updatedAt}</span>` : '';
+    return `<span id="theme-perf-badge-${themeId}"
+        style="font-size:0.72rem;font-weight:900;color:${color};background:${bg};border:1px solid ${color};border-radius:4px;padding:1px 7px;">
+        ${sign}${pct.toFixed(2)}%</span>${time}`;
+}
+
+async function fetchThemePerf(themeId) {
+    if (!WATCH_PERF_API_KEY) return;
+    const theme = themes.find(t => t.id === themeId);
+    if (!theme || theme.stocks.length === 0) return;
+
+    themePerfCache[themeId] = { pct: null, loading: true, updatedAt: '' };
+    // バッジをローディング表示に更新
+    const badge = document.getElementById(`theme-perf-badge-${themeId}`);
+    if (badge) badge.outerHTML = renderThemePerfBadge(themeId);
+
+    const results = [];
+    for (const sym of theme.stocks) {
+        try {
+            const res = await fetch(
+                `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(sym)}&interval=1day&outputsize=2&apikey=${WATCH_PERF_API_KEY}`
+            );
+            const json = await res.json();
+            if (json.status === 'error' || !json.values || json.values.length < 2) continue;
+            const cur  = parseFloat(json.values[0].close);
+            const prev = parseFloat(json.values[1].close);
+            if (!isNaN(cur) && !isNaN(prev) && prev !== 0) {
+                results.push((cur - prev) / prev * 100);
+            }
+        } catch(e) { /* skip */ }
+        // レート制限対策
+        await new Promise(r => setTimeout(r, 250));
+    }
+
+    const avg = results.length > 0
+        ? results.reduce((a, b) => a + b, 0) / results.length
+        : null;
+    const now = new Date();
+    themePerfCache[themeId] = {
+        pct: avg,
+        loading: false,
+        updatedAt: `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`
+    };
+
+    // バッジだけ差し替え
+    const el = document.getElementById(`theme-perf-badge-${themeId}`);
+    if (el) {
+        const tmp = document.createElement('span');
+        tmp.innerHTML = renderThemePerfBadge(themeId);
+        el.replaceWith(tmp.firstElementChild || tmp);
+    }
+}
+
+async function refreshAllThemePerf() {
+    if (!WATCH_PERF_API_KEY) { alert('WATCH_PERF_API_KEY が未設定です'); return; }
+    const btn = document.getElementById('watch-refresh-all-btn');
+    if (btn) { btn.disabled = true; btn.innerText = '更新中...'; }
+    for (const theme of themes) {
+        if (theme.stocks.length > 0) await fetchThemePerf(theme.id);
+    }
+    if (btn) { btn.disabled = false; btn.innerText = '📊 一括更新'; }
+}
+
 function renderThemes() {
     const list = document.getElementById('theme-list');
     const sorted = [...themes].sort((a, b) => b.id - a.id);
-    list.innerHTML = sorted.map(theme=>`
+    list.innerHTML = sorted.map(theme => `
         <div class="theme-card">
             <div class="theme-card-top">
                 <div style="min-width:0;flex:1;">
-                    <div style="display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;">
+                    <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
                         <h2 class="theme-title">${theme.name}</h2>
                         <span class="theme-date">${theme.date}</span>
+                        ${renderThemePerfBadge(theme.id)}
                     </div>
                     <div class="theme-tag-row" style="margin-top:3px;">
-                        ${theme.tags.map(tag=>`<span class="theme-tag"># ${tag}</span>`).join('')}
+                        ${theme.tags.map(tag => `<span class="theme-tag"># ${tag}</span>`).join('')}
                     </div>
                 </div>
                 <div style="display:flex;gap:2px;flex-shrink:0;align-items:center;">
+                    <button onclick="fetchThemePerf(${theme.id})" title="この箱を更新"
+                        style="padding:3px 8px;background:#334155;border:1px solid var(--border);color:#22d3ee;border-radius:6px;font-weight:800;cursor:pointer;font-size:0.65rem;">↺</button>
                     <button onclick="copyTheme(${theme.id})" style="padding:3px 8px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem;" id="copy-theme-btn-${theme.id}">📋</button>
                     <button class="btn-ghost" onclick="openThemeModal(${theme.id})"><i data-lucide="edit-3" style="width:13px;"></i></button>
                     <button class="btn-ghost" onclick="deleteTheme(${theme.id})"><i data-lucide="trash-2" style="width:13px;"></i></button>
                 </div>
             </div>
             <div class="stock-list">
-                ${theme.stocks.map((s,i)=>`
-    <div class="stock-badge">
-        <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${s}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:var(--primary);">${s}</a>
-        <span onclick="removeThemeStock(${theme.id},${i})" style="cursor:pointer;color:#64748b;margin-left:2px;font-size:0.65rem;">✕</span>
-    </div>`).join('')}
+                ${theme.stocks.map((s, i) => `
+                <div class="stock-badge">
+                    <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${s}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:var(--primary);">${s}</a>
+                    <span onclick="removeThemeStock(${theme.id},${i})" style="cursor:pointer;color:#64748b;margin-left:2px;font-size:0.65rem;">✕</span>
+                </div>`).join('')}
                 <button onclick="addThemeStock(${theme.id})" style="border:1px dashed #475569;background:none;border-radius:14px;padding:2px 10px;color:#94a3b8;font-size:0.68rem;font-weight:bold;cursor:pointer;">+ 追加</button>
                 ${theme.stocks.length > 0 ? `<button onclick="clearThemeStocks(${theme.id})" style="border:1px dashed #7f1d1d;background:none;border-radius:14px;padding:2px 10px;color:#f87171;font-size:0.68rem;font-weight:bold;cursor:pointer;">🗑 全削除</button>` : ''}
             </div>
         </div>`).join('');
-    if(themes.length===0){
-        list.innerHTML='<p style="text-align:center;color:var(--text-sub);margin-top:30px;font-size:0.78rem;">テーマが登録されていません。</p>';
+    if (themes.length === 0) {
+        list.innerHTML = '<p style="text-align:center;color:var(--text-sub);margin-top:30px;font-size:0.78rem;">テーマが登録されていません。</p>';
     }
-    if(window.lucide) lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
 }
 
 // ======== プロンプトコピー ========
