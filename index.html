@@ -1019,7 +1019,9 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbw8bphx9s_QhCLbgKbhkI1i
 const SECTOR_GAS_URL = "https://script.google.com/macros/s/AKfycby1lo_XSLpA6OIFvX9MbyEqO6RzCWaSzSJuFtrKy6tuTZPEOjzBWfKxQ_7Fczd_fbV0/exec";
 
 // ======== Rank移植（コード1） ========
-const RANK_API_KEY = "4745e87ea2404681a5c9fa6376aac35a";
+const RANK_API_KEY   = "4745e87ea2404681a5c9fa6376aac35a";
+const RANK_API_KEY_2 = "c99eeb783e064f2ead679a9c48564a32";
+const RANK_API_KEYS  = [RANK_API_KEY, RANK_API_KEY_2];
 
 const R2_TICKERS_MAIN = [
   "RSP","QQQ","IWM","QQQE",
@@ -1310,108 +1312,134 @@ async function startRankUpdate() {
   const btn = document.getElementById('rank-update-btn');
   const statusEl = document.getElementById('rank-status');
   if (btn) {
-    if (btn.disabled) return; // 実行中なら即リターン
+    if (btn.disabled) return;
     btn.disabled = true;
     btn.innerText = '更新中...';
   }
 
-  // Phase1: メインETF（スコア計算用）
+  // ---- Phase0: VIXY(KEY1) + BTC(KEY2) 同時取得 ----
   const mainData = [];
-  statusEl.innerText = 'VIXY取得中...';
-  try {
-    const vRes = await fetch(`https://api.twelvedata.com/time_series?symbol=VIXY&interval=1day&outputsize=25&apikey=${RANK_API_KEY}`);
-    const vJson = await vRes.json();
-    if (vJson.values && vJson.values.length >= 20) {
-  const cur = parseFloat(vJson.values[0].close);
-  const sma20 = vJson.values.slice(0, 20).reduce((a, v) => a + parseFloat(v.close), 0) / 20;
-  const ratio = (cur / sma20) * 100; // SMA20比（%）
-  localStorage.setItem('mcd_vix', ratio.toString());
-  localStorage.setItem('mcd_vixy_cur', cur.toString());
-  localStorage.setItem('mcd_vixy_sma20', sma20.toFixed(2));
-}
-  } catch(e) { console.error('VIXY取得失敗', e); }
+  statusEl.innerText = 'VIXY + BTC 取得中...';
+  await Promise.all([
+    (async () => {
+      try {
+        const vRes = await fetch(`https://api.twelvedata.com/time_series?symbol=VIXY&interval=1day&outputsize=25&apikey=${RANK_API_KEYS[0]}`);
+        const vJson = await vRes.json();
+        if (vJson.values && vJson.values.length >= 20) {
+          const cur = parseFloat(vJson.values[0].close);
+          const sma20 = vJson.values.slice(0, 20).reduce((a, v) => a + parseFloat(v.close), 0) / 20;
+          const ratio = (cur / sma20) * 100;
+          localStorage.setItem('mcd_vix', ratio.toString());
+          localStorage.setItem('mcd_vixy_cur', cur.toString());
+          localStorage.setItem('mcd_vixy_sma20', sma20.toFixed(2));
+        }
+      } catch(e) { console.error('VIXY取得失敗', e); }
+    })(),
+    (async () => {
+      try {
+        const btcRes = await fetch(`https://api.twelvedata.com/time_series?symbol=BTC/USD&interval=1day&outputsize=5&apikey=${RANK_API_KEYS[1]}`);
+        const btcJson = await btcRes.json();
+        if (btcJson.values && btcJson.values.length >= 2) {
+          const btcD = btcJson.values;
+          const btcCur = parseFloat(btcD[0].close);
+          const btcD1  = ((btcCur - parseFloat(btcD[1].close)) / parseFloat(btcD[1].close)) * 100;
+          mainData.push({
+            symbol: 'BTC/USD', cur: btcCur,
+            d1: btcD1, d5: null, d10: null, d21: null,
+            aboveEma21: null, volPct: null,
+            aboveSma10: false, aboveSma20: false, aboveSma50: false, aboveSma200: false,
+            sma20aboveSma50: false, sma50aboveSma200: false,
+            _isBtc: true
+          });
+        }
+      } catch(e) { console.error('BTC取得失敗', e); }
+    })()
+  ]);
+  // 両キーが次のリクエストまで8.5秒空くよう待機
   await r2Sleep(8500);
 
-  try {
-  const btcRes = await fetch(`https://api.twelvedata.com/time_series?symbol=BTC/USD&interval=1day&outputsize=5&apikey=${RANK_API_KEY}`);
-  const btcJson = await btcRes.json();
-  if (btcJson.values && btcJson.values.length >= 2) {
-    const btcD = btcJson.values;
-    const btcCur = parseFloat(btcD[0].close);
-    const btcD1  = ((btcCur - parseFloat(btcD[1].close)) / parseFloat(btcD[1].close)) * 100;
-    mainData.push({
-      symbol: 'BTC/USD', cur: btcCur,
-      d1: btcD1, d5: null, d10: null, d21: null,
-      aboveEma21: null, volPct: null,
-      aboveSma10: false, aboveSma20: false, aboveSma50: false, aboveSma200: false,
-      sma20aboveSma50: false, sma50aboveSma200: false,
-      _isBtc: true  // スコア計算から除外するフラグ
-    });
-  }
-} catch(e) { console.error('BTC取得失敗', e); }
-await r2Sleep(8500);
-
-for (let i = 0; i < R2_TICKERS_MAIN.length; i++) {
-    const sym = R2_TICKERS_MAIN[i];
-    statusEl.innerText = `スコア計算用取得 ${i + 1}/${R2_TICKERS_MAIN.length}: ${sym}`;
-    try {
-      const res  = await fetch(`https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=210&apikey=${RANK_API_KEY}`);
-      const json = await res.json();
-      if (json.status === 'error') {
-        if (json.code === 429) { statusEl.innerText = 'レート制限 - 60秒待機中...'; await r2Sleep(60000); i--; continue; }
-        throw new Error(json.message);
-      }
-      mainData.push(r2ProcessValues(sym, json.values));
-    } catch(e) { console.error(sym, e); }
-    if (i < R2_TICKERS_MAIN.length - 1) await r2Sleep(8500);
+  // ---- Phase1: メインETF 2件ずつ並列 ----
+  for (let i = 0; i < R2_TICKERS_MAIN.length; i += 2) {
+    const pair = [R2_TICKERS_MAIN[i], R2_TICKERS_MAIN[i+1]].filter(Boolean);
+    statusEl.innerText = `スコア計算用取得 ${i+1}/${R2_TICKERS_MAIN.length}: ${pair.join(' + ')}`;
+    let hit429 = false;
+    await Promise.all(pair.map(async (sym, idx) => {
+      try {
+        const res  = await fetch(`https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=210&apikey=${RANK_API_KEYS[idx]}`);
+        const json = await res.json();
+        if (json.status === 'error') {
+          if (json.code === 429) { hit429 = true; return; }
+          throw new Error(json.message);
+        }
+        mainData.push(r2ProcessValues(sym, json.values));
+      } catch(e) { console.error(sym, e); }
+    }));
+    if (hit429) {
+      statusEl.innerText = 'レート制限 - 60秒待機中...';
+      await r2Sleep(60000);
+      i -= 2; // ペアごと再試行
+      continue;
+    }
+    if (i + 2 < R2_TICKERS_MAIN.length) await r2Sleep(8500);
   }
 
+  // スコア保存・描画
   r2AllData = mainData;
-localStorage.setItem('mcd_etf_data', JSON.stringify(mainData));
-const vix = parseFloat(localStorage.getItem('mcd_vix') || '0');
-const scoreData = mainData.filter(d => !d._isBtc);
-const sc = r2CalcScore(scoreData, vix);
-  // 履歴保存
+  localStorage.setItem('mcd_etf_data', JSON.stringify(mainData));
+  const vix = parseFloat(localStorage.getItem('mcd_vix') || '0');
+  const scoreData = mainData.filter(d => !d._isBtc);
+  const sc = r2CalcScore(scoreData, vix);
   let hist = JSON.parse(localStorage.getItem('mcd_score_history') || '[]');
   hist.unshift({ score: sc.total, cond: r2CondLabel(sc.total).text, date: new Date().toLocaleDateString('ja-JP') });
   if (hist.length > 10) hist = hist.slice(0, 4);
   localStorage.setItem('mcd_score_history', JSON.stringify(hist));
   r2RenderAll(mainData);
 
-  // Phase2: ランキング用ETF
+  // ---- Phase2: ランキングETF 2件ずつ並列 ----
   rankMarketData = [];
-  for (let i = 0; i < RANK_TICKERS.length; i++) {
-    const symbol = RANK_TICKERS[i];
-    statusEl.innerText = `ランキング取得 ${i + 1}/${RANK_TICKERS.length}: ${symbol}`;
-    try {
-      const res  = await fetch(`https://api.twelvedata.com/time_series?symbol=${symbol}&interval=1day&outputsize=60&apikey=${RANK_API_KEY}`);
-      const data = await res.json();
-      if (data.status === 'error') {
-        if (data.code === 429) { statusEl.innerText = 'レート制限 - 60秒待機中...'; await r2Sleep(60000); i--; continue; }
-        throw new Error(data.message);
-      }
-      const v = data.values;
-      const now = parseFloat(v[0].close);
-      const closes = v.map(x => parseFloat(x.close));
-      const sma50val = closes.slice(0, 50).reduce((a, b) => a + b, 0) / 50;
-      const k = 2 / 22; let ema21val = closes.slice(0, 21).reduce((a, b) => a + b, 0) / 21;
-      for (let j = 20; j >= 0; j--) ema21val = closes[j] * k + ema21val * (1 - k);
-      rankMarketData.push({
-        symbol,
-        day_change:      ((now - parseFloat(v[1].close))  / parseFloat(v[1].close))  * 100,
-        five_day_change: ((now - parseFloat(v[5]?.close  || v[v.length-1].close)) / parseFloat(v[5]?.close  || v[v.length-1].close)) * 100,
-        ten_day_change:  ((now - parseFloat(v[10]?.close || v[v.length-1].close)) / parseFloat(v[10]?.close || v[v.length-1].close)) * 100,
-        month_change:    ((now - parseFloat(v[21]?.close || v[v.length-1].close)) / parseFloat(v[21]?.close || v[v.length-1].close)) * 100,
-        above_ema21: now > ema21val,
-        above_sma50: now > sma50val,
-      });
-      localStorage.setItem('market_perf_info', JSON.stringify(rankMarketData));
-      renderRankTable();
-    } catch(e) { console.error(e); }
-    if (i < RANK_TICKERS.length - 1) await r2Sleep(8500);
+  for (let i = 0; i < RANK_TICKERS.length; i += 2) {
+    const pair = [RANK_TICKERS[i], RANK_TICKERS[i+1]].filter(Boolean);
+    statusEl.innerText = `ランキング取得 ${i+1}/${RANK_TICKERS.length}: ${pair.join(' + ')}`;
+    let hit429 = false;
+    await Promise.all(pair.map(async (sym, idx) => {
+      try {
+        const res  = await fetch(`https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=60&apikey=${RANK_API_KEYS[idx]}`);
+        const data = await res.json();
+        if (data.status === 'error') {
+          if (data.code === 429) { hit429 = true; return; }
+          throw new Error(data.message);
+        }
+        const v = data.values;
+        const now = parseFloat(v[0].close);
+        const closes = v.map(x => parseFloat(x.close));
+        const sma50val = closes.slice(0, 50).reduce((a, b) => a + b, 0) / 50;
+        const k = 2 / 22;
+        let ema21val = closes.slice(0, 21).reduce((a, b) => a + b, 0) / 21;
+        for (let j = 20; j >= 0; j--) ema21val = closes[j] * k + ema21val * (1 - k);
+        rankMarketData.push({
+          symbol: sym,
+          day_change:      ((now - parseFloat(v[1].close))  / parseFloat(v[1].close))  * 100,
+          five_day_change: ((now - parseFloat(v[5]?.close  || v[v.length-1].close)) / parseFloat(v[5]?.close  || v[v.length-1].close)) * 100,
+          ten_day_change:  ((now - parseFloat(v[10]?.close || v[v.length-1].close)) / parseFloat(v[10]?.close || v[v.length-1].close)) * 100,
+          month_change:    ((now - parseFloat(v[21]?.close || v[v.length-1].close)) / parseFloat(v[21]?.close || v[v.length-1].close)) * 100,
+          above_ema21: now > ema21val,
+          above_sma50: now > sma50val,
+        });
+        localStorage.setItem('market_perf_info', JSON.stringify(rankMarketData));
+        renderRankTable();
+      } catch(e) { console.error(e); }
+    }));
+    if (hit429) {
+      statusEl.innerText = 'レート制限 - 60秒待機中...';
+      await r2Sleep(60000);
+      i -= 2;
+      continue;
+    }
+    if (i + 2 < RANK_TICKERS.length) await r2Sleep(8500);
   }
+
   statusEl.innerText = '更新完了';
-  if (btn) btn.disabled = false;
+  if (btn) { btn.disabled = false; btn.innerText = '更新'; }
 }
 
 function r2Sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
