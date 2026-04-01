@@ -3144,6 +3144,8 @@ const TT_RAW_DATA = [
 ];
 
 const TT_API_KEY = '12343bfe66954ec39519d3c3834578d5';
+const TT_API_KEY_2 = 'c99eeb783e064f2ead679a9c48564a32';
+const TT_API_KEYS = [TT_API_KEY, TT_API_KEY_2];
 const TT_RATE_DELAY = 8000;
 const TT_MAX_BATCH = 8;
 
@@ -3285,21 +3287,47 @@ async function ttFetchPerf(n, tickers, period, onProgress) {
     }
   } else {
     const outputSize = period === '5day' ? 6 : 11;
-    for (let i = 0; i < tickers.length; i++) {
-      const sym = tickers[i];
-      if (i > 0) { for (let t = TT_RATE_DELAY/1000; t > 0; t--) { onProgress && onProgress(`待機 ${t}s (${i}/${tickers.length})`); await ttSleep(1000); } }
-      onProgress && onProgress(`${period==='5day'?'5D':'10D'} ${sym} (${i+1}/${tickers.length})`);
-      try {
-        const resp = await fetch(`https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=${outputSize}&apikey=${TT_API_KEY}`);
-        const data = await resp.json();
-        if (!data || data.status==='error' || !data.values || data.values.length < 2) { results[sym] = null; }
-        else {
-          const vals = data.values;
-          const newest = parseFloat(vals[0].close);
-          const oldest = parseFloat(vals[vals.length-1].open || vals[vals.length-1].close);
-          results[sym] = ((newest - oldest) / oldest) * 100;
+    for (let i = 0; i < tickers.length; i += 2) {
+      const pair = [tickers[i], tickers[i+1]].filter(Boolean);
+      if (i > 0) {
+        for (let t = TT_RATE_DELAY/1000; t > 0; t--) {
+          onProgress && onProgress(`待機 ${t}s (${i}/${tickers.length})`);
+          await ttSleep(1000);
         }
-      } catch { results[sym] = null; }
+      }
+      onProgress && onProgress(`${period==='5day'?'5D':'10D'} ${pair.join('+')} (${i+1}/${tickers.length})`);
+
+      await Promise.all(pair.map(async (sym, idx) => {
+        const apiKey = TT_API_KEYS[idx % TT_API_KEYS.length];
+        let retries = 2;
+        while (retries > 0) {
+          try {
+            const resp = await fetch(
+              `https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=${outputSize}&apikey=${apiKey}`
+            );
+            const data = await resp.json();
+            if (data?.status === 'error' && data?.code === 429) {
+              // レート制限は待機してリトライ
+              await ttSleep(15000);
+              retries--;
+              continue;
+            }
+            if (!data || data.status==='error' || !data.values || data.values.length < 2) {
+              results[sym] = null;
+            } else {
+              const vals = data.values;
+              const newest = parseFloat(vals[0].close);
+              const oldest = parseFloat(vals[vals.length-1].open || vals[vals.length-1].close);
+              results[sym] = ((newest - oldest) / oldest) * 100;
+            }
+            break;
+          } catch {
+            retries--;
+            if (retries > 0) await ttSleep(5000);
+            else results[sym] = null;
+          }
+        }
+      }));
     }
   }
   ttPerfCache[key] = results;
