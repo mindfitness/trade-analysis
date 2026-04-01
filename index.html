@@ -864,11 +864,7 @@
             </div>
         </div>
     </section>
-
-    <div style="color:var(--ai-accent); display:flex; align-items:center; gap:5px; margin-bottom:10px; font-size:0.78rem; font-weight:800; padding-top:4px;">
-        <i data-lucide="bot" style="width:14px;"></i> プロンプトストック
-    </div>
-
+      
     <section style="margin-bottom:10px;">
         <div style="display:flex; align-items:center; gap:6px; margin-bottom:10px;">
             <i data-lucide="calculator" style="width:14px; color:var(--ai-accent);"></i>
@@ -895,19 +891,32 @@
             </div>
         </div>
     </section>
-    <section>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">Final Check</span>
-            <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-1', this)">コピー</button>
-        </div>
-        <div class="prompt-container-static"><pre id="prompt-1">過去48時間以内の英語ポスト分析。アメリカ株　について、センチメントを分析せよ。テクニカルやfundamentals、ニュースなどの情報から、bullish/bearishを評価せよ。回答は日本語で出力せよ。</pre></div>
-    </section>
-    <section>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4TT(Alt+T/O)</span>
-            <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-2', this)">コピー</button>
-        </div>
-        <div class="prompt-container-static"><pre id="prompt-2">fetch('/api/theme-ranking?force_reload=1')
+
+     <!-- プロンプトストック アコーディオン -->
+    <div style="margin-bottom:10px;">
+        <button onclick="togglePromptStock(this)"
+            style="width:100%; display:flex; justify-content:space-between; align-items:center;
+                   padding:8px 12px; background:#1e1b4b; border:1px solid #4f46e5;
+                   border-radius:8px; cursor:pointer; color:var(--ai-accent);">
+            <div style="display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:800;">
+                <i data-lucide="bot" style="width:14px;"></i> プロンプトストック
+            </div>
+            <span id="prompt-stock-chevron" style="font-size:0.7rem; color:#6366f1;">▼ 開く</span>
+        </button>
+        <div id="prompt-stock-body" style="display:none; margin-top:6px;">
+            <section style="margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">Final Check</span>
+                    <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-1', this)">コピー</button>
+                </div>
+                <div class="prompt-container-static"><pre id="prompt-1">過去48時間以内の英語ポスト分析。アメリカ株　について、センチメントを分析せよ。テクニカルやfundamentals、ニュースなどの情報から、bullish/bearishを評価せよ。回答は日本語で出力せよ。</pre></div>
+            </section>
+            <section style="margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4TT(Alt+T/O)</span>
+                    <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-2', this)">コピー</button>
+                </div>
+                <div class="prompt-container-static"><pre id="prompt-2">fetch('/api/theme-ranking?force_reload=1')
   .then(r => r.json())
   .then(data => {
     const themes = data.all_themes.filter(t => t.related);
@@ -924,13 +933,13 @@
     console.log(result);
     both.forEach((t, i) => console.log(`${i+1}. ${t.name}  1D:${(t['1日']*100).toFixed(1)}%  5D:${(t['5日']*100).toFixed(1)}%  → ${t.related}`));
   });</pre></div>
-    </section>
-    <section>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4TV(Alt+S)</span>
-            <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-3', this)">コピー</button>
-        </div>
-        <div class="prompt-container-static"><pre id="prompt-3">//
+            </section>
+            <section>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4TV(Alt+S)</span>
+                    <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-3', this)">コピー</button>
+                </div>
+                <div class="prompt-container-static"><pre id="prompt-3">//
 var elements = document.querySelectorAll('span[class*="tickerName-"], a[href*="/symbols/"]');
 var tickers = Array.from(elements)
     .map(el => el.innerText.split('\n')[0].trim())
@@ -939,7 +948,9 @@ var tickers = Array.from(elements)
 var result = [...new Set(tickers)].join(', ');
 console.log(result);
 copy(result); //</pre></div>
-    </section>
+            </section>
+        </div>
+    </div>
  
 
   </div><!-- /screen-subtab-func -->
@@ -2203,6 +2214,16 @@ function copyStaticPrompt(elementId, btn) {
         btn.innerText="完了！"; btn.classList.add('copied');
         setTimeout(()=>{ btn.innerText=orig; btn.classList.remove('copied'); },2000);
     });
+}
+
+function togglePromptStock(btn) {
+    const body = document.getElementById('prompt-stock-body');
+    const chevron = document.getElementById('prompt-stock-chevron');
+    const isOpen = body.style.display !== 'none';
+    body.style.display = isOpen ? 'none' : 'block';
+    chevron.textContent = isOpen ? '▼ 開く' : '▲ 閉じる';
+    btn.style.borderRadius = isOpen ? '8px' : '8px 8px 0 0';
+    if (window.lucide) lucide.createIcons();
 }
 
 // ======== 価格自動取得 ========
