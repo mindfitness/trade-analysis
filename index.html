@@ -1757,7 +1757,7 @@ const totalFinished = winTrades.length + loseTrades.length;
 const winPct = totalFinished > 0 ? Math.round((winTrades.length / totalFinished) * 100) : 0;
 const winRateEl = document.getElementById('win-rate-display');
 if (winRateEl) {
-    winRateEl.innerText = `WR ${winPct}%`;
+    winRateEl.innerText = `${winPct}%`;
     winRateEl.style.color = winPct >= 50 ? 'var(--win-deep)' : 'var(--lose-deep)';
 }
 
