@@ -438,6 +438,10 @@
         <div class="summary-count" style="color: var(--win-deep);" id="count-win">0</div>
         <div class="summary-label" style="color: var(--win-deep);">WIN</div>
     </div>
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px 12px; background:var(--card); border-radius:10px; border:2px solid var(--border); min-width:70px;">
+        <div id="win-rate-display" style="font-size:1.3rem; font-weight:900; line-height:1;">--%</div>
+        <div style="font-size:0.68rem; font-weight:800; color:var(--text-sub); margin-top:2px;">勝率</div>
+    </div>
     <div id="box-lose" class="summary-box" onclick="setHistoryFilter('lose')">
         <div class="summary-count" style="color: var(--lose-deep);" id="count-lose">0</div>
         <div class="summary-label" style="color: var(--lose-deep);">LOSE</div>
@@ -1745,9 +1749,17 @@ function renderTrades() {
     const loseTrades = trades.filter(t=>t.result==='lose');
 
     document.getElementById('count-win').innerText = winTrades.length;
-    document.getElementById('count-lose').innerText = loseTrades.length;
-    document.getElementById('box-win').className = `summary-box ${currentHistoryFilter==='win'?'active-win':''}`;
-    document.getElementById('box-lose').className = `summary-box ${currentHistoryFilter==='lose'?'active-lose':''}`;
+document.getElementById('count-lose').innerText = loseTrades.length;
+document.getElementById('box-win').className = `summary-box ${currentHistoryFilter==='win'?'active-win':''}`;
+document.getElementById('box-lose').className = `summary-box ${currentHistoryFilter==='lose'?'active-lose':''}`;
+
+const totalFinished = winTrades.length + loseTrades.length;
+const winPct = totalFinished > 0 ? Math.round((winTrades.length / totalFinished) * 100) : 0;
+const winRateEl = document.getElementById('win-rate-display');
+if (winRateEl) {
+    winRateEl.innerText = `勝率 ${winPct}%`;
+    winRateEl.style.color = winPct >= 50 ? 'var(--win-deep)' : 'var(--lose-deep)';
+}
 
     const activeCards = trades.filter(t=>!t.result).map(t=>renderCard(t)).join('');
     activeCont.innerHTML = activeCards
