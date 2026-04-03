@@ -1038,7 +1038,8 @@ const PERF_API_KEY = 'f550f672515b4cd6b4c2966f1e2cc0fb';
 const TRADE_API_URL = "/api";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbw8bphx9s_QhCLbgKbhkI1iAMu22EBIfsR0YVeEE4MoF0qYWcxyE9AKhm3yCzafO40_2g/exec";
 const SECTOR_GAS_URL = "https://script.google.com/macros/s/AKfycby1lo_XSLpA6OIFvX9MbyEqO6RzCWaSzSJuFtrKy6tuTZPEOjzBWfKxQ_7Fczd_fbV0/exec";
-
+const MC_API_URL = "/api/mc"; 
+    
 // ======== Rank移植（コード1） ========
 const RANK_API_KEY   = "4745e87ea2404681a5c9fa6376aac35a";
 const RANK_API_KEY_2 = "c99eeb783e064f2ead679a9c48564a32";
@@ -1114,7 +1115,7 @@ const TICKER_INFO = {
 };
 
 let r2AllData = [];
-let rankMarketData = JSON.parse(localStorage.getItem('market_perf_info') || '[]');
+let rankMarketData = [];
 let rankCurrentSort = { key: 'day_change', asc: false };
 let r2ActiveFilters = [];
 let r2PinnedSymbol = null;
@@ -1404,16 +1405,26 @@ async function startRankUpdate() {
     if (i + 2 < R2_TICKERS_MAIN.length) await r2Sleep(8500);
   }
 
-  // スコア保存・描画
+ // スコア保存・描画
   r2AllData = mainData;
-  localStorage.setItem('mcd_etf_data', JSON.stringify(mainData));
   const vix = parseFloat(localStorage.getItem('mcd_vix') || '0');
   const scoreData = mainData.filter(d => !d._isBtc);
   const sc = r2CalcScore(scoreData, vix);
-  let hist = JSON.parse(localStorage.getItem('mcd_score_history') || '[]');
+  let hist = await mcLoad("score_history") || [];
+  if (!Array.isArray(hist)) hist = [];
   hist.unshift({ score: sc.total, cond: r2CondLabel(sc.total).text, date: new Date().toLocaleDateString('ja-JP') });
-  if (hist.length > 10) hist = hist.slice(0, 4);
-  localStorage.setItem('mcd_score_history', JSON.stringify(hist));
+  if (hist.length > 4) hist = hist.slice(0, 4);  // 4件に制限
+
+  // KVに保存（localStorage削除）
+  const vixObj = {
+    ratio:  parseFloat(localStorage.getItem('mcd_vix')        || '0'),
+    cur:    parseFloat(localStorage.getItem('mcd_vixy_cur')   || '0'),
+    sma20:  parseFloat(localStorage.getItem('mcd_vixy_sma20') || '0'),
+  };
+  await mcSaveAll(mainData, hist, vixObj);
+
+  // ランキングデータも保存
+  // ※ Phase2完了後に保存するので、ここでは mainData のみ
   r2RenderAll(mainData);
 
   // ---- Phase2: ランキングETF 2件ずつ並列 ----
@@ -1446,7 +1457,7 @@ async function startRankUpdate() {
           above_ema21: now > ema21val,
           above_sma50: now > sma50val,
         });
-        localStorage.setItem('market_perf_info', JSON.stringify(rankMarketData));
+    
         renderRankTable();
       } catch(e) { console.error(e); }
     }));
@@ -1458,6 +1469,9 @@ async function startRankUpdate() {
     }
     if (i + 2 < RANK_TICKERS.length) await r2Sleep(8500);
   }
+
+  // ランキングデータをKVに保存
+  await mcSave("rank_data", rankMarketData);
 
   statusEl.innerText = '更新完了';
   if (btn) { btn.disabled = false; btn.innerText = '更新'; }
@@ -3034,6 +3048,48 @@ const bg = score >= 65
     ">Score ${score}</span>`;
 }
 
+// ======== MC データ KV保存/読込 ========
+async function mcSave(key, value) {
+  try {
+    await fetch(MC_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key, value }),
+    });
+  } catch (e) {
+    console.warn("MC KV save failed:", e);
+  }
+}
+
+async function mcLoad(key) {
+  try {
+    const res = await fetch(`${MC_API_URL}?key=${key}`);
+    const data = await res.json();
+    return data;
+  } catch (e) {
+    console.warn("MC KV load failed:", e);
+    return null;
+  }
+}
+
+async function mcSaveAll(mainData, scoreHist, vixObj) {
+  await Promise.all([
+    mcSave("etf_data",       mainData),
+    mcSave("score_history",  scoreHist),
+    mcSave("vix",            vixObj),
+  ]);
+}
+
+async function mcLoadAll() {
+  const [etfData, scoreHist, vix, rankData] = await Promise.all([
+    mcLoad("etf_data"),
+    mcLoad("score_history"),
+    mcLoad("vix"),
+    mcLoad("rank_data"),
+  ]);
+  return { etfData, scoreHist, vix, rankData };
+}
+
 // ======== 初期化 ========
 // ======== TT (Theme Map) ========
 const TT_RAW_DATA = [
@@ -3521,19 +3577,44 @@ function switchMCSubtab(tab) {
   btnTT.style.color      = isMC ? 'var(--text-sub)' : 'white';
   if (!isMC) { ttInitListeners(); ttRender(); }
 }
-window.onload = () => {
+
+window.onload = async () => {
     renderEntryChecks();
     loadTrades();
     loadThemes();
-    const savedMain = localStorage.getItem('mcd_etf_data');
-    if (savedMain) {
-        try { r2RenderAll(JSON.parse(savedMain)); } catch(e) {}
+
+    // KVからMCデータを読み込み
+    const mc = await mcLoadAll();
+
+    if (mc.etfData && Array.isArray(mc.etfData) && mc.etfData.length > 0) {
+        r2AllData = mc.etfData;
+
+        // VIXをKVから復元してlocalStorageにセット（既存の描画関数との互換性を保つ）
+        if (mc.vix) {
+            localStorage.setItem('mcd_vix',        String(mc.vix.ratio ?? 0));
+            localStorage.setItem('mcd_vixy_cur',   String(mc.vix.cur   ?? 0));
+            localStorage.setItem('mcd_vixy_sma20', String(mc.vix.sma20 ?? 0));
+        }
+
+        // スコア履歴をKVから復元
+        if (mc.scoreHist && Array.isArray(mc.scoreHist)) {
+            
+        }
+
+        try { r2RenderAll(mc.etfData); } catch(e) { r2DrawGauge(0); }
     } else {
         r2DrawGauge(0);
     }
-    if (rankMarketData.length > 0) renderRankTable();
+
+    // ランキングデータをKVから復元
+    if (mc.rankData && Array.isArray(mc.rankData) && mc.rankData.length > 0) {
+        rankMarketData = mc.rankData;
+        renderRankTable();
+    }
+
     if (window.lucide) lucide.createIcons();
 };
+    
 </script>
 </body>
     <!-- 
