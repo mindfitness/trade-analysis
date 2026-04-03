@@ -6,5 +6,6 @@ binding = "trade_db"
 database_name = "trade-db"
 database_id = "f4a91b38-1e47-413a-a00b-721d7c46ee8d"
 
-[[kv_namespaces]] name = "MCSTORE" id = "2e7ffec60637433e92c5f8acbe673b20" 
-preview_id = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+[[kv_namespaces]]
+name = "MCSTORE"
+id = "2e7ffec60637433e92c5f8acbe673b20"
