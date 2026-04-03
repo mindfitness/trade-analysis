@@ -1242,8 +1242,8 @@ vixValEl.innerText = sc.vixPenalty > 0
     vixValEl.style.color = sc.vixPenalty > 0 ? '#ef4444' : '#10b981';
   }
 
-  // 履歴
-  const hist = JSON.parse(localStorage.getItem('mcd_score_history') || '[]');
+  // 履歴（KV経由でwindow._mcScoreHistに格納されたものを使う）
+  const hist = window._mcScoreHist || JSON.parse(localStorage.getItem('mcd_score_history') || '[]');
   ['r2-h-now','r2-h-1','r2-h-2','r2-h-3'].forEach((id, i) => {
     const h = hist[i];
     const el = document.getElementById(id);
@@ -3596,9 +3596,9 @@ window.onload = async () => {
             localStorage.setItem('mcd_vixy_sma20', String(mc.vix.sma20 ?? 0));
         }
 
-        // スコア履歴をKVから復元
+        // スコア履歴をKVから復元（グローバル変数に格納してr2RenderAllで参照）
         if (mc.scoreHist && Array.isArray(mc.scoreHist)) {
-            
+            window._mcScoreHist = mc.scoreHist;
         }
 
         try { r2RenderAll(mc.etfData); } catch(e) { r2DrawGauge(0); }
