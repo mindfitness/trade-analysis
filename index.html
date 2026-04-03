@@ -858,10 +858,16 @@
         <div id="intersect-result" style="display:none;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                 <span id="intersect-result-label" style="font-size:0.65rem; font-weight:700; color:var(--perf-accent); letter-spacing:0.08em;"></span>
-                <button id="intersect-copy-btn" onclick="copyIntersect()"
-                    style="padding:3px 10px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem;">
-                    📋 コピー
-                </button>
+                <div style="display:flex;gap:6px;">
+    <button id="intersect-copy-btn" onclick="copyIntersect()"
+        style="padding:3px 10px; background:#334155; border:1px solid var(--border); color:#22d3ee; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem;">
+        📋 共通コピー
+    </button>
+    <button id="intersect-copy-diff-btn" onclick="copyIntersectDiff()"
+        style="padding:3px 10px; background:#334155; border:1px solid var(--border); color:#f59e0b; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">
+        📋 差分コピー
+    </button>
+</div>
             </div>
             <div id="intersect-result-body"
                 style="background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-family:monospace; font-size:0.78rem; color:#22d3ee; line-height:1.8; word-break:break-all;">
@@ -2405,6 +2411,7 @@ function runIntersect() {
     const setA = parseTickers(rawA);
     const setB = new Set(parseTickers(rawB));
     const common = setA.filter(t => setB.has(t));
+    const diffA  = setA.filter(t => !setB.has(t)); // AからBを差し引いた差分
 
     const resultEl  = document.getElementById('intersect-result');
     const labelEl   = document.getElementById('intersect-result-label');
@@ -2412,20 +2419,55 @@ function runIntersect() {
 
     resultEl.style.display = 'block';
 
-    if (common.length === 0) {
+    if (common.length === 0 && diffA.length === 0) {
         labelEl.innerText = '共通銘柄: 0件';
         labelEl.style.color = 'var(--lose-deep)';
-        bodyEl.style.color  = 'var(--text-sub)';
-        bodyEl.innerText    = '共通する銘柄はありませんでした';
+        bodyEl.innerHTML = `<span style="color:var(--text-sub)">共通する銘柄はありませんでした</span>`;
         document.getElementById('intersect-copy-btn').style.display = 'none';
+        document.getElementById('intersect-copy-diff-btn').style.display = 'none';
         return;
     }
 
-    labelEl.innerText = `共通銘柄: ${common.length}件`;
+    labelEl.innerText = `共通: ${common.length}件　差分(A-B): ${diffA.length}件`;
     labelEl.style.color = 'var(--perf-accent)';
-    bodyEl.style.color  = '#22d3ee';
-    bodyEl.innerText    = common.join(', ');
-    document.getElementById('intersect-copy-btn').style.display = 'inline-block';
+
+    bodyEl.innerHTML = `
+        <div style="margin-bottom:8px;">
+            <div style="font-size:0.6rem;font-weight:700;color:#22d3ee;margin-bottom:3px;">● 共通銘柄 (${common.length}件)</div>
+            <div id="intersect-common-text" style="color:#22d3ee;font-family:monospace;font-size:0.78rem;line-height:1.8;word-break:break-all;">
+                ${common.length > 0 ? common.join(', ') : '<span style="color:var(--text-sub)">なし</span>'}
+            </div>
+        </div>
+        <hr style="border:none;border-top:1px solid var(--border);margin:8px 0;">
+        <div>
+            <div style="font-size:0.6rem;font-weight:700;color:#f59e0b;margin-bottom:3px;">● 差分 A − B (${diffA.length}件)</div>
+            <div id="intersect-diff-text" style="color:#f59e0b;font-family:monospace;font-size:0.78rem;line-height:1.8;word-break:break-all;">
+                ${diffA.length > 0 ? diffA.join(', ') : '<span style="color:var(--text-sub)">なし</span>'}
+            </div>
+        </div>`;
+
+    document.getElementById('intersect-copy-btn').style.display      = common.length > 0 ? 'inline-block' : 'none';
+    document.getElementById('intersect-copy-diff-btn').style.display = diffA.length  > 0 ? 'inline-block' : 'none';
+}
+
+function copyIntersect() {
+    const text = document.getElementById('intersect-common-text')?.innerText;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('intersect-copy-btn');
+        btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
+        setTimeout(() => { btn.innerText = '📋 共通コピー'; btn.style.background = '#334155'; }, 2000);
+    });
+}
+
+function copyIntersectDiff() {
+    const text = document.getElementById('intersect-diff-text')?.innerText;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('intersect-copy-diff-btn');
+        btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
+        setTimeout(() => { btn.innerText = '📋 差分コピー'; btn.style.background = '#334155'; }, 2000);
+    });
 }
 
 function copyIntersect() {
