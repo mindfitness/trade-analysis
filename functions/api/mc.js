@@ -26,7 +26,7 @@ export async function onRequest(context) {
       });
     }
 
-    const value = await env.MC_STORE.get(`mc:${key}`);
+    const value = await env.MCSTORE.get(`mc:${key}`);
     return new Response(value ?? "null", {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -48,9 +48,9 @@ export async function onRequest(context) {
     if (key === "score_history") {
       let hist = Array.isArray(value) ? value : [];
       if (hist.length > 4) hist = hist.slice(0, 4);
-      await env.MC_STORE.put(`mc:${key}`, JSON.stringify(hist));
+      await env.MCSTORE.put(`mc:${key}`, JSON.stringify(hist));
     } else {
-      await env.MC_STORE.put(`mc:${key}`, JSON.stringify(value));
+      await env.MCSTORE.put(`mc:${key}`, JSON.stringify(value));
     }
 
     return new Response(JSON.stringify({ ok: true }), {
