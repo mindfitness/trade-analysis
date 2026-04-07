@@ -798,12 +798,14 @@
 
   <div id="screen-results" style="display:none;">
    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-      <span style="font-size:0.65rem; font-weight:700; color:var(--text-sub); letter-spacing:0.1em; text-transform:uppercase;">Results</span>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <span id="screen-results-count" style="font-size:0.65rem; font-weight:700; color:var(--win-deep);">0 matches</span>
-        <button id="copy-screen-results-btn" onclick="copyScreenResults()" style="padding:3px 10px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 コピー</button>
-      </div>
-    </div>
+         <span style="font-size:0.65rem; font-weight:700; color:var(--text-sub); letter-spacing:0.1em; text-transform:uppercase;">Results</span>
+         <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+           <span id="screen-results-count" style="font-size:0.65rem; font-weight:700; color:var(--win-deep);">0 matches</span>
+           <button id="copy-screen-results-btn" onclick="copyScreenResults(null)" style="padding:3px 10px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 ALL</button>
+           <button id="copy-screen-rs-btn" onclick="copyScreenResults('RS')" style="padding:3px 10px; background:#334155; border:1px solid #10b981; color:#6ee7b7; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 RS</button>
+           <button id="copy-screen-vcs-btn" onclick="copyScreenResults('VCS')" style="padding:3px 10px; background:#334155; border:1px solid #8b5cf6; color:#c4b5fd; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 VCS</button>
+         </div>
+       </div>
     <div id="screen-results-body"></div>
   </div>
 
@@ -2393,19 +2395,27 @@ function copyTheme(themeId) {
 }
 
 // ======== スクリーニング結果コピー ========
-function copyScreenResults() {
+function copyScreenResults(type) {
     const cards = document.querySelectorAll('#screen-results-body > div');
     if (cards.length === 0) return;
-    const lines = Array.from(cards).map(card => {
+    const lines = Array.from(cards).filter(card => {
+        if (!type) return true;
+        const badge = card.querySelector('span[style*="border-radius:3px"]');
+        if (!badge) return false;
+        return badge.innerText.trim() === type;
+    }).map(card => {
         const ticker = card.querySelector('a span')?.innerText?.trim() || '';
-        return ticker ? `$${ticker}` : null;
+        return ticker ? ticker : null;
     }).filter(Boolean);
-    if (lines.length === 0) return;
+    if (lines.length === 0) { alert(`${type || '全'}の銘柄がありません`); return; }
     const text = lines.join(', ');
+    const btnId = type === 'RS' ? 'copy-screen-rs-btn' : type === 'VCS' ? 'copy-screen-vcs-btn' : 'copy-screen-results-btn';
     navigator.clipboard.writeText(text).then(() => {
-        const btn = document.getElementById('copy-screen-results-btn');
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        const orig = btn.innerText;
         btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
-        setTimeout(() => { btn.innerText = '📋 コピー'; btn.style.background = '#334155'; }, 2000);
+        setTimeout(() => { btn.innerText = orig; btn.style.background = '#334155'; }, 2000);
     });
 }
 
@@ -2744,6 +2754,8 @@ function screenAppendCard(r) {
     </div>`;
   body.appendChild(div.firstElementChild);
   document.getElementById('copy-screen-results-btn').style.display = 'inline-block';
+  if (r.matchType === 'vcs') document.getElementById('copy-screen-vcs-btn').style.display = 'inline-block';
+  else document.getElementById('copy-screen-rs-btn').style.display = 'inline-block';
 }
 
 // 既存のscreenAppendCard関数の直後に追加
@@ -2863,6 +2875,9 @@ if (duplicatesRemoved > 0) {
   document.getElementById('screen-results-body').innerHTML = '';
   document.getElementById('screen-skip-body').innerHTML = '';
   document.getElementById('screen-results').style.display = 'none';
+  document.getElementById('copy-screen-results-btn').style.display = 'none';
+  document.getElementById('copy-screen-rs-btn').style.display = 'none';
+  document.getElementById('copy-screen-vcs-btn').style.display = 'none';
   document.getElementById('screen-skip-section').style.display = 'none';
   document.getElementById('screen-progress').style.display = 'block';
 
