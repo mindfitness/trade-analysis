@@ -2132,13 +2132,12 @@ function renderThemePerfBadge(themeId) {
         return `<span id="theme-perf-badge-${themeId}" style="font-size:0.62rem;color:var(--text-sub);">--</span>`;
     }
     const pct = cache.pct;
-    const color = pct > 0 ? 'var(--win-deep)' : pct < 0 ? 'var(--lose-deep)' : 'var(--text-sub)';
-    const bg    = pct > 0 ? '#064e3b' : pct < 0 ? '#7f1d1d' : '#334155';
-    const sign  = pct > 0 ? '+' : '';
+    const color = pct >= 60 ? 'var(--win-deep)' : pct >= 40 ? '#f59e0b' : 'var(--lose-deep)';
+const bg    = pct >= 60 ? '#064e3b'          : pct >= 40 ? '#451a03' : '#7f1d1d';
     const time  = cache.updatedAt ? `<span style="font-size:0.55rem;color:#475569;margin-left:4px;">${cache.updatedAt}</span>` : '';
-    return `<span id="theme-perf-badge-${themeId}"
-        style="font-size:0.72rem;font-weight:900;color:${color};background:${bg};border:1px solid ${color};border-radius:4px;padding:1px 7px;">
-        ${sign}${pct.toFixed(2)}%</span>${time}`;
+return `<span id="theme-perf-badge-${themeId}"
+    style="font-size:0.72rem;font-weight:900;color:${color};background:${bg};border:1px solid ${color};border-radius:4px;padding:1px 7px;">
+    ${pct.toFixed(0)}% 上昇</span>${time}`;
 }
 
 async function fetchThemePerf(themeId) {
@@ -2170,8 +2169,8 @@ async function fetchThemePerf(themeId) {
     }
 
     const avg = results.length > 0
-        ? results.reduce((a, b) => a + b, 0) / results.length
-        : null;
+    ? (results.filter(v => v > 0).length / results.length) * 100
+    : null;
     const now = new Date();
     themePerfCache[themeId] = {
         pct: avg,
