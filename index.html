@@ -2496,6 +2496,7 @@ function copyIntersect() {
 // ======== スクリーナー ========
 const SCREEN_API_KEY = 'f550f672515b4cd6b4c2966f1e2cc0fb';
 const SCREEN_API_KEY_2 = '10f03734e47d4c5fb02dd591d7928e8c';
+const SCREEN_API_KEY_3 = 'fce650259e7d4981bd2c2e8579a9d9a6';
 let screenSaveToWatch = false;
 const SCREEN_DELAY = 7000;
 let screenSpyMap = null;
@@ -2877,27 +2878,26 @@ if (duplicatesRemoved > 0) {
 
   let matchCount = 0;
   let skipCount = 0;
-  const API_KEYS = [SCREEN_API_KEY, SCREEN_API_KEY_2];
+  const API_KEYS = [SCREEN_API_KEY, SCREEN_API_KEY_2, SCREEN_API_KEY_3];
 
   // 2件ずつペアで処理
-  for (let i = 0; i < tickers.length; i += 2) {
-    const pair = [tickers[i], tickers[i + 1]].filter(Boolean);
+  for (let i = 0; i < tickers.length; i += 3) {
+    const pair = [tickers[i], tickers[i + 1], tickers[i + 2]].filter(Boolean);
     const pct = Math.round((i / tickers.length) * 100);
     document.getElementById('screen-progress-bar').style.width = pct + '%';
     document.getElementById('screen-progress-count').innerText = `${i} / ${tickers.length}`;
     document.getElementById('screen-progress-ticker').innerText = `スキャン中: ${pair.join(' + ')}`;
 
-    // 2件を同時リクエスト（各キーを割り当て）
     const results = [];
-for (const [idx, sym] of pair.entries()) {
-  try {
-    const result = await screenTickerWithKey(sym, API_KEYS[idx]);
-    results.push({ status: 'fulfilled', value: result });
-  } catch(e) {
-    e._sym = sym;
-    results.push({ status: 'rejected', reason: e });
-  }
-}
+    for (const [idx, sym] of pair.entries()) {
+      try {
+        const result = await screenTickerWithKey(sym, API_KEYS[idx]);
+        results.push({ status: 'fulfilled', value: result });
+      } catch(e) {
+        e._sym = sym;
+        results.push({ status: 'rejected', reason: e });
+      }
+    }
 
     for (const [idx, res] of results.entries()) {
       if (res.status === 'rejected') {
@@ -2931,9 +2931,8 @@ for (const [idx, sym] of pair.entries()) {
       }
     }
 
-    if (i + 2 < tickers.length) await new Promise(r => setTimeout(r, SCREEN_DELAY));
+    if (i + 3 < tickers.length) await new Promise(r => setTimeout(r, SCREEN_DELAY));
   }
-
   document.getElementById('screen-progress-bar').style.width = '100%';
   document.getElementById('screen-progress-count').innerText = `${tickers.length} / ${tickers.length}`;
   document.getElementById('screen-progress-ticker').innerText = '完了';
