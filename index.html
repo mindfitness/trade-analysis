@@ -3636,6 +3636,14 @@ function applyUserRestrictions() {
         });
     });
 
+    // spanタグのクリックイベント無効化（銘柄削除✕ボタンなど）
+    document.querySelectorAll('.stock-badge span[onclick]').forEach(el => {
+        el.onclick = null;
+        el.style.opacity = '0.2';
+        el.style.cursor = 'not-allowed';
+        el.style.pointerEvents = 'none';
+    });
+
     // Entry入力欄を無効化
     ['stock-name','entry-price','trade-memo'].forEach(id => {
         const el = document.getElementById(id);
