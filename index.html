@@ -1016,17 +1016,24 @@ copy(result); //</pre></div>
 <script>
 const a = '09', b = '01';
 const _h = btoa(a + b);
+const _u1 = '19', _u2 = '40';
+const _hu = btoa(_u1 + _u2);
+
 function checkAuth() {
     const input = document.getElementById('auth-input').value;
     if (btoa(input) === _h) {
-        sessionStorage.setItem('auth', '1');
+        sessionStorage.setItem('auth', 'admin');
         document.getElementById('auth-screen').style.display = 'none';
+    } else if (btoa(input) === _hu) {
+        sessionStorage.setItem('auth', 'user');
+        document.getElementById('auth-screen').style.display = 'none';
+        requestAnimationFrame(() => applyUserRestrictions());
     } else {
         document.getElementById('auth-error').style.display = 'block';
         document.getElementById('auth-input').value = '';
     }
 }
-if (sessionStorage.getItem('auth') !== '1') {
+if (!['admin','user'].includes(sessionStorage.getItem('auth'))) {
     window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('auth-screen').style.display = 'flex';
     });
@@ -1796,6 +1803,7 @@ if (winRateEl) {
     else renderAnalysis(loseTrades,negativeItems,'LOSE項目分析','var(--lose-deep)');
 
     if(window.lucide) lucide.createIcons();
+    if (sessionStorage.getItem('auth') === 'user') applyUserRestrictions();
 }
 
 function renderAnalysis(filteredTrades, itemsList, title, baseColor) {
@@ -2236,6 +2244,7 @@ function renderThemes() {
         list.innerHTML = '<p style="text-align:center;color:var(--text-sub);margin-top:30px;font-size:0.78rem;">テーマが登録されていません。</p>';
     }
     if (window.lucide) lucide.createIcons();
+    if (sessionStorage.getItem('auth') === 'user') applyUserRestrictions();
 }
 
 // ======== プロンプトコピー ========
@@ -3590,6 +3599,62 @@ function switchMCSubtab(tab) {
   if (!isMC) { ttInitListeners(); ttRender(); }
 }
 
+function applyUserRestrictions() {
+    // 操作系ボタンをすべて無効化
+    const disableSelectors = [
+        // Entry
+        'button[onclick="registerTrade()"]',
+        // PF
+        'button[onclick^="setTradeResult"]',
+        'button[onclick^="deleteTrade"]',
+        'button[onclick^="toggleEdit"]',
+        'button[onclick^="toggleItemEdit"]',
+        'button[onclick^="refreshPrice"]',
+        // History / WIN×LOSE（閲覧のみOK）
+        // Theme
+        'button[onclick="openThemeModal()"]',
+        'button[onclick^="openThemeModal("]',
+        'button[onclick^="deleteTheme"]',
+        'button[onclick^="addThemeStock"]',
+        'button[onclick^="removeThemeStock"]',
+        'button[onclick^="clearThemeStocks"]',
+        'button[onclick="refreshAllThemePerf()"]',
+        'button[onclick^="fetchThemePerf"]',
+        // MC更新
+        'button[onclick="startRankUpdate()"]',
+        // Screen実行
+        'button[onclick^="startScreening"]',
+        'button[onclick^="retryErrors"]',
+        // ヘッダー新規ボタン
+        'button[onclick="headerAction()"]',
+    ];
+    disableSelectors.forEach(sel => {
+        document.querySelectorAll(sel).forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.3';
+            btn.style.cursor = 'not-allowed';
+        });
+    });
+
+    // Entry入力欄を無効化
+    ['stock-name','entry-price','trade-memo'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.disabled = true; el.style.opacity = '0.3'; }
+    });
+
+    // スクリーナー入力欄を無効化
+    const screenInput = document.getElementById('screen-ticker-input');
+    if (screenInput) { screenInput.disabled = true; screenInput.style.opacity = '0.3'; }
+
+    // ヘッダーに「閲覧モード」バッジを表示（重複防止）
+    const header = document.querySelector('header h1');
+    if (header && !document.getElementById('user-mode-badge')) {
+        header.insertAdjacentHTML('afterend',
+            '<span id="user-mode-badge" style="font-size:0.6rem;font-weight:900;background:#451a03;color:#f59e0b;border:1px solid #b45309;border-radius:4px;padding:1px 7px;margin-left:6px;vertical-align:middle;">non admin</span>'
+        );
+    }
+}
+
 window.onload = async () => {
     renderEntryChecks();
     loadTrades();
@@ -3625,6 +3690,11 @@ window.onload = async () => {
     }
 
     if (window.lucide) lucide.createIcons();
+
+    // ユーザーモードで再ロードした場合も制限を適用
+    if (sessionStorage.getItem('auth') === 'user') {
+        applyUserRestrictions();
+    }
 };
     
 </script>
