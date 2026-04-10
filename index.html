@@ -2493,12 +2493,12 @@ function copyIntersectDiff() {
 }
 
 function copyIntersect() {
-    const text = document.getElementById('intersect-result-body').innerText;
-    if (!text) return;
+    const text = document.getElementById('intersect-common-text')?.innerText?.trim();
+    if (!text || text === 'なし') return;
     navigator.clipboard.writeText(text).then(() => {
         const btn = document.getElementById('intersect-copy-btn');
         btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
-        setTimeout(() => { btn.innerText = '📋 コピー'; btn.style.background = '#334155'; }, 2000);
+        setTimeout(() => { btn.innerText = '📋 共通コピー'; btn.style.background = '#334155'; }, 2000);
     });
 }
 
