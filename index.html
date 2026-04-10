@@ -3602,8 +3602,10 @@ function switchMCSubtab(tab) {
 function applyUserRestrictions() {
     // 操作系ボタンをすべて無効化
     const disableSelectors = [
-        // Entry
-        'button[onclick="registerTrade()"]',
+    // プロンプトストック
+    'button[onclick^="togglePromptStock"]',
+    // Entry
+    'button[onclick="registerTrade()"]',
         // PF
         'button[onclick^="setTradeResult"]',
         'button[onclick^="deleteTrade"]',
