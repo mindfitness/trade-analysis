@@ -2679,9 +2679,7 @@ async function screenTicker(symbol) {
   );
   const isHH = parseFloat(values[0].high) > parseFloat(values[1].high);
   const vcs = screenCalcVCS(values);
-  const isBearishCandle = parseFloat(values[0].close) < parseFloat(values[0].open);
-const isHighVolBearish = isBearishCandle && volumes[0] > vol50Avg && volumes[0] > volumes[1];
-const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >= 1000000 && !isHighVolBearish;
+  const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >= 1000000;
   const vcsCondition = !isNaN(vcs) && vcs >= 60;
 
   return { symbol, price: sClose, rs10, rs21, hasVolSpike, vcs,
@@ -2722,9 +2720,7 @@ async function screenTickerWithKey(symbol, apiKey) {
   );
   const isHH = parseFloat(values[0].high) > parseFloat(values[1].high);
   const vcs = screenCalcVCS(values);
-  const isBearishCandle = parseFloat(values[0].close) < parseFloat(values[0].open);
-const isHighVolBearish = isBearishCandle && volumes[0] > vol50Avg && volumes[0] > volumes[1];
-const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >= 1000000 && !isHighVolBearish;
+  const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >= 1000000;
   const vcsCondition = !isNaN(vcs) && vcs >= 60;
 
   return { symbol, price: sClose, rs10, rs21, hasVolSpike, vcs,
