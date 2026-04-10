@@ -940,7 +940,7 @@
     const unique = [...new Set(tickers)];
     const result = unique.join(', ');
     
-    console.log(`✅ 1D・5D両方top35: ${both.length}テーマ / 全銘柄（手動でコピーしてください）:`);
+    console.log(`✅ 1D・5D両方top35: ${both.length}テーマ / 全銘柄:`);
     console.log(result);
     both.forEach((t, i) => console.log(`${i+1}. ${t.name}  1D:${(t['1日']*100).toFixed(1)}%  5D:${(t['5日']*100).toFixed(1)}%  → ${t.related}`));
   });</pre></div>
