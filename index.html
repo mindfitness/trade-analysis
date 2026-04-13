@@ -2689,7 +2689,7 @@ async function screenTicker(symbol) {
   const isHH = parseFloat(values[0].high) > parseFloat(values[1].high);
   const vcs = screenCalcVCS(values);
   const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >= 1000000;
-  const vcsCondition = !isNaN(vcs) && vcs >= 60;
+  const vcsCondition = !isNaN(vcs) && vcs >= 70;
 
   return { symbol, price: sClose, rs10, rs21, hasVolSpike, vcs,
     matchType: rsCondition ? 'rs' : vcsCondition ? 'vcs' : null,
@@ -2730,7 +2730,7 @@ async function screenTickerWithKey(symbol, apiKey) {
   const isHH = parseFloat(values[0].high) > parseFloat(values[1].high);
   const vcs = screenCalcVCS(values);
   const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >= 1000000;
-  const vcsCondition = !isNaN(vcs) && vcs >= 60;
+  const vcsCondition = !isNaN(vcs) && vcs >= 70;
 
   return { symbol, price: sClose, rs10, rs21, hasVolSpike, vcs,
     matchType: rsCondition ? 'rs' : vcsCondition ? 'vcs' : null,
@@ -2745,7 +2745,7 @@ function screenAppendCard(r) {
   const badge = isVcsOnly
     ? `<span style="font-size:0.6rem;font-weight:900;background:#4c1d95;color:#c4b5fd;padding:1px 6px;border-radius:3px;">VCS</span>`
     : `<span style="font-size:0.6rem;font-weight:900;background:#064e3b;color:#6ee7b7;padding:1px 6px;border-radius:3px;">RS</span>`;
-  const vcsColor = isNaN(r.vcs) ? 'var(--text-sub)' : r.vcs >= 60 ? '#8b5cf6' : 'var(--text-sub)';
+  const vcsColor = isNaN(r.vcs) ? 'var(--text-sub)' : r.vcs >= 70 ? '#8b5cf6' : 'var(--text-sub)';
   div.innerHTML = `
     <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;border-left:3px solid ${accentColor};display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
       <div style="display:flex;align-items:center;gap:5px;min-width:55px;">
@@ -2807,7 +2807,7 @@ function screenRegisterToWatch(result) {
         id: Date.now(),
         name: 'VCS',
         date: `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`,
-        tags: ['VCS>60'],
+        tags: ['VCS>70'],
         stocks: [result.symbol]
       });
     }
@@ -2932,7 +2932,7 @@ if (duplicatesRemoved > 0) {
       const result = res.value;
       const sym = result.symbol;
       const isMatch = mode === 'vcs'
-        ? (!isNaN(result.vcs) && result.vcs >= 60)
+        ? (!isNaN(result.vcs) && result.vcs >= 70)
         : result.match;
       const matchType = mode === 'vcs' ? 'vcs' : result.matchType;
       result.matchType = matchType;
