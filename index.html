@@ -1311,8 +1311,12 @@ vixValEl.innerText = sc.vixPenalty > 0
       const emaBadge = d.aboveEma21
         ? `<span style="font-size:0.55rem;font-weight:800;padding:1px 5px;border-radius:3px;background:#064e3b;color:#10b981;margin-left:4px;">EMA高</span>`
         : `<span style="font-size:0.55rem;font-weight:800;padding:1px 5px;border-radius:3px;background:#7f1d1d;color:#ef4444;margin-left:4px;">EMA低</span>`;
+      const tvLink = `https://jp.tradingview.com/chart/2heIjlhI/?symbol=${d.symbol}`;
+      const symbolLabel = ['RSP','QQQE','QQQ'].includes(d.symbol)
+        ? `<a href="${tvLink}" target="_blank" rel="noopener noreferrer" style="color:#22d3ee;text-decoration:underline;font-weight:900;">${d.symbol}</a>`
+        : `<span>${d.symbol}</span>`;
       return `<div style="background:#1a2234;border:1px solid #1e2d45;border-radius:8px;padding:10px 12px;">
-        <div style="font-size:0.6rem;color:#4a6080;">${d.symbol}${emaBadge}</div>
+        <div style="font-size:0.6rem;color:#4a6080;">${symbolLabel}${emaBadge}</div>
         <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px;">
           <span style="font-size:0.82rem;font-weight:800;">$${d.cur.toFixed(2)}</span>
           <span style="font-size:0.78rem;font-weight:800;color:${chgCol};">${chgStr}</span>
