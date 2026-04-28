@@ -804,6 +804,7 @@
            <button id="copy-screen-results-btn" onclick="copyScreenResults(null)" style="padding:3px 10px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 ALL</button>
            <button id="copy-screen-rs-btn" onclick="copyScreenResults('RS')" style="padding:3px 10px; background:#334155; border:1px solid #10b981; color:#6ee7b7; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 RS</button>
            <button id="copy-screen-vcs-btn" onclick="copyScreenResults('VCS')" style="padding:3px 10px; background:#334155; border:1px solid #8b5cf6; color:#c4b5fd; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 VCS</button>
+           <button id="copy-screen-ma-btn" onclick="copyScreenResults('MA')" style="padding:3px 10px; background:#334155; border:1px solid #f59e0b; color:#fcd34d; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 MA</button>
          </div>
        </div>
     <div id="screen-results-body"></div>
@@ -2422,7 +2423,7 @@ function copyScreenResults(type) {
     }).filter(Boolean);
     if (lines.length === 0) { alert(`${type || '全'}の銘柄がありません`); return; }
     const text = lines.join(', ');
-    const btnId = type === 'RS' ? 'copy-screen-rs-btn' : type === 'VCS' ? 'copy-screen-vcs-btn' : 'copy-screen-results-btn';
+    const btnId = type === 'RS' ? 'copy-screen-rs-btn' : type === 'VCS' ? 'copy-screen-vcs-btn' : type === 'MA' ? 'copy-screen-ma-btn' : 'copy-screen-results-btn';
     navigator.clipboard.writeText(text).then(() => {
         const btn = document.getElementById(btnId);
         if (!btn) return;
@@ -2752,18 +2753,38 @@ const hasPP = ppCount >= 1;
 const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >= 1000000 && hasPP;
   const vcsCondition = !isNaN(vcs) && vcs >= 70;
 
-  return { symbol, price: sClose, rs10, rs21, hasVolSpike, ppCount, vcs,
-    matchType: rsCondition ? 'rs' : vcsCondition ? 'vcs' : null,
-    match: rsCondition || vcsCondition };
+  // MA条件: 21EMA, 21SMA, 50SMAのいずれかに終値が0%~1%以内で接触
+  const ema21val = (() => {
+    const k = 2 / 22;
+    let ema = closes.slice(0, 21).reduce((a, b) => a + b, 0) / 21;
+    for (let j = 20; j >= 0; j--) ema = closes[j] * k + ema * (1 - k);
+    return ema;
+  })();
+  const sma21val = closes.slice(0, 21).reduce((a, b) => a + b, 0) / 21;
+  const sma50val2 = closes.slice(0, 50).reduce((a, b) => a + b, 0) / 50;
+  const maTouchPct = (ma) => (sClose - ma) / ma * 100;
+  const isMaTouch = (ma) => maTouchPct(ma) >= 0 && maTouchPct(ma) <= 1;
+  const maHit = isMaTouch(ema21val) || isMaTouch(sma21val) || isMaTouch(sma50val2);
+  const maTouchLabel = isMaTouch(ema21val) ? `EMA21(${maTouchPct(ema21val).toFixed(2)}%)` 
+    : isMaTouch(sma21val) ? `SMA21(${maTouchPct(sma21val).toFixed(2)}%)` 
+    : isMaTouch(sma50val2) ? `SMA50(${maTouchPct(sma50val2).toFixed(2)}%)` : '';
+  const maCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && vol60Avg >= 1000000 && hasPP && maHit;
+
+  return { symbol, price: sClose, rs10, rs21, hasVolSpike, ppCount, vcs, maTouchLabel,
+    matchType: rsCondition ? 'rs' : vcsCondition ? 'vcs' : maCondition ? 'ma' : null,
+    match: rsCondition || vcsCondition || maCondition };
 }
 
 function screenAppendCard(r) {
   const body = document.getElementById('screen-results-body');
   const div = document.createElement('div');
+  const isMaOnly = r.matchType === 'ma';
   const isVcsOnly = r.matchType === 'vcs';
-  const accentColor = isVcsOnly ? '#8b5cf6' : 'var(--win-deep)';
+  const accentColor = isVcsOnly ? '#8b5cf6' : isMaOnly ? '#f59e0b' : 'var(--win-deep)';
   const badge = isVcsOnly
     ? `<span style="font-size:0.6rem;font-weight:900;background:#4c1d95;color:#c4b5fd;padding:1px 6px;border-radius:3px;">VCS</span>`
+    : isMaOnly
+    ? `<span style="font-size:0.6rem;font-weight:900;background:#451a03;color:#fcd34d;padding:1px 6px;border-radius:3px;">MA</span>`
     : `<span style="font-size:0.6rem;font-weight:900;background:#064e3b;color:#6ee7b7;padding:1px 6px;border-radius:3px;">RS</span>`;
   const vcsColor = isNaN(r.vcs) ? 'var(--text-sub)' : r.vcs >= 70 ? '#8b5cf6' : 'var(--text-sub)';
   div.innerHTML = `
@@ -2780,10 +2801,12 @@ function screenAppendCard(r) {
       <span style="font-size:0.72rem;font-weight:700;color:${r.hasVolSpike?'var(--win-deep)':'var(--text-sub)'};">${r.hasVolSpike?'VOL✓':'VOL✗'}</span>
       <span style="font-size:0.72rem;font-weight:700;color:${r.ppCount>=1?'var(--win-deep)':'var(--text-sub)'};">PP:${r.ppCount}</span>
       <span style="font-size:0.72rem;font-weight:700;color:${vcsColor};">VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}</span>
+      ${isMaOnly ? `<span style="font-size:0.72rem;font-weight:700;color:#f59e0b;">${r.maTouchLabel}</span>` : ''}
     </div>`;
   body.appendChild(div.firstElementChild);
   document.getElementById('copy-screen-results-btn').style.display = 'inline-block';
   if (r.matchType === 'vcs') document.getElementById('copy-screen-vcs-btn').style.display = 'inline-block';
+  else if (r.matchType === 'ma') document.getElementById('copy-screen-ma-btn').style.display = 'inline-block';
   else document.getElementById('copy-screen-rs-btn').style.display = 'inline-block';
 }
 
@@ -2907,6 +2930,7 @@ if (duplicatesRemoved > 0) {
   document.getElementById('copy-screen-results-btn').style.display = 'none';
   document.getElementById('copy-screen-rs-btn').style.display = 'none';
   document.getElementById('copy-screen-vcs-btn').style.display = 'none';
+  document.getElementById('copy-screen-ma-btn').style.display = 'none';
   document.getElementById('screen-skip-section').style.display = 'none';
   document.getElementById('screen-progress').style.display = 'block';
 
