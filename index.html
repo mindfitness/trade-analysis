@@ -2761,13 +2761,26 @@ const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >=
     return ema;
   })();
   const sma21val = closes.slice(0, 21).reduce((a, b) => a + b, 0) / 21;
-  const sma50val2 = closes.slice(0, 50).reduce((a, b) => a + b, 0) / 50;
+ const sma50val2 = closes.slice(0, 50).reduce((a, b) => a + b, 0) / 50;
+
+  // MAクラウド下限: low の EMA21
+  const lows = values.map(d => parseFloat(d.low));
+  const cloudLowEma21 = (() => {
+    if (lows.length < 21) return null;
+    const k = 2 / 22;
+    let ema = lows.slice(0, 21).reduce((a, b) => a + b, 0) / 21;
+    for (let j = 20; j >= 0; j--) ema = lows[j] * k + ema * (1 - k);
+    return ema;
+  })();
+
+  // MA条件: 終値が各MAまたはクラウド下限に0%~1%以内で接触
   const maTouchPct = (ma) => (sClose - ma) / ma * 100;
-  const isMaTouch = (ma) => maTouchPct(ma) >= 0 && maTouchPct(ma) <= 1;
-  const maHit = isMaTouch(ema21val) || isMaTouch(sma21val) || isMaTouch(sma50val2);
-  const maTouchLabel = isMaTouch(ema21val) ? `EMA21(${maTouchPct(ema21val).toFixed(2)}%)` 
-    : isMaTouch(sma21val) ? `SMA21(${maTouchPct(sma21val).toFixed(2)}%)` 
-    : isMaTouch(sma50val2) ? `SMA50(${maTouchPct(sma50val2).toFixed(2)}%)` : '';
+  const isMaTouch = (ma) => ma !== null && maTouchPct(ma) >= 0 && maTouchPct(ma) <= 1;
+  const maHit = isMaTouch(ema21val) || isMaTouch(sma21val) || isMaTouch(sma50val2) || isMaTouch(cloudLowEma21);
+  const maTouchLabel = isMaTouch(ema21val)      ? `EMA21close(${maTouchPct(ema21val).toFixed(2)}%)`
+    : isMaTouch(sma21val)      ? `SMA21close(${maTouchPct(sma21val).toFixed(2)}%)`
+    : isMaTouch(sma50val2)     ? `SMA50close(${maTouchPct(sma50val2).toFixed(2)}%)`
+    : isMaTouch(cloudLowEma21) ? `CloudLow-EMA21(${maTouchPct(cloudLowEma21).toFixed(2)}%)` : '';
   const maCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && vol60Avg >= 1000000 && hasPP && maHit;
 
   return { symbol, price: sClose, rs10, rs21, hasVolSpike, ppCount, vcs, maTouchLabel,
