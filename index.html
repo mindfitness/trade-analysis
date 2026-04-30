@@ -2773,14 +2773,67 @@ const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >=
     return ema;
   })();
 
-  // MA条件: 終値が各MAまたはクラウド下限に0%~1%以内で接触
-  const maTouchPct = (ma) => (sClose - ma) / ma * 100;
-  const isMaTouch = (ma) => ma !== null && maTouchPct(ma) >= 0 && maTouchPct(ma) <= 1;
-  const maHit = isMaTouch(ema21val) || isMaTouch(sma21val) || isMaTouch(sma50val2) || isMaTouch(cloudLowEma21);
-  const maTouchLabel = isMaTouch(ema21val)      ? `EMA21close(${maTouchPct(ema21val).toFixed(2)}%)`
-    : isMaTouch(sma21val)      ? `SMA21close(${maTouchPct(sma21val).toFixed(2)}%)`
-    : isMaTouch(sma50val2)     ? `SMA50close(${maTouchPct(sma50val2).toFixed(2)}%)`
-    : isMaTouch(cloudLowEma21) ? `CloudLow-EMA21(${maTouchPct(cloudLowEma21).toFixed(2)}%)` : '';
+  // MA条件: 終値または当日最安値が各MAまたはクラウド下限に0%~1%以内で接触
+  const sLow = lows[0]; // 当日最安値
+  const maTouchPct     = (price, ma) => (price - ma) / ma * 100;
+  const isMaTouch      = (ma) => ma !== null && (
+    (maTouchPct(sClose, ma) >= 0 && maTouchPct(sClose, ma) <= 1) ||
+    (maTouchPct(sLow,   ma) >= 0 && maTouchPct(sLow,   ma) <= 1)
+  );
+  const getMaTouchLabel = (ma, name) => {
+    if (ma === null) return null;
+    const cPct = maTouchPct(sClose, ma);
+    const lPct = maTouchPct(sLow, ma);
+    if (cPct >= 0 && cPct <= 1) return `${name}-close(${cPct.toFixed(2)}%)`;
+    if (lPct >= 0 && lPct <= 1) return `${name}-low(${lPct.toFixed(2)}%)`;
+    return null;
+  };
+  // Chandelier Stop: highest(high, 22) - ATR(22) * 3.0
+  const highs = values.map(d => parseFloat(d.high));
+  const atr22 = (() => {
+    const trs = values.map((d, i) => {
+      if (i === values.length - 1) return parseFloat(d.high) - parseFloat(d.low);
+      const h = parseFloat(d.high), l = parseFloat(d.low), pc = parseFloat(values[i + 1].close);
+      return Math.max(h - l, Math.abs(h - pc), Math.abs(l - pc));
+    });
+    return trs.slice(0, 22).reduce((a, b) => a + b, 0) / 22;
+  })();
+  const chandelier = Math.max(...highs.slice(0, 22)) - atr22 * 3.0;
+
+  // Pivot: 直近 pivotLen 本の局所安値（左右 pivotLen 本で最小）
+  const pivotLen = 5;
+  let pivotLow = null;
+  for (let i = pivotLen; i < values.length - pivotLen; i++) {
+    const center = parseFloat(values[i].low);
+    const leftOk  = Array.from({length: pivotLen}, (_, j) => parseFloat(values[i - j - 1].low)).every(v => v > center);
+    const rightOk = Array.from({length: pivotLen}, (_, j) => parseFloat(values[i + j + 1].low)).every(v => v > center);
+    if (leftOk && rightOk) { pivotLow = center; break; }
+  }
+
+  // Fibonacci: 直近 fibLen 本のswingHigh / swingLow から 0.618 と 1.764
+  const fibLen = 40;
+  const fibHighs = highs.slice(0, fibLen);
+  const fibLows  = lows.slice(0, fibLen);
+  const swingHigh = Math.max(...fibHighs);
+  const swingLow  = Math.min(...fibLows);
+  const fibDiff   = swingHigh - swingLow;
+  const fib0618   = swingHigh - fibDiff * 0.618;
+  const fib1764   = swingLow  + fibDiff * 1.764;
+
+  // 全ライン統合タッチ判定（終値 OR 最安値が 0%~1% 以内）
+  const maHit = isMaTouch(ema21val) || isMaTouch(sma21val) || isMaTouch(sma50val2) || isMaTouch(cloudLowEma21)
+             || isMaTouch(chandelier) || isMaTouch(pivotLow) || isMaTouch(fib0618) || isMaTouch(fib1764);
+
+  const maTouchLabel =
+    getMaTouchLabel(ema21val,      'EMA21')          ??
+    getMaTouchLabel(sma21val,      'SMA21')          ??
+    getMaTouchLabel(sma50val2,     'SMA50')          ??
+    getMaTouchLabel(cloudLowEma21, 'CloudLow-EMA21') ??
+    getMaTouchLabel(chandelier,    'Chandelier')     ??
+    getMaTouchLabel(pivotLow,      'PivotLow')       ??
+    getMaTouchLabel(fib0618,       'Fib0.618')       ??
+    getMaTouchLabel(fib1764,       'Fib1.764')       ?? '';
+
   const maCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && vol60Avg >= 1000000 && hasPP && maHit;
 
   return { symbol, price: sClose, rs10, rs21, hasVolSpike, ppCount, vcs, maTouchLabel,
