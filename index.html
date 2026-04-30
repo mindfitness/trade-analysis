@@ -2887,10 +2887,10 @@ function screenAppendSkipCard(r) {
           <span style="font-size:0.88rem;font-weight:900;color:#64748b;text-decoration:underline;">${r.symbol}</span>
         </a>
       </div>
-      <span style="font-size:0.72rem;color:var(--text-sub);">$${r.price.toFixed(2)}</span>
       <span style="font-size:0.72rem;font-weight:700;${screenRsClass(r.rs10)}">R10:${isNaN(r.rs10)?'N/A':r.rs10.toFixed(0)}%</span>
       <span style="font-size:0.72rem;font-weight:700;${screenRsClass(r.rs21)}">R21:${isNaN(r.rs21)?'N/A':r.rs21.toFixed(0)}%</span>
       <span style="font-size:0.72rem;font-weight:700;color:${r.hasVolSpike?'var(--win-deep)':'var(--text-sub)'};">${r.hasVolSpike?'VOL✓':'VOL✗'}</span>
+      <span style="font-size:0.72rem;font-weight:700;color:${r.ppCount>=1?'var(--win-deep)':'var(--text-sub)'};">PP:${r.ppCount}</span>
       <span style="font-size:0.72rem;font-weight:700;color:var(--text-sub);">VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}</span>
     </div>`;
   body.appendChild(div.firstElementChild);
