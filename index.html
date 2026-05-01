@@ -2754,8 +2754,7 @@ for (let i = 0; i < 30; i++) {
 }
 const hasPP = ppCount >= 1;
 
-const aboveSma50 = sClose > sma50val2;
-const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >= 1000000 && hasPP && aboveSma50;
+const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >= 1000000 && hasPP;
   const vcsCondition = !isNaN(vcs) && vcs >= 70;
 
   // MA条件: 21EMA, 21SMA, 50SMAのいずれかに終値が0%~1%以内で接触
