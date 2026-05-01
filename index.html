@@ -773,14 +773,18 @@
         <span id="save-toggle-label" style="font-size:0.68rem; color:var(--text-sub); font-weight:700;">Watchに保存しない</span>
     </label>
 </div>
-<div style="display:flex; gap:6px;">
+<div style="display:flex; gap:6px; flex-wrap:wrap;">
   <button id="screen-run-btn" onclick="startScreening('rs')"
-  style="flex:1; padding:10px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
-  ▶ RS+VCS+MA
+  style="flex:1; min-width:0; padding:10px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
+  ▶ RS(ALL)
 </button>
 <button id="screen-vcs-btn" onclick="startScreening('vcs')"
-  style="flex:1; padding:10px; background:#7c3aed; color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
+  style="flex:1; min-width:0; padding:10px; background:#7c3aed; color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
   ▶ VCSのみ
+</button>
+<button id="screen-ma-only-btn" onclick="startScreening('ma')"
+  style="flex:1; min-width:0; padding:10px; background:#b45309; color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
+  ▶ MAのみ
 </button>
 </div>
 
@@ -2990,9 +2994,11 @@ if (duplicatesRemoved > 0) {
 
   const btn    = document.getElementById('screen-run-btn');
   const vcsBtn = document.getElementById('screen-vcs-btn');
-  btn.disabled = true; vcsBtn.disabled = true;
-  btn.innerText = mode === 'vcs' ? '▶ RS+VCS' : '... 実行中';
+  const maBtn  = document.getElementById('screen-ma-only-btn');
+  btn.disabled = true; vcsBtn.disabled = true; maBtn.disabled = true;
+  btn.innerText    = mode === 'rs' ? '... 実行中' : '▶ RS+VCS+MA';
   vcsBtn.innerText = mode === 'vcs' ? '... 実行中' : '▶ VCSのみ';
+  maBtn.innerText  = mode === 'ma' ? '... 実行中' : '▶ MAのみ';
   document.getElementById('screen-log').innerHTML = '';
   document.getElementById('screen-results-body').innerHTML = '';
   document.getElementById('screen-skip-body').innerHTML = '';
@@ -3006,9 +3012,10 @@ if (duplicatesRemoved > 0) {
 
   const spyOk = await screenEnsureSpy();
   if (!spyOk) {
-    btn.disabled = false; vcsBtn.disabled = false;
-    btn.innerText = '▶ RS+VCS';
-    vcsBtn.innerText = '▶ VCSのみ';
+    btn.disabled = false; vcsBtn.disabled = false; maBtn.disabled = false;
+  btn.innerText    = '▶ RS+VCS+MA';
+  vcsBtn.innerText = '▶ VCSのみ';
+  maBtn.innerText  = '▶ MAのみ';
     screenAddLog('SPY取得失敗のため中断', 'err');
     return;
   }
@@ -3046,10 +3053,12 @@ if (duplicatesRemoved > 0) {
       }
       const result = res.value;
       const sym = result.symbol;
-      const isMatch = mode === 'vcs'
+     const isMatch = mode === 'vcs'
         ? (!isNaN(result.vcs) && result.vcs >= 70)
+        : mode === 'ma'
+        ? result.matchType === 'ma'
         : result.match;
-      const matchType = mode === 'vcs' ? 'vcs' : result.matchType;
+      const matchType = mode === 'vcs' ? 'vcs' : mode === 'ma' ? 'ma' : result.matchType;
       result.matchType = matchType;
       if (isMatch) {
         matchCount++;
