@@ -2521,6 +2521,10 @@ function copyIntersect() {
 const SCREEN_API_KEY = 'f550f672515b4cd6b4c2966f1e2cc0fb';
 const SCREEN_API_KEY_2 = '10f03734e47d4c5fb02dd591d7928e8c';
 const SCREEN_API_KEY_3 = 'fce650259e7d4981bd2c2e8579a9d9a6';
+const SCREEN_API_KEY_4 = '3f8004b1d81c49c699e4011a2cdf0745';
+const SCREEN_API_KEY_5 = 'ca4b29c03e4d426f8314ee517137193d';
+
+
 let screenSaveToWatch = false;
 const SCREEN_DELAY = 7000;
 let screenSpyMap = null;
@@ -3012,11 +3016,11 @@ if (duplicatesRemoved > 0) {
 
   let matchCount = 0;
   let skipCount = 0;
-  const API_KEYS = [SCREEN_API_KEY, SCREEN_API_KEY_2, SCREEN_API_KEY_3];
+  const API_KEYS = [SCREEN_API_KEY, SCREEN_API_KEY_2, SCREEN_API_KEY_3, SCREEN_API_KEY_4, SCREEN_API_KEY_5];
 
-  // 2件ずつペアで処理
-  for (let i = 0; i < tickers.length; i += 3) {
-    const pair = [tickers[i], tickers[i + 1], tickers[i + 2]].filter(Boolean);
+  // 5件同時並列処理
+  for (let i = 0; i < tickers.length; i += 5) {
+    const pair = [tickers[i], tickers[i + 1], tickers[i + 2], tickers[i + 3], tickers[i + 4]].filter(Boolean);
     const pct = Math.round((i / tickers.length) * 100);
     document.getElementById('screen-progress-bar').style.width = pct + '%';
     document.getElementById('screen-progress-count').innerText = `${i} / ${tickers.length}`;
@@ -3065,7 +3069,7 @@ if (duplicatesRemoved > 0) {
       }
     }
 
-    if (i + 3 < tickers.length) await new Promise(r => setTimeout(r, SCREEN_DELAY));
+    if (i + 5 < tickers.length) await new Promise(r => setTimeout(r, SCREEN_DELAY));
   }
   document.getElementById('screen-progress-bar').style.width = '100%';
   document.getElementById('screen-progress-count').innerText = `${tickers.length} / ${tickers.length}`;
