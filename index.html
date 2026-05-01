@@ -2838,7 +2838,7 @@ const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >=
     getMaTouchLabel(fib0618,       'Fib0.618')       ??
     getMaTouchLabel(fib1764,       'Fib1.764')       ?? '';
 
-  const maCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && vol60Avg >= 1000000 && hasPP && maHit;
+  const maCondition = maHit;
 
   return { symbol, price: sClose, rs10, rs21, hasVolSpike, ppCount, vcs, maTouchLabel,
     matchType: rsCondition ? 'rs' : vcsCondition ? 'vcs' : maCondition ? 'ma' : null,
