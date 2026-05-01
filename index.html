@@ -3098,9 +3098,10 @@ if (duplicatesRemoved > 0) {
     document.getElementById('screen-results').style.display = 'block';
     document.getElementById('screen-results-body').innerHTML = '<div style="text-align:center;color:var(--text-sub);padding:20px;font-size:0.75rem;">条件に合致する銘柄はありませんでした</div>';
   }
-  btn.disabled = false; vcsBtn.disabled = false;
-  btn.innerText = '▶ RS+VCS';
+  btn.disabled = false; vcsBtn.disabled = false; maBtn.disabled = false;
+  btn.innerText    = '▶ RS(ALL)';
   vcsBtn.innerText = '▶ VCSのみ';
+  maBtn.innerText  = '▶ MAのみ';
 }
 
 // ======== Screen サブタブ切替 ========
