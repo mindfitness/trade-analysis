@@ -809,6 +809,8 @@
            <button id="copy-screen-rs-btn" onclick="copyScreenResults('RS')" style="padding:3px 10px; background:#334155; border:1px solid #10b981; color:#6ee7b7; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 RS</button>
            <button id="copy-screen-vcs-btn" onclick="copyScreenResults('VCS')" style="padding:3px 10px; background:#334155; border:1px solid #8b5cf6; color:#c4b5fd; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 VCS</button>
            <button id="copy-screen-ma-btn" onclick="copyScreenResults('MA')" style="padding:3px 10px; background:#334155; border:1px solid #f59e0b; color:#fcd34d; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 MA</button>
+<button id="copy-screen-ma-pp-btn" onclick="copyScreenResults('MA-PP')" style="padding:3px 10px; background:#334155; border:1px solid #f59e0b; color:#fcd34d; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 MA+PP</button>
+<button id="copy-screen-ma-npp-btn" onclick="copyScreenResults('MA-NPP')" style="padding:3px 10px; background:#334155; border:1px solid #f59e0b; color:#fcd34d; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 MA-PP</button>
          </div>
        </div>
     <div id="screen-results-body"></div>
@@ -2418,16 +2420,26 @@ function copyScreenResults(type) {
     if (cards.length === 0) return;
     const lines = Array.from(cards).filter(card => {
         if (!type) return true;
-        const badge = card.querySelector('span[style*="border-radius:3px"]');
-        if (!badge) return false;
-        return badge.innerText.trim() === type;
+        const mt = card.dataset.matchType || '';
+        const pp = parseInt(card.dataset.pp || '0');
+        if (type === 'MA-PP')  return mt === 'ma' && pp >= 1;
+        if (type === 'MA-NPP') return mt === 'ma' && pp < 1;
+        if (type === 'MA')     return mt === 'ma';
+        if (type === 'VCS')    return mt === 'vcs';
+        if (type === 'RS')     return mt === 'rs';
+        return true;
     }).map(card => {
         const ticker = card.querySelector('a span')?.innerText?.trim() || '';
         return ticker ? ticker : null;
     }).filter(Boolean);
     if (lines.length === 0) { alert(`${type || '全'}の銘柄がありません`); return; }
     const text = lines.join(', ');
-    const btnId = type === 'RS' ? 'copy-screen-rs-btn' : type === 'VCS' ? 'copy-screen-vcs-btn' : type === 'MA' ? 'copy-screen-ma-btn' : 'copy-screen-results-btn';
+    const btnId = type === 'RS' ? 'copy-screen-rs-btn'
+        : type === 'VCS'    ? 'copy-screen-vcs-btn'
+        : type === 'MA'     ? 'copy-screen-ma-btn'
+        : type === 'MA-PP'  ? 'copy-screen-ma-pp-btn'
+        : type === 'MA-NPP' ? 'copy-screen-ma-npp-btn'
+        : 'copy-screen-results-btn';
     navigator.clipboard.writeText(text).then(() => {
         const btn = document.getElementById(btnId);
         if (!btn) return;
@@ -2852,7 +2864,9 @@ const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >=
 function screenAppendCard(r) {
   const body = document.getElementById('screen-results-body');
   const div = document.createElement('div');
-  const isMaOnly = r.matchType === 'ma';
+div.dataset.matchType = r.matchType || '';
+div.dataset.pp = r.ppCount || 0;
+const isMaOnly = r.matchType === 'ma';
   const isVcsOnly = r.matchType === 'vcs';
   const accentColor = isVcsOnly ? '#8b5cf6' : isMaOnly ? '#f59e0b' : 'var(--win-deep)';
   const badge = isVcsOnly
@@ -2877,10 +2891,17 @@ function screenAppendCard(r) {
       <span style="font-size:0.72rem;font-weight:700;color:${vcsColor};">VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}</span>
       ${isMaOnly ? `<span style="font-size:0.72rem;font-weight:700;color:#f59e0b;">${r.maTouchLabel}</span>` : ''}
     </div>`;
-  body.appendChild(div.firstElementChild);
+  const card = div.firstElementChild;
+card.dataset.matchType = r.matchType || '';
+card.dataset.pp = r.ppCount || 0;
+body.appendChild(card);
   document.getElementById('copy-screen-results-btn').style.display = 'inline-block';
   if (r.matchType === 'vcs') document.getElementById('copy-screen-vcs-btn').style.display = 'inline-block';
-  else if (r.matchType === 'ma') document.getElementById('copy-screen-ma-btn').style.display = 'inline-block';
+  else if (r.matchType === 'ma') {
+    document.getElementById('copy-screen-ma-btn').style.display = 'inline-block';
+    document.getElementById('copy-screen-ma-pp-btn').style.display = 'inline-block';
+    document.getElementById('copy-screen-ma-npp-btn').style.display = 'inline-block';
+}
   else document.getElementById('copy-screen-rs-btn').style.display = 'inline-block';
 }
 
