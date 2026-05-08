@@ -3791,6 +3791,15 @@ function switchMCSubtab(tab) {
 }
 
 function applyUserRestrictions() {
+    // TVリンクを無効化
+    document.querySelectorAll('a[href*="tradingview"]').forEach(el => {
+        el.removeAttribute('href');
+        el.style.pointerEvents = 'none';
+        el.style.cursor = 'not-allowed';
+        el.style.color = '#475569';
+        el.style.textDecoration = 'none';
+    });
+
     // 操作系ボタンをすべて無効化
     const disableSelectors = [
     // プロンプトストック
