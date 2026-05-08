@@ -2826,7 +2826,7 @@ const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >=
     return ema;
   })();
   const sma21val = closes.slice(0, 21).reduce((a, b) => a + b, 0) / 21;
- const sma50val2 = closes.slice(0, 50).reduce((a, b) => a + b, 0) / 50;
+  const sma50val2 = closes.slice(0, 50).reduce((a, b) => a + b, 0) / 50;
 
   // MAクラウド下限: low の EMA21
   const lows = values.map(d => parseFloat(d.low));
@@ -2835,6 +2835,16 @@ const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >=
     const k = 2 / 22;
     let ema = lows.slice(0, 21).reduce((a, b) => a + b, 0) / 21;
     for (let j = 20; j >= 0; j--) ema = lows[j] * k + ema * (1 - k);
+    return ema;
+  })();
+
+  // ★追加: MAクラウド上限: high の EMA21
+  const highs = values.map(d => parseFloat(d.high));
+  const cloudHighEma21 = (() => {
+    if (highs.length < 21) return null;
+    const k = 2 / 22;
+    let ema = highs.slice(0, 21).reduce((a, b) => a + b, 0) / 21;
+    for (let j = 20; j >= 0; j--) ema = highs[j] * k + ema * (1 - k);
     return ema;
   })();
 
@@ -2854,7 +2864,6 @@ const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >=
     return null;
   };
   // Chandelier Stop: highest(high, 22) - ATR(22) * 3.0
-  const highs = values.map(d => parseFloat(d.high));
   const atr22 = (() => {
     const trs = values.map((d, i) => {
       if (i === values.length - 1) return parseFloat(d.high) - parseFloat(d.low);
@@ -2887,21 +2896,50 @@ const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >=
 
   // 全ライン統合タッチ判定（終値 OR 最安値が 0%~1% 以内）
   const maHit = isMaTouch(ema21val) || isMaTouch(sma21val) || isMaTouch(sma50val2) || isMaTouch(cloudLowEma21)
+             || isMaTouch(cloudHighEma21)
              || isMaTouch(chandelier) || isMaTouch(pivotLow) || isMaTouch(fib0618) || isMaTouch(fib1764);
 
   const maTouchLabel =
-    getMaTouchLabel(ema21val,      'EMA21')          ??
-    getMaTouchLabel(sma21val,      'SMA21')          ??
-    getMaTouchLabel(sma50val2,     'SMA50')          ??
-    getMaTouchLabel(cloudLowEma21, 'CloudLow-EMA21') ??
-    getMaTouchLabel(chandelier,    'Chandelier')     ??
-    getMaTouchLabel(pivotLow,      'PivotLow')       ??
-    getMaTouchLabel(fib0618,       'Fib0.618')       ??
-    getMaTouchLabel(fib1764,       'Fib1.764')       ?? '';
+    getMaTouchLabel(ema21val,       'EMA21')           ??
+    getMaTouchLabel(sma21val,       'SMA21')           ??
+    getMaTouchLabel(sma50val2,      'SMA50')           ??
+    getMaTouchLabel(cloudLowEma21,  'CloudLow-EMA21')  ??
+    getMaTouchLabel(cloudHighEma21, 'CloudHigh-EMA21') ??
+    getMaTouchLabel(chandelier,     'Chandelier')      ??
+    getMaTouchLabel(pivotLow,       'PivotLow')        ??
+    getMaTouchLabel(fib0618,        'Fib0.618')        ??
+    getMaTouchLabel(fib1764,        'Fib1.764')        ?? '';
+
+  // ===== トレンドライン近接検出 (アプローチB) =====
+  const _tlLines = [
+    { name: 'EMA21',           val: ema21val },
+    { name: 'SMA21',           val: sma21val },
+    { name: 'SMA50',           val: sma50val2 },
+    { name: 'CloudLow-EMA21',  val: cloudLowEma21 },
+    { name: 'CloudHigh-EMA21', val: cloudHighEma21 },
+    { name: 'Chandelier',      val: chandelier },
+    { name: 'PivotLow',        val: pivotLow },
+    { name: 'Fib0.618',        val: fib0618 },
+    { name: 'Fib1.764',        val: fib1764 },
+  ].filter(l => l.val !== null && !isNaN(l.val));
+
+  const TL_CONV_THRESH = 0.4; // 近接閾値 %
+  const tlConvPairs = [];
+  for (let _i = 0; _i < _tlLines.length; _i++) {
+    for (let _j = _i + 1; _j < _tlLines.length; _j++) {
+      const _diff = Math.abs(_tlLines[_i].val - _tlLines[_j].val) / sClose * 100;
+      if (_diff <= TL_CONV_THRESH) {
+        tlConvPairs.push(`${_tlLines[_i].name}×${_tlLines[_j].name}(${_diff.toFixed(2)}%)`);
+      }
+    }
+  }
+  const tlConv = tlConvPairs.length >= 1; // 1ペア以上 = 2本以上が密集
+  // ================================================
 
   const maCondition = maHit;
 
   return { symbol, price: sClose, rs10, rs21, hasVolSpike, ppCount, vcs, maTouchLabel,
+    tlConvPairs, tlConv,
     matchType: rsCondition ? 'rs' : vcsCondition ? 'vcs' : maCondition ? 'ma' : null,
     match: rsCondition || vcsCondition || maCondition };
 }
@@ -2935,6 +2973,7 @@ const isMaOnly = r.matchType === 'ma';
       <span style="font-size:0.72rem;font-weight:700;color:${r.ppCount>=1?'var(--win-deep)':'var(--text-sub)'};">PP:${r.ppCount}</span>
       <span style="font-size:0.72rem;font-weight:700;color:${vcsColor};">VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}</span>
       ${isMaOnly ? `<span style="font-size:0.72rem;font-weight:700;color:#f59e0b;">${r.maTouchLabel}</span>` : ''}
+      ${r.tlConv ? `<span style="font-size:0.6rem;font-weight:900;background:#1e1b4b;color:#a78bfa;border:1px solid #4f46e5;border-radius:3px;padding:1px 6px;">TL×${r.tlConvPairs.length}</span>` : ''}
     </div>`;
   const card = div.firstElementChild;
 card.dataset.matchType = r.matchType || '';
