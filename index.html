@@ -2967,7 +2967,7 @@ const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >=
   const tlConv = tlConvPairs.length >= 1; // 1ペア以上 = 2本以上が密集
   // ================================================
 
-  const rsLongOk = (!isNaN(rs126) && rs126 >= 40) || (!isNaN(rs252) && rs252 >= 40);
+  const rsLongOk = (!isNaN(rs126) && rs126 >= 50) || (!isNaN(rs252) && rs252 >= 50);
   const maCondition = maHit && rsLongOk;
 
   const mms = calcMMS(values);
