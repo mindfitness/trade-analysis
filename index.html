@@ -3263,32 +3263,43 @@ if (duplicatesRemoved > 0) {
         screenAddLog(`✗ error  ${sym}  ${res.reason?.message}`, 'err');
         continue;
       }
+
       const result = res.value;
       const sym = result.symbol;
-     const isMatch = (mode === 'vcs'
-  ? (!isNaN(result.vcs) && result.vcs >= 70)
-  : mode === 'ma'
-  ? result.matchType === 'ma'
-  : result.match) && (result.mms ?? 0) >= 5;
-      const matchType = mode === 'vcs' ? 'vcs' : mode === 'ma' ? 'ma' : result.matchType;
-      result.matchType = matchType;
+
+      const rsLongOk = (!isNaN(result.rs126) && result.rs126 >= 50) || (!isNaN(result.rs252) && result.rs252 >= 50);
+      const maConditionCheck = !!result.maTouchLabel && rsLongOk && (result.mms ?? 0) >= 5;
+
+      const isMatch = mode === 'vcs'
+        ? (!isNaN(result.vcs) && result.vcs >= 70) && (result.mms ?? 0) >= 5
+        : mode === 'ma'
+        ? maConditionCheck
+        : result.match && (result.mms ?? 0) >= 5;
+
       if (isMatch) {
+        const matchType = mode === 'vcs' ? 'vcs'
+          : mode === 'ma' ? 'ma'
+          : result.matchType;
+        result.matchType = matchType;
+
         matchCount++;
-        const vcsStr    = isNaN(result.vcs) ? 'N/A' : result.vcs.toFixed(1);
-        const typeLabel = result.matchType === 'vcs' ? '[VCS]' : '[RS]';
-        screenAddLog(`✓ MATCH ${typeLabel}  ${sym}  R10:${isNaN(result.rs10)?'N/A':result.rs10.toFixed(1)}%  R21:${isNaN(result.rs21)?'N/A':result.rs21.toFixed(1)}%  VCS:${vcsStr}`, 'match');
+        screenAddLog(`✓ MATCH [${matchType?.toUpperCase()}]  ${sym}  R10:${isNaN(result.rs10)?'N/A':result.rs10.toFixed(1)}%  R21:${isNaN(result.rs21)?'N/A':result.rs21.toFixed(1)}%  VCS:${isNaN(result.vcs)?'N/A':result.vcs.toFixed(1)}`, 'match');
         document.getElementById('screen-results').style.display = 'block';
         document.getElementById('screen-results-count').innerText = `${matchCount} match${matchCount !== 1 ? 'es' : ''}`;
         screenAppendCard(result);
         if (screenSaveToWatch) screenRegisterToWatch(result);
       } else {
         skipCount++;
-        screenAddLog(`— skip  ${sym}  R10:${isNaN(result.rs10)?'N/A':result.rs10.toFixed(1)}%  R21:${isNaN(result.rs21)?'N/A':result.rs21.toFixed(1)}%`, 'skip');
+        const maHitLog  = result.maTouchLabel ? `MAタッチ:${result.maTouchLabel}` : 'MAタッチなし';
+        const rsLongLog = `R126:${isNaN(result.rs126)?'N/A':result.rs126.toFixed(0)}% R252:${isNaN(result.rs252)?'N/A':result.rs252.toFixed(0)}%`;
+        const mmsLog    = `MMS:${result.mms??'--'}/8`;
+        screenAddLog(`— skip  ${sym}  R10:${isNaN(result.rs10)?'N/A':result.rs10.toFixed(1)}%  R21:${isNaN(result.rs21)?'N/A':result.rs21.toFixed(1)}%  ${maHitLog}  ${rsLongLog}  ${mmsLog}`, 'skip');
         document.getElementById('screen-skip-section').style.display = 'block';
         document.getElementById('screen-skip-count').innerText = `${skipCount} skipped`;
         screenAppendSkipCard(result);
       }
     }
+      
 
     if (i + 5 < tickers.length) await new Promise(r => setTimeout(r, SCREEN_DELAY));
   }
