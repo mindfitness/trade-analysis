@@ -2882,18 +2882,18 @@ const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >=
   // MA条件: 終値または当日最安値が各MAまたはクラウド下限に0%~1%以内で接触
   const sLow = lows[0]; // 当日最安値
   const maTouchPct     = (price, ma) => (price - ma) / ma * 100;
-  const isMaTouch      = (ma) => ma !== null && (
-    (maTouchPct(sClose, ma) >= 0 && maTouchPct(sClose, ma) <= 1) ||
-    (maTouchPct(sLow,   ma) >= 0 && maTouchPct(sLow,   ma) <= 1)
-  );
-  const getMaTouchLabel = (ma, name) => {
+  const isMaTouch = (ma) => ma !== null && (
+    (maTouchPct(sClose, ma) >= -0.5 && maTouchPct(sClose, ma) <= 1.5) ||
+    (maTouchPct(sLow,   ma) >= -0.5 && maTouchPct(sLow,   ma) <= 1.5)
+);
+const getMaTouchLabel = (ma, name) => {
     if (ma === null) return null;
     const cPct = maTouchPct(sClose, ma);
     const lPct = maTouchPct(sLow, ma);
-    if (cPct >= 0 && cPct <= 1) return `${name}-close(${cPct.toFixed(2)}%)`;
-    if (lPct >= 0 && lPct <= 1) return `${name}-low(${lPct.toFixed(2)}%)`;
+    if (cPct >= -0.5 && cPct <= 1.5) return `${name}-close(${cPct.toFixed(2)}%)`;
+    if (lPct >= -0.5 && lPct <= 1.5) return `${name}-low(${lPct.toFixed(2)}%)`;
     return null;
-  };
+};
   // Chandelier Stop: highest(high, 22) - ATR(22) * 3.0
   const atr22 = (() => {
     const trs = values.map((d, i) => {
@@ -3028,18 +3028,90 @@ body.appendChild(card);
 function screenAppendSkipCard(r) {
   const body = document.getElementById('screen-skip-body');
   const div = document.createElement('div');
+
+  // MA条件の失敗理由を詳細に解析
+  const maReasons = [];
+
+  // RS長期条件
+  const rs126ok = !isNaN(r.rs126) && r.rs126 >= 50;
+  const rs252ok = !isNaN(r.rs252) && r.rs252 >= 50;
+  const rsLongOk = rs126ok || rs252ok;
+  if (!rsLongOk) {
+    maReasons.push(`RS長期NG(R126:${isNaN(r.rs126)?'N/A':r.rs126.toFixed(0)}% R252:${isNaN(r.rs252)?'N/A':r.rs252.toFixed(0)}%)`);
+  }
+
+  // MAタッチ条件
+  const hasMaTouch = !!r.maTouchLabel;
+  if (!hasMaTouch) {
+    maReasons.push('MAタッチなし');
+  } else {
+    maReasons.push(`MAタッチ: ${r.maTouchLabel}`);
+  }
+
+  // MMS条件
+  const mmsOk = (r.mms ?? 0) >= 5;
+  if (!mmsOk) {
+    maReasons.push(`MMS不足(${r.mms??'--'}/8)`);
+  }
+
+  // RS条件の個別NG理由
+  const rsNgs = [];
+  if (isNaN(r.rs10) || r.rs10 <= 50) rsNgs.push(`R10:${isNaN(r.rs10)?'N/A':r.rs10.toFixed(0)}%`);
+  if (isNaN(r.rs21) || r.rs21 <= 60) rsNgs.push(`R21:${isNaN(r.rs21)?'N/A':r.rs21.toFixed(0)}%`);
+  if (!r.hasVolSpike) rsNgs.push('VOL✗');
+  if (r.ppCount < 1) rsNgs.push('PP:0');
+
+  // VCS条件
+  const vcsOk = !isNaN(r.vcs) && r.vcs >= 70;
+
+  // どの条件でも落ちた理由サマリ
+  const failSummary = [];
+  if (rsNgs.length > 0) failSummary.push(`RS(${rsNgs.join(' ')})`);
+  if (!vcsOk) failSummary.push(`VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}`);
+  if (!mmsOk) failSummary.push(`MMS:${r.mms??'--'}/8`);
+
+  const maDetailHtml = maReasons.map(reason => {
+    const isNG = reason.includes('NG') || reason.includes('なし') || reason.includes('不足');
+    return `<span style="font-size:0.6rem;font-weight:700;
+      color:${isNG ? 'var(--lose-deep)' : '#f59e0b'};
+      background:${isNG ? '#450a0a' : '#451a03'};
+      border:1px solid ${isNG ? '#991b1b' : '#b45309'};
+      border-radius:3px;padding:1px 5px;white-space:nowrap;">${reason}</span>`;
+  }).join('');
+
+  const tlHtml = r.tlConv
+    ? `<span style="font-size:0.6rem;font-weight:900;background:#1e1b4b;color:#a78bfa;border:1px solid #4f46e5;border-radius:3px;padding:1px 5px;">TL×${r.tlConvPairs?.length??0}</span>`
+    : '';
+
   div.innerHTML = `
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;opacity:0.6;">
-      <div style="min-width:55px;">
-        <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${r.symbol}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
-          <span style="font-size:0.88rem;font-weight:900;color:#64748b;text-decoration:underline;">${r.symbol}</span>
-        </a>
+    <div style="background:var(--card);border:1px solid #1e2d45;border-radius:8px;padding:8px 12px;margin-bottom:5px;opacity:0.75;">
+      <!-- 1行目: ティッカー + 失敗サマリ -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:5px;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${r.symbol}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
+            <span style="font-size:0.88rem;font-weight:900;color:#64748b;text-decoration:underline;">${r.symbol}</span>
+          </a>
+          <span style="font-size:0.62rem;font-weight:700;
+            background:#1a2234;color:#4a6080;
+            border:1px solid #2a3f5f;border-radius:3px;padding:1px 6px;">
+            MMS ${r.mms??'--'}/8
+          </span>
+          ${tlHtml}
+        </div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
+          <span style="font-size:0.68rem;font-weight:700;${screenRsClass(r.rs10)}">R10:${isNaN(r.rs10)?'N/A':r.rs10.toFixed(0)}%</span>
+          <span style="font-size:0.68rem;font-weight:700;${screenRsClass(r.rs21)}">R21:${isNaN(r.rs21)?'N/A':r.rs21.toFixed(0)}%</span>
+          <span style="font-size:0.68rem;font-weight:700;${screenRsClass(Math.max(isNaN(r.rs126)?0:r.rs126,isNaN(r.rs252)?0:r.rs252))}">R長:${isNaN(r.rs126)&&isNaN(r.rs252)?'N/A':Math.max(isNaN(r.rs126)?0:r.rs126,isNaN(r.rs252)?0:r.rs252).toFixed(0)}%</span>
+          <span style="font-size:0.68rem;font-weight:700;color:${r.hasVolSpike?'var(--win-deep)':'#475569'};">${r.hasVolSpike?'VOL✓':'VOL✗'}</span>
+          <span style="font-size:0.68rem;font-weight:700;color:${r.ppCount>=1?'var(--win-deep)':'#475569'};">PP:${r.ppCount}</span>
+          <span style="font-size:0.68rem;font-weight:700;color:${vcsOk?'#8b5cf6':'#475569'};">VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}</span>
+        </div>
       </div>
-      <span style="font-size:0.72rem;font-weight:700;${screenRsClass(r.rs10)}">R10:${isNaN(r.rs10)?'N/A':r.rs10.toFixed(0)}%</span>
-      <span style="font-size:0.72rem;font-weight:700;${screenRsClass(r.rs21)}">R21:${isNaN(r.rs21)?'N/A':r.rs21.toFixed(0)}%</span>
-      <span style="font-size:0.72rem;font-weight:700;color:${r.hasVolSpike?'var(--win-deep)':'var(--text-sub)'};">${r.hasVolSpike?'VOL✓':'VOL✗'}</span>
-      <span style="font-size:0.72rem;font-weight:700;color:${r.ppCount>=1?'var(--win-deep)':'var(--text-sub)'};">PP:${r.ppCount}</span>
-      <span style="font-size:0.72rem;font-weight:700;color:var(--text-sub);">VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}</span>
+      <!-- 2行目: MA詳細 -->
+      <div style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;">
+        <span style="font-size:0.58rem;color:#4a6080;font-weight:700;flex-shrink:0;">MA:</span>
+        ${maDetailHtml || '<span style="font-size:0.6rem;color:#4a6080;">判定なし</span>'}
+      </div>
     </div>`;
   body.appendChild(div.firstElementChild);
 }
