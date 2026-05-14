@@ -3014,11 +3014,8 @@ const getMaTouchLabel = (ma, name) => {
   const tlConv = tlConvPairs.length >= 1; // 1ペア以上 = 2本以上が密集
   // ================================================
 
-  const rsLongOk = (!isNaN(rs126) && rs126 >= 50) || (!isNaN(rs252) && rs252 >= 50);
-  const maCondition = maHit && rsLongOk;
-
   const mms = calcMMS(values);
-  // ADR% 計算（PineScript準拠: 20日間 high/low比の平均）
+// ADR% 計算
 const adrLen = 20;
 let adrPct = null;
 if (values.length >= adrLen) {
@@ -3028,8 +3025,19 @@ if (values.length >= adrLen) {
   adrPct = (ratios.reduce((a, b) => a + b, 0) / adrLen - 1) * 100;
 }
 
+const rsLongOk = (!isNaN(rs126) && rs126 >= 50) || (!isNaN(rs252) && rs252 >= 50);
+
+const adrLow2 = sClose * (1 - (adrPct ?? 0) / 100 * 2.0);
+const isAdrTouchAnyLine = [ema21val, sma21val, sma50val2, cloudLowEma21,
+  cloudHighEma21, chandelier, pivotLow, fib0618, fib1764]
+  .some(ma => ma !== null && !isNaN(ma) &&
+    maTouchPct(adrLow2, ma) >= -0.5 && maTouchPct(adrLow2, ma) <= 1.5
+  );
+
+const maCondition = maHit && rsLongOk && isAdrTouchAnyLine;
+
 return { symbol, price: sClose, rs10, rs21, rs126, rs252, hasVolSpike, ppCount, vcs, maTouchLabel,
-    tlConvPairs, tlConv, mms, adrPct,
+    tlConvPairs, tlConv, mms, adrPct, isAdrTouchAnyLine,
     matchType: rsCondition ? 'rs' : vcsCondition ? 'vcs' : maCondition ? 'ma' : null,
     match: (rsCondition || vcsCondition || maCondition) && mms >= 5 };
 }
@@ -3127,8 +3135,16 @@ function screenAppendSkipCard(r) {
   if (!vcsOk) failSummary.push(`VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}`);
   if (!mmsOk) failSummary.push(`MMS:${r.mms??'--'}/8`);
 
+  // ADRタッチ条件
+// ADRタッチ条件
+  const adrLow2 = r.price * (1 - (r.adrPct ?? 0) / 100 * 2.0);
+  const isAdrTouch = r.isAdrTouchAnyLine ?? false;
+  if (!isAdrTouch) {
+    maReasons.push(`ADR×2安値($${adrLow2.toFixed(2)})がMAに未到達`);
+  }
+
   const maDetailHtml = maReasons.map(reason => {
-    const isNG = reason.includes('NG') || reason.includes('なし') || reason.includes('不足');
+    const isNG = reason.includes('NG') || reason.includes('なし') || reason.includes('不足') || reason.includes('未到達');
     return `<span style="font-size:0.6rem;font-weight:700;
       color:${isNG ? 'var(--lose-deep)' : '#f59e0b'};
       background:${isNG ? '#450a0a' : '#451a03'};
