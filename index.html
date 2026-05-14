@@ -414,6 +414,8 @@
                 <span style="color:#94a3b8; font-weight:700;">ETF:</span> <span id="ep-etf" style="color:var(--sector-accent);">--</span>　
                 <span style="color:#94a3b8; font-weight:700;">Rank ETF:</span> <span id="ep-rank-etf" style="color:var(--rank-accent);">--</span>
             </div>
+            <!-- ADR予測レンジ（autoFetchPriceで動的に挿入） -->
+            <div id="ep-adr" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid var(--border);"></div>
         </div>
 
         <div style="margin-top: 8px;">
@@ -2364,6 +2366,48 @@ async function autoFetchPrice() {
         setEp('ep-2m',    calc(cur, gp(42)));
         perfArea.style.display = 'block';
 
+        // ADR% 計算（PineScript準拠: 20日間 high/low比の平均）
+        const adrLen = 20;
+        const adrDiv = document.getElementById('ep-adr');
+        if (values.length >= adrLen && adrDiv) {
+            const ratios = values.slice(0, adrLen).map(d =>
+                parseFloat(d.high) / parseFloat(d.low)
+            );
+            const adrPct = (ratios.reduce((a, b) => a + b, 0) / adrLen - 1) * 100;
+            const base    = cur;
+            const shallow = (base * (1 - adrPct * 0.007)).toFixed(2);
+            const mid     = (base * (1 - adrPct * 0.01)).toFixed(2);
+            const deep    = (base * (1 - adrPct * 0.015)).toFixed(2);
+            const adrColor = adrPct >= 3.5 && adrPct <= 8.0
+                ? 'var(--win-deep)' : 'var(--lose-deep)';
+            adrDiv.style.display = 'block';
+            adrDiv.innerHTML = `
+                <div style="display:flex; align-items:center; gap:6px; margin-bottom:5px;">
+                    <span style="font-size:0.65rem; font-weight:900; color:${adrColor};">
+                        📐 ADR% ${adrPct.toFixed(2)}%
+                    </span>
+                    <span style="font-size:0.58rem; color:var(--text-sub);">翌日予測安値（終値 $${base.toFixed(2)} ベース）</span>
+                </div>
+                <div style="flex:1; background:#0f172a; border-radius:5px; padding:5px 6px; border:1px solid #334155; text-align:center;">
+   
+<div style="flex:1; background:#0f172a; border-radius:5px; padding:5px 6px; border:1px solid #334155; text-align:center;">
+    <div style="font-size:0.52rem; color:var(--text-sub); margin-bottom:2px;">浅い押し ×1.0</div>
+    <div style="font-size:0.82rem; font-weight:900; color:#f59e0b;">$${shallow}</div>
+    <div style="font-size:0.55rem; color:var(--text-sub);">-${(adrPct*1.0).toFixed(2)}%</div>
+</div>
+<div style="flex:1; background:#0f172a; border-radius:5px; padding:5px 6px; border:1px solid var(--primary); text-align:center;">
+    <div style="font-size:0.52rem; color:#93c5fd; margin-bottom:2px;">標準 ×1.5 ★</div>
+    <div style="font-size:0.85rem; font-weight:900; color:var(--primary);">$${mid}</div>
+    <div style="font-size:0.55rem; color:var(--text-sub);">-${(adrPct*1.5).toFixed(2)}%</div>
+</div>
+<div style="flex:1; background:#0f172a; border-radius:5px; padding:5px 6px; border:1px solid #334155; text-align:center;">
+    <div style="font-size:0.52rem; color:var(--text-sub); margin-bottom:2px;">深い押し ×2.0</div>
+    <div style="font-size:0.85rem; font-weight:900; color:#818cf8;">$${deep}</div>
+    <div style="font-size:0.55rem; color:var(--text-sub);">-${(adrPct*2.0).toFixed(2)}%</div>
+</div>
+                </div>`;
+        }
+
         fetchSectorDataByTicker(ticker).then(d => {
             document.getElementById('ep-name').innerText     = d.name     || '--';
             document.getElementById('ep-industry').innerText = d.industry || '--';
@@ -2387,6 +2431,9 @@ function clearAutoPrice() {
     priceEl.placeholder = '取得中...';
     document.getElementById('price-status').innerText = '';
     document.getElementById('entry-perf-area').style.display = 'none';
+    // ADRエリアもリセット
+    const adrDiv = document.getElementById('ep-adr');
+    if (adrDiv) { adrDiv.style.display = 'none'; adrDiv.innerHTML = ''; }
 }
 
 // ======== カリキュレーター ========
@@ -2971,8 +3018,18 @@ const getMaTouchLabel = (ma, name) => {
   const maCondition = maHit && rsLongOk;
 
   const mms = calcMMS(values);
-  return { symbol, price: sClose, rs10, rs21, rs126, rs252, hasVolSpike, ppCount, vcs, maTouchLabel,
-    tlConvPairs, tlConv, mms,
+  // ADR% 計算（PineScript準拠: 20日間 high/low比の平均）
+const adrLen = 20;
+let adrPct = null;
+if (values.length >= adrLen) {
+  const ratios = values.slice(0, adrLen).map(d =>
+    parseFloat(d.high) / parseFloat(d.low)
+  );
+  adrPct = (ratios.reduce((a, b) => a + b, 0) / adrLen - 1) * 100;
+}
+
+return { symbol, price: sClose, rs10, rs21, rs126, rs252, hasVolSpike, ppCount, vcs, maTouchLabel,
+    tlConvPairs, tlConv, mms, adrPct,
     matchType: rsCondition ? 'rs' : vcsCondition ? 'vcs' : maCondition ? 'ma' : null,
     match: (rsCondition || vcsCondition || maCondition) && mms >= 5 };
 }
