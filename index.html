@@ -3027,12 +3027,10 @@ if (values.length >= adrLen) {
 
 const rsLongOk = (!isNaN(rs126) && rs126 >= 50) || (!isNaN(rs252) && rs252 >= 50);
 
-const adrLow2 = sClose * (1 - (adrPct ?? 0) / 100 * 2.0);
-const isAdrTouchAnyLine = [ema21val, sma21val, sma50val2, cloudLowEma21,
-  cloudHighEma21, chandelier, pivotLow, fib0618, fib1764]
-  .some(ma => ma !== null && !isNaN(ma) &&
-    maTouchPct(adrLow2, ma) >= -0.5 && maTouchPct(adrLow2, ma) <= 1.5
-  );
+const adrLow2 = sClose * (1 - (adrPct ?? 0) / 100 * 1.5);
+const isAdrTouchAnyLine = (cloudHighEma21 === null || sClose <= cloudHighEma21)
+  ? true
+  : maTouchPct(adrLow2, cloudHighEma21) >= -0.5 && maTouchPct(adrLow2, cloudHighEma21) <= 1.5;
 
 const maCondition = maHit && rsLongOk && isAdrTouchAnyLine;
 
@@ -3135,13 +3133,13 @@ function screenAppendSkipCard(r) {
   if (!vcsOk) failSummary.push(`VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}`);
   if (!mmsOk) failSummary.push(`MMS:${r.mms??'--'}/8`);
 
-  // ADRタッチ条件
+ 
 // ADRタッチ条件
-  const adrLow2 = r.price * (1 - (r.adrPct ?? 0) / 100 * 2.0);
-  const isAdrTouch = r.isAdrTouchAnyLine ?? false;
-  if (!isAdrTouch) {
-    maReasons.push(`ADR×2安値($${adrLow2.toFixed(2)})がMAに未到達`);
-  }
+  const adrLow2 = r.price * (1 - (r.adrPct ?? 0) / 100 * 1.5);
+const isAdrTouch = r.isAdrTouchAnyLine ?? false;
+if (!isAdrTouch) {
+  maReasons.push(`ADR×1.5安値($${adrLow2.toFixed(2)})がCloudHighEMA21に未到達`);
+}
 
   const maDetailHtml = maReasons.map(reason => {
     const isNG = reason.includes('NG') || reason.includes('なし') || reason.includes('不足') || reason.includes('未到達');
@@ -3341,7 +3339,7 @@ if (duplicatesRemoved > 0) {
       const sym = result.symbol;
 
       const rsLongOk = (!isNaN(result.rs126) && result.rs126 >= 50) || (!isNaN(result.rs252) && result.rs252 >= 50);
-      const maConditionCheck = !!result.maTouchLabel && rsLongOk && (result.mms ?? 0) >= 5;
+const maConditionCheck = !!result.maTouchLabel && rsLongOk && (result.mms ?? 0) >= 5 && (result.isAdrTouchAnyLine ?? false);
 
       const isMatch = mode === 'vcs'
         ? (!isNaN(result.vcs) && result.vcs >= 70) && (result.mms ?? 0) >= 5
