@@ -816,8 +816,7 @@
            <button id="copy-screen-rs-btn" onclick="copyScreenResults('RS')" style="padding:3px 10px; background:#334155; border:1px solid #10b981; color:#6ee7b7; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 RS</button>
            <button id="copy-screen-vcs-btn" onclick="copyScreenResults('VCS')" style="padding:3px 10px; background:#334155; border:1px solid #8b5cf6; color:#c4b5fd; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 VCS</button>
            <button id="copy-screen-ma-btn" onclick="copyScreenResults('MA')" style="padding:3px 10px; background:#334155; border:1px solid #f59e0b; color:#fcd34d; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 MA</button>
-<button id="copy-screen-ma-pp-btn" onclick="copyScreenResults('MA-PP')" style="padding:3px 10px; background:#334155; border:1px solid #f59e0b; color:#fcd34d; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 MA+PP</button>
-<button id="copy-screen-ma-npp-btn" onclick="copyScreenResults('MA-NPP')" style="padding:3px 10px; background:#334155; border:1px solid #f59e0b; color:#fcd34d; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 MA-PP</button>
+<button id="copy-screen-ma-tl-btn" onclick="copyScreenResults('MA-TL')" style="padding:3px 10px; background:#334155; border:1px solid #a78bfa; color:#a78bfa; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 MA+TL</button>
          </div>
        </div>
     <div id="screen-results-body"></div>
@@ -2514,8 +2513,7 @@ function copyScreenResults(type) {
         if (!type) return true;
         const mt = card.dataset.matchType || '';
         const pp = parseInt(card.dataset.pp || '0');
-        if (type === 'MA-PP')  return mt === 'ma' && pp >= 1;
-        if (type === 'MA-NPP') return mt === 'ma' && pp < 1;
+        if (type === 'MA-TL')  return mt === 'ma' && card.querySelector('[style*="a78bfa"]') !== null;
         if (type === 'MA')     return mt === 'ma';
         if (type === 'VCS')    return mt === 'vcs';
         if (type === 'RS')     return mt === 'rs';
@@ -3076,13 +3074,13 @@ const isMaOnly = r.matchType === 'ma';
   const card = div.firstElementChild;
 card.dataset.matchType = r.matchType || '';
 card.dataset.pp = r.ppCount || 0;
+card.dataset.tl = r.tlConv ? '1' : '0';
 body.appendChild(card);
   document.getElementById('copy-screen-results-btn').style.display = 'inline-block';
   if (r.matchType === 'vcs') document.getElementById('copy-screen-vcs-btn').style.display = 'inline-block';
   else if (r.matchType === 'ma') {
     document.getElementById('copy-screen-ma-btn').style.display = 'inline-block';
-    document.getElementById('copy-screen-ma-pp-btn').style.display = 'inline-block';
-    document.getElementById('copy-screen-ma-npp-btn').style.display = 'inline-block';
+    document.getElementById('copy-screen-ma-tl-btn').style.display = 'inline-block';
 }
   else document.getElementById('copy-screen-rs-btn').style.display = 'inline-block';
 }
