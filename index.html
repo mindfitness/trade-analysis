@@ -853,9 +853,7 @@
             <i data-lucide="git-merge" style="width:14px; color:var(--perf-accent);"></i>
             <span style="font-size:0.8rem; font-weight:800; color:var(--perf-accent);">Ticker Intersect</span>
         </div>
-        <div style="font-size:0.62rem; color:var(--text-sub); margin-bottom:8px; line-height:1.6;">
-            2つのリストに共通する銘柄を抽出します
-        </div>
+
         <div style="margin-bottom:6px;">
             <div style="font-size:0.62rem; color:var(--text-sub); font-weight:700; margin-bottom:3px;">リスト A</div>
             <textarea id="intersect-a" placeholder="NVDA, AAPL, MSFT ..." rows="3"
@@ -890,6 +888,33 @@
         </div>
     </section>
       
+    
+
+     <section style="margin-bottom:10px;">
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:10px;">
+            <i data-lucide="link" style="width:14px; color:var(--sector-accent);"></i>
+            <span style="font-size:0.8rem; font-weight:800; color:var(--sector-accent);">Barchart URL生成</span>
+        </div>
+        <textarea id="barchart-ticker-input" placeholder="NVDA, AAPL, MSFT ..." rows="3"
+            style="font-family:monospace; font-size:0.82rem; resize:vertical; margin-bottom:8px;"></textarea>
+        <button onclick="generateBarchartURLs()"
+            style="width:100%; padding:8px; background:var(--sector-accent); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem; margin-bottom:8px;">
+            ▶ URL生成
+        </button>
+        <div id="barchart-result" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span id="barchart-result-label" style="font-size:0.65rem; font-weight:700; color:var(--sector-accent); letter-spacing:0.08em;"></span>
+                <button id="barchart-copy-btn" onclick="copyBarchartURLs()"
+                    style="padding:3px 10px; background:#334155; border:1px solid var(--border); color:#22d3ee; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem;">
+                    📋 全コピー
+                </button>
+            </div>
+            <div id="barchart-result-body"
+                style="background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:8px 12px; max-height:300px; overflow-y:auto;">
+            </div>
+        </div>
+    </section>
+    
     <section style="margin-bottom:10px;">
         <div style="display:flex; align-items:center; gap:6px; margin-bottom:10px;">
             <i data-lucide="calculator" style="width:14px; color:var(--ai-accent);"></i>
@@ -4144,6 +4169,50 @@ window.onload = async () => {
         applyUserRestrictions();
     }
 };
+
+// ======== Barchart URL生成 ========
+function generateBarchartURLs() {
+    const raw = document.getElementById('barchart-ticker-input').value;
+    const tickers = parseTickers(raw);
+    const resultEl = document.getElementById('barchart-result');
+    const labelEl  = document.getElementById('barchart-result-label');
+    const bodyEl   = document.getElementById('barchart-result-body');
+
+    if (tickers.length === 0) {
+        resultEl.style.display = 'none';
+        return;
+    }
+
+    labelEl.innerText = `${tickers.length}件のURLを生成`;
+    bodyEl.innerHTML = tickers.map(t => {
+        const url = `https://www.barchart.com/stocks/quotes/${t}/overview`;
+        return `<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 0; border-bottom:1px solid var(--border);">
+            <span style="font-size:0.82rem; font-weight:900; color:#22d3ee; min-width:60px; flex-shrink:0;">${t}</span>
+            <a href="${url}" target="_blank" rel="noopener noreferrer"
+                style="font-size:0.65rem; color:var(--sector-accent); word-break:break-all; flex:1; text-decoration:underline; line-height:1.4;">
+                ${url}
+            </a>
+            <button onclick="navigator.clipboard.writeText('${url}').then(()=>{this.innerText='✅';setTimeout(()=>this.innerText='📋',1500)})"
+                style="padding:2px 7px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:5px; font-size:0.62rem; cursor:pointer; flex-shrink:0;">
+                📋
+            </button>
+        </div>`;
+    }).join('');
+
+    resultEl.style.display = 'block';
+}
+
+function copyBarchartURLs() {
+    const raw = document.getElementById('barchart-ticker-input').value;
+    const tickers = parseTickers(raw);
+    if (tickers.length === 0) return;
+    const text = tickers.map(t => `${t}: https://www.barchart.com/stocks/quotes/${t}/overview`).join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('barchart-copy-btn');
+        btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
+        setTimeout(() => { btn.innerText = '📋 全コピー'; btn.style.background = '#334155'; }, 2000);
+    });
+}
     
 </script>
 </body>
