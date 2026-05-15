@@ -3030,7 +3030,7 @@ const rsLongOk = (!isNaN(rs126) && rs126 >= 50) || (!isNaN(rs252) && rs252 >= 50
 const adrLow2 = sClose * (1 - (adrPct ?? 0) / 100 * 1.5);
 const isAdrTouchAnyLine = (cloudHighEma21 === null || sClose <= cloudHighEma21)
   ? true
-  : maTouchPct(adrLow2, cloudHighEma21) >= -0.5 && maTouchPct(adrLow2, cloudHighEma21) <= 1.5;
+  : maTouchPct(adrLow2, cloudHighEma21) <= 1.5;
 
 const maCondition = maHit && rsLongOk && isAdrTouchAnyLine;
 
