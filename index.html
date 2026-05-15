@@ -3793,8 +3793,9 @@ function ttBuildCard(d) {
     </div>
     <div class="tt-bar-row"><div style="height:100%;width:${ttBarW(d.change)}%;background:${ttBarColor(d.change)};transition:width .5s;"></div></div>
     <div class="tt-chips">${chips}</div>
-    <div class="tt-fetch-wrap">
+    <div class="tt-fetch-wrap" style="display:flex;gap:6px;align-items:center;">
       <button class="tt-fetch-btn" id="tt-fbtn-${d.n}" onclick="ttTogglePerf(${d.n},this)">▶ 騰落率を取得</button>
+      <button class="tt-fetch-btn" id="tt-cbtn-${d.n}" onclick="ttCopyTickers(${d.n},this)" style="margin-left:auto;">📋 コピー</button>
     </div>
     <div class="tt-perf-sec" id="tt-perf-${d.n}">
       <div id="tt-perf-body-${d.n}"></div>
@@ -3985,6 +3986,17 @@ function ttRenderAllPeriods(n) {
       <td>${ttFmtPct(r10[sym]??null)}</td>
     </tr>`).join('')}</tbody>
   </table>`;
+}
+
+function ttCopyTickers(n, btn) {
+  const themeData = TT_RAW_DATA.find(d => d.n === n);
+  if (!themeData) return;
+  const text = themeData.tickers.join(', ');
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✅ コピー済み';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  });
 }
 
 // イベントリスナー（TTタブ表示時に初期化）
