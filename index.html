@@ -2998,7 +2998,7 @@ const getMaTouchLabel = (ma, name) => {
   // 全ライン統合タッチ判定（終値 OR 最安値が 0%~1% 以内）
   const maHit = isMaTouch(ema21val) || isMaTouch(sma21val) || isMaTouch(sma50val2) || isMaTouch(cloudLowEma21)
              || isMaTouch(cloudHighEma21)
-             || isMaTouch(chandelier) || isMaTouch(pivotLow) || isMaTouch(fib0618) || isMaTouch(fib1764);
+             || isMaTouch(chandelier) || isMaTouch(pivotLow) || isMaTouch(fib0618);
 
   const maTouchLabel =
     getMaTouchLabel(ema21val,       'EMA21')           ??
@@ -3008,10 +3008,8 @@ const getMaTouchLabel = (ma, name) => {
     getMaTouchLabel(cloudHighEma21, 'CloudHigh-EMA21') ??
     getMaTouchLabel(chandelier,     'Chandelier')      ??
     getMaTouchLabel(pivotLow,       'PivotLow')        ??
-    getMaTouchLabel(fib0618,        'Fib0.618')        ??
-    getMaTouchLabel(fib1764,        'Fib1.764')        ?? '';
-
-  // ===== トレンドライン近接検出 (アプローチB) =====
+    getMaTouchLabel(fib0618,        'Fib0.618')        ?? '';
+   // ===== トレンドライン近接検出 (アプローチB) =====
   const _tlLines = [
     { name: 'EMA21',           val: ema21val },
     { name: 'SMA21',           val: sma21val },
@@ -3021,7 +3019,6 @@ const getMaTouchLabel = (ma, name) => {
     { name: 'Chandelier',      val: chandelier },
     { name: 'PivotLow',        val: pivotLow },
     { name: 'Fib0.618',        val: fib0618 },
-    { name: 'Fib1.764',        val: fib1764 },
   ].filter(l => l.val !== null && !isNaN(l.val));
 
   const TL_CONV_THRESH = 0.4; // 近接閾値 %
