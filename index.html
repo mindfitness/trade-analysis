@@ -3046,16 +3046,87 @@ if (values.length >= adrLen) {
 }
 
 const rsLongOk = (!isNaN(rs126) && rs126 >= 50) || (!isNaN(rs252) && rs252 >= 50);
-
 const adrLow2 = sClose * (1 - (adrPct ?? 0) / 100 * 1.5);
 const isAdrTouchAnyLine = (cloudHighEma21 === null || sClose <= cloudHighEma21)
   ? true
   : maTouchPct(adrLow2, cloudHighEma21) <= 1.5;
 
-const maCondition = maHit && rsLongOk && isAdrTouchAnyLine;
+// ===== LL-HL構造 + Pivot近接判定 =====
+const PIVOT_MIN = 2;
+const PIVOT_MAX = 10;
+
+// pivotlow検出: closes/lowsの降順配列(values[0]=最新)でlen本ずつ走査
+// values[i].low を使用
+const findPivotLows = (vals, len) => {
+  const pivotResults = [];
+  for (let i = len; i < vals.length - len; i++) {
+    const center = parseFloat(vals[i].low);
+    let isLow = true;
+    for (let j = 1; j <= len; j++) {
+      if (parseFloat(vals[i - j].low) <= center || parseFloat(vals[i + j].low) <= center) {
+        isLow = false;
+        break;
+      }
+    }
+    if (isLow) pivotResults.push({ price: center, idx: i });
+  }
+  return pivotResults;
+};
+
+let hlStructureFound = false;
+let pivotHitLabel = '';
+
+for (let len = PIVOT_MIN; len <= PIVOT_MAX; len++) {
+  const pivots = findPivotLows(values, len);
+  if (pivots.length < 2) continue;
+
+  // 直近2点: pivots[0]=新, pivots[1]=旧
+  const currP = pivots[0].price;
+  const prevP = pivots[1].price;
+
+  // HL判定: 直近pivotlowが前より高い
+  if (currP <= prevP) continue;
+
+  hlStructureFound = true;
+
+  // 2nd Pivot: currPとprevPの間の最高値(high)
+  const startIdx = pivots[0].idx;
+  const endIdx   = pivots[1].idx;
+  let breakVal = -Infinity;
+  for (let k = startIdx; k <= endIdx; k++) {
+    const h = parseFloat(values[k].high);
+    if (h > breakVal) breakVal = h;
+  }
+
+  // 1st Pivot (Fib 0.618)
+  const fibRange = breakVal - currP;
+  const firstPivot = currP + fibRange * 0.618;
+
+  // 近接判定: closeまたはlowがpivot価格の±2%以内
+  const touch2 = (price, target) => {
+    const pct = (price - target) / target * 100;
+    return pct >= -2.0 && pct <= 2.0;
+  };
+  const sLow = parseFloat(values[0].low);
+
+  if (touch2(sClose, firstPivot) || touch2(sLow, firstPivot)) {
+    pivotHitLabel = `1stPivot(len${len}:$${firstPivot.toFixed(2)})`;
+    break;
+  }
+  if (touch2(sClose, breakVal) || touch2(sLow, breakVal)) {
+    pivotHitLabel = `2ndPivot(len${len}:$${breakVal.toFixed(2)})`;
+    break;
+  }
+}
+
+// HL構造なし → スキップ
+// HL構造あり → MAタッチ OR Pivot近接 のいずれかでOK
+const pivotHit = hlStructureFound && pivotHitLabel !== '';
+const maCondition = hlStructureFound && rsLongOk && isAdrTouchAnyLine && (maHit || pivotHit);
 
 return { symbol, price: sClose, rs10, rs21, rs126, rs252, hasVolSpike, ppCount, vcs, maTouchLabel,
     tlConvPairs, tlConv, mms, adrPct, isAdrTouchAnyLine,
+    hlStructureFound, pivotHitLabel,
     matchType: rsCondition ? 'rs' : vcsCondition ? 'vcs' : maCondition ? 'ma' : null,
     match: (rsCondition || vcsCondition || maCondition) && mms >= 5 };
 }
@@ -3123,13 +3194,21 @@ function screenAppendSkipCard(r) {
     maReasons.push(`RS長期NG(R126:${isNaN(r.rs126)?'N/A':r.rs126.toFixed(0)}% R252:${isNaN(r.rs252)?'N/A':r.rs252.toFixed(0)}%)`);
   }
 
-  // MAタッチ条件
+  // HL構造
+if (!r.hlStructureFound) {
+  maReasons.push('LL-HL構造なし');
+}
+// MAタッチ / Pivot近接
+if (r.hlStructureFound) {
   const hasMaTouch = !!r.maTouchLabel;
-  if (!hasMaTouch) {
-    maReasons.push('MAタッチなし');
+  const hasPivotHit = !!r.pivotHitLabel;
+  if (!hasMaTouch && !hasPivotHit) {
+    maReasons.push('MAタッチなし / Pivot近接なし');
   } else {
-    maReasons.push(`MAタッチ: ${r.maTouchLabel}`);
+    if (hasMaTouch)   maReasons.push(`MAタッチ: ${r.maTouchLabel}`);
+    if (hasPivotHit)  maReasons.push(`Pivot近接: ${r.pivotHitLabel}`);
   }
+}
 
   // MMS条件
   const mmsOk = (r.mms ?? 0) >= 5;
@@ -3359,7 +3438,9 @@ if (duplicatesRemoved > 0) {
       const sym = result.symbol;
 
       const rsLongOk = (!isNaN(result.rs126) && result.rs126 >= 50) || (!isNaN(result.rs252) && result.rs252 >= 50);
-const maConditionCheck = !!result.maTouchLabel && rsLongOk && (result.mms ?? 0) >= 5 && (result.isAdrTouchAnyLine ?? false);
+　　　const maConditionCheck = result.hlStructureFound && rsLongOk && 
+    (result.mms ?? 0) >= 5 && (result.isAdrTouchAnyLine ?? false) &&
+    (!!result.maTouchLabel || !!result.pivotHitLabel);
 
       const isMatch = mode === 'vcs'
         ? (!isNaN(result.vcs) && result.vcs >= 70) && (result.mms ?? 0) >= 5
