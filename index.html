@@ -3076,24 +3076,30 @@ for (let len = 2; len <= 5; len++) {
   const pvs = _pivotLows(_lows2, len);
   if (pvs.length < 2) continue;
 
-  // 直近2点でHL確認（pvs[0]=新, pvs[1]=旧）
-  const cvi = pvs[0], pvi = pvs[1];
-  const currP = _lows2[cvi], prevP = _lows2[pvi];
-  if (currP <= prevP) continue;           // HL不成立
-  if (_closes2[0] < currP) continue;      // 現在値がHL安値より下
+  // コード1準拠：全ペアを走査して最初にHL成立するものを採用
+  let found = null;
+  for (let i = 0; i < pvs.length - 1; i++) {
+    const cvi = pvs[i], pvi = pvs[i + 1];
+    const currP = _lows2[cvi], prevP = _lows2[pvi];
+    if (currP <= prevP) continue;        // HL不成立
+    if (_closes2[0] < currP) continue;   // 現在値がHL安値より下
 
-  // 2点間の最高値 = 2nd Pivot
-  let bv = -Infinity;
-  for (let k = cvi + 1; k <= pvi - 1; k++)
-    if (_highs2[k] > bv) bv = _highs2[k];
-  if (bv === -Infinity) continue;
+    let bv = -Infinity;
+    for (let k = cvi + 1; k <= pvi - 1; k++)
+      if (_highs2[k] > bv) bv = _highs2[k];
+    if (bv === -Infinity) continue;
 
-  // 1st Pivot = Fib 0.618
-  const rng  = bv - currP;
-  const p1   = currP + rng * 0.618;
+    const rng = bv - currP;
+    const p1  = currP + rng * 0.618;
+
+    found = { len, currP, prevP, bv, p1 };
+    break; // 最初に成立したペアを採用
+  }
+
+  if (!found) continue;
 
   hlStructureFound = true;
-  _best = { len, currP, prevP, bv, p1 };
+  _best = found;
   // len最大を採用するためbreakしない
 }
 
