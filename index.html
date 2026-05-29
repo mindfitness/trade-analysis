@@ -3052,77 +3052,83 @@ const isAdrTouchAnyLine = (cloudHighEma21 === null || sClose <= cloudHighEma21)
   : maTouchPct(adrLow2, cloudHighEma21) <= 1.5;
 
 // ===== LL-HL構造 + Pivot近接判定 =====
-const PIVOT_MIN = 2;
-const PIVOT_MAX = 10;
+// ===== コード1準拠 Pivot計算 =====
+const _closes2 = values.map(d => parseFloat(d.close));
+const _lows2   = values.map(d => parseFloat(d.low));
+const _highs2  = values.map(d => parseFloat(d.high));
 
-// pivotlow検出: closes/lowsの降順配列(values[0]=最新)でlen本ずつ走査
-// values[i].low を使用
-const findPivotLows = (vals, len) => {
-  const pivotResults = [];
-  for (let i = len; i < vals.length - len; i++) {
-    const center = parseFloat(vals[i].low);
-    let isLow = true;
-    for (let j = 1; j <= len; j++) {
-      if (parseFloat(vals[i - j].low) <= center || parseFloat(vals[i + j].low) <= center) {
-        isLow = false;
-        break;
-      }
-    }
-    if (isLow) pivotResults.push({ price: center, idx: i });
+function _pivotLows(lows, len) {
+  const N = lows.length, r = [];
+  for (let vi = len; vi <= N-1-len; vi++) {
+    const c = lows[vi]; let ok = true;
+    for (let j = 1; j <= len; j++)
+      if (lows[vi+j] <= c || lows[vi-j] <= c) { ok=false; break; }
+    if (ok) r.push(vi);
   }
-  return pivotResults;
-};
+  return r;
+}
 
 let hlStructureFound = false;
-let pivotHitLabel = '';
+let pivotHitLabel    = '';
+let _best = null;
 
-for (let len = PIVOT_MIN; len <= PIVOT_MAX; len++) {
-  const pivots = findPivotLows(values, len);
-  if (pivots.length < 2) continue;
+for (let len = 2; len <= 5; len++) {
+  const pvs = _pivotLows(_lows2, len);
+  if (pvs.length < 2) continue;
 
-  // 直近2点: pivots[0]=新, pivots[1]=旧
-  const currP = pivots[0].price;
-  const prevP = pivots[1].price;
+  // 直近2点でHL確認（pvs[0]=新, pvs[1]=旧）
+  const cvi = pvs[0], pvi = pvs[1];
+  const currP = _lows2[cvi], prevP = _lows2[pvi];
+  if (currP <= prevP) continue;           // HL不成立
+  if (_closes2[0] < currP) continue;      // 現在値がHL安値より下
 
-  // HL判定: 直近pivotlowが前より高い
-  if (currP <= prevP) continue;
+  // 2点間の最高値 = 2nd Pivot
+  let bv = -Infinity;
+  for (let k = cvi + 1; k <= pvi - 1; k++)
+    if (_highs2[k] > bv) bv = _highs2[k];
+  if (bv === -Infinity) continue;
+
+  // 1st Pivot = Fib 0.618
+  const rng  = bv - currP;
+  const p1   = currP + rng * 0.618;
 
   hlStructureFound = true;
+  _best = { len, currP, prevP, bv, p1 };
+  // len最大を採用するためbreakしない
+}
 
-  // 2nd Pivot: currPとprevPの間の最高値(high)
-  const startIdx = pivots[0].idx;
-  const endIdx   = pivots[1].idx;
-  let breakVal = -Infinity;
-  for (let k = startIdx; k <= endIdx; k++) {
-    const h = parseFloat(values[k].high);
-    if (h > breakVal) breakVal = h;
-  }
+// ±5%フィルター：closeまたはlowが1st or 2nd Pivotのいずれかに±5%以内
+let pivotInRange = false;
+let pivotHit     = false;
 
-  // 1st Pivot (Fib 0.618)
-  const fibRange = breakVal - currP;
-  const firstPivot = currP + fibRange * 0.618;
+if (_best) {
+  const { bv, p1 } = _best;
+  const checkRange = (price, pivot) =>
+    Math.abs((price - pivot) / pivot * 100) <= 5.0;
 
-  // 近接判定: closeまたはlowがpivot価格の±2%以内
+  pivotInRange = checkRange(sClose, bv) || checkRange(sLow, bv)
+              || checkRange(sClose, p1) || checkRange(sLow, p1);
+
+  // 既存のPivot近接判定（±2%）も更新
   const touch2 = (price, target) => {
     const pct = (price - target) / target * 100;
     return pct >= -2.0 && pct <= 2.0;
   };
-  const sLow = parseFloat(values[0].low);
-
-  if (touch2(sClose, firstPivot) || touch2(sLow, firstPivot)) {
-    pivotHitLabel = `1stPivot(len${len}:$${firstPivot.toFixed(2)})`;
-    break;
-  }
-  if (touch2(sClose, breakVal) || touch2(sLow, breakVal)) {
-    pivotHitLabel = `2ndPivot(len${len}:$${breakVal.toFixed(2)})`;
-    break;
+  if (touch2(sClose, p1) || touch2(sLow, p1)) {
+    pivotHitLabel = `1stPivot(len${_best.len}:$${p1.toFixed(2)})`;
+    pivotHit = true;
+  } else if (touch2(sClose, bv) || touch2(sLow, bv)) {
+    pivotHitLabel = `2ndPivot(len${_best.len}:$${bv.toFixed(2)})`;
+    pivotHit = true;
   }
 }
 
-// HL構造なし → スキップ
-// HL構造あり → MAタッチ OR Pivot近接 のいずれかでOK
-const pivotHit = hlStructureFound && pivotHitLabel !== '';
-const maCondition = hlStructureFound && rsLongOk && isAdrTouchAnyLine && (maHit || pivotHit);
+// MA条件：pivotInRangeがfalseなら問答無用でスキップ
+const maCondition = hlStructureFound
+  && pivotInRange          // ★ 新規：±5%以内フィルター
+  && rsLongOk
+  && isAdrTouchAnyLine
+  && (maHit || pivotHit);
 
 return { symbol, price: sClose, rs10, rs21, rs126, rs252, hasVolSpike, ppCount, vcs, maTouchLabel,
     tlConvPairs, tlConv, mms, adrPct, isAdrTouchAnyLine,
