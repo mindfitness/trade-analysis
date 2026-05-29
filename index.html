@@ -3131,10 +3131,10 @@ if (_best) {
 
 // MA条件：pivotInRangeがfalseなら問答無用でスキップ
 const maCondition = hlStructureFound
-  && pivotInRange          // ★ 新規：±5%以内フィルター
+  && pivotInRange
   && rsLongOk
   && isAdrTouchAnyLine
-  && (maHit || pivotHit);
+  && maHit;
 
 return { symbol, price: sClose, rs10, rs21, rs126, rs252, hasVolSpike, ppCount, vcs, maTouchLabel,
     tlConvPairs, tlConv, mms, adrPct, isAdrTouchAnyLine,
