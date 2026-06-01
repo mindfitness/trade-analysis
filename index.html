@@ -963,41 +963,7 @@
             </section>
             <section style="margin-bottom:10px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                    <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4TT(Alt+T/O)</span>
-                    <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-2', this)">コピー</button>
-                </div>
-                <div class="prompt-container-static"><pre id="prompt-2">fetch('/api/theme-ranking?force_reload=1')
-  .then(r => r.json())
-  .then(data => {
-    const themes = data.all_themes.filter(t => t.related);
-    const top35_1d = new Set(themes.sort((a, b) => b['1日'] - a['1日']).slice(0, 35).map(t => t.name));
-    const top35_5d = new Set(themes.sort((a, b) => b['5日'] - a['5日']).slice(0, 35).map(t => t.name));
-    
-    const both = themes.filter(t => top35_1d.has(t.name) && top35_5d.has(t.name));
-    
-    const tickers = both.flatMap(t => t.related.split(','));
-    const unique = [...new Set(tickers)];
-    const result = unique.join(', ');
-    
-    console.log(`✅ 1D・5D両方top35: ${both.length}テーマ / 全銘柄:`);
-    console.log(result);
-    both.forEach((t, i) => console.log(`${i+1}. ${t.name}  1D:${(t['1日']*100).toFixed(1)}%  5D:${(t['5日']*100).toFixed(1)}%  → ${t.related}`));
-  });</pre></div>
-            </section>
-            <section>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                    <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">4TV(Alt+S)</span>
-                    <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-3', this)">コピー</button>
-                </div>
-                <div class="prompt-container-static"><pre id="prompt-3">//
-var elements = document.querySelectorAll('span[class*="tickerName-"], a[href*="/symbols/"]');
-var tickers = Array.from(elements)
-    .map(el => el.innerText.split('\n')[0].trim())
-    .filter(t => /^[A-Z]{1,5}$/.test(t)); //
-
-var result = [...new Set(tickers)].join(', ');
-console.log(result);
-copy(result); //</pre></div>
+                   
             </section>
         </div>
     </div>
