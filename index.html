@@ -3010,6 +3010,7 @@ if (values.length >= adrLen) {
   );
   adrPct = (ratios.reduce((a, b) => a + b, 0) / adrLen - 1) * 100;
 }
+const adrOk = adrPct !== null && adrPct >= 3.5;
 
 const rsLongOk = (!isNaN(rs126) && rs126 >= 50) || (!isNaN(rs252) && rs252 >= 50);
 const adrLow2 = sClose * (1 - (adrPct ?? 0) / 100 * 1.5);
@@ -3100,10 +3101,11 @@ const maCondition = hlStructureFound
   && pivotInRange
   && rsLongOk
   && isAdrTouchAnyLine
-  && maHit;
+  && maHit
+  && adrOk;
 
 return { symbol, price: sClose, rs10, rs21, rs126, rs252, hasVolSpike, ppCount, vcs, maTouchLabel,
-    tlConvPairs, tlConv, mms, adrPct, isAdrTouchAnyLine,
+    tlConvPairs, tlConv, mms, adrPct, isAdrTouchAnyLine, adrOk,
     hlStructureFound, pivotHitLabel,
     matchType: rsCondition ? 'rs' : vcsCondition ? 'vcs' : maCondition ? 'ma' : null,
     match: (rsCondition || vcsCondition || maCondition) && mms >= 5 };
@@ -3216,6 +3218,9 @@ if (r.hlStructureFound) {
 const isAdrTouch = r.isAdrTouchAnyLine ?? false;
 if (!isAdrTouch) {
   maReasons.push(`ADR×1.5安値($${adrLow2.toFixed(2)})がCloudHighEMA21に未到達`);
+}
+if (!(r.adrOk ?? false)) {
+  maReasons.push(`ADR%不足(${r.adrPct !== null ? r.adrPct.toFixed(2) : 'N/A'}% < 3.5%)`);
 }
 
   const maDetailHtml = maReasons.map(reason => {
@@ -3418,10 +3423,11 @@ if (duplicatesRemoved > 0) {
       const rsLongOk = (!isNaN(result.rs126) && result.rs126 >= 50) || (!isNaN(result.rs252) && result.rs252 >= 50);
 　　　const maConditionCheck = result.hlStructureFound && rsLongOk && 
     (result.mms ?? 0) >= 5 && (result.isAdrTouchAnyLine ?? false) &&
-    (!!result.maTouchLabel || !!result.pivotHitLabel);
+    (!!result.maTouchLabel || !!result.pivotHitLabel) &&
+    (result.adrOk ?? false);
 
       const isMatch = mode === 'vcs'
-        ? (!isNaN(result.vcs) && result.vcs >= 70) && (result.mms ?? 0) >= 5
+    ? (!isNaN(result.vcs) && result.vcs >= 70) && (result.mms ?? 0) >= 5 && (result.adrOk ?? false)
         : mode === 'ma'
         ? maConditionCheck
         : result.match && (result.mms ?? 0) >= 5;
