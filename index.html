@@ -2798,7 +2798,7 @@ async function screenTicker(symbol) {
   const isHH = parseFloat(values[0].high) > parseFloat(values[1].high);
   const vcs = screenCalcVCS(values);
   const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >= 1000000;
-  const vcsCondition = !isNaN(vcs) && vcs >= 70;
+  const vcsCondition = hlStructureFound && pivotInRange && !isNaN(vcs) && vcs >= 70;
 
   return { symbol, price: sClose, rs10, rs21, hasVolSpike, ppCount, vcs,
     matchType: rsCondition ? 'rs' : vcsCondition ? 'vcs' : null,
@@ -2831,6 +2831,102 @@ function calcMMS(values) {
   const cond7 = cur >= high52 * 0.75;
   const cond8 = cur > sma200;
   return [cond1,cond2,cond3,cond4,cond5,cond6,cond7,cond8].filter(Boolean).length;
+}
+
+/* ─── Pivot Low 検出 ─── */
+function detectPivotLows(lows, len) {
+  const N = lows.length;
+  const found = [];
+  for (let vi = len; vi <= N - 1 - len; vi++) {
+    const c = lows[vi];
+    let ok = true;
+    for (let j = 1; j <= len; j++) {
+      if (lows[vi - j] <= c || lows[vi + j] <= c) { ok = false; break; }
+    }
+    if (ok) found.push(vi);
+  }
+  return found;
+}
+
+/* ─── LL-HL 構造検出（Pine準拠・Tightest採用） ─── */
+function detectHLStructureFull(values, minLen = 2, maxLen = 7) {
+  const closes = values.map(d => parseFloat(d.close));
+  const lows   = values.map(d => parseFloat(d.low));
+  const highs  = values.map(d => parseFloat(d.high));
+  const N      = values.length;
+  const candidates = [];
+
+  for (let len = minLen; len <= maxLen; len++) {
+    const pvs = detectPivotLows(lows, len);
+    if (pvs.length < 2) continue;
+
+    const cvi   = pvs[0];
+    const pvi   = pvs[1];
+    const currP = lows[cvi];
+    const prevP = lows[pvi];
+    if (currP <= prevP) continue; // HL不成立
+
+    // HL割れチェック（Pivot確定後のバーのみ）
+    const checkEnd = cvi - len;
+    if (checkEnd > 0) {
+      let broke = false;
+      for (let i = 0; i < checkEnd; i++) {
+        if (lows[i] < currP) { broke = true; break; }
+      }
+      if (broke) continue;
+    }
+
+    // break_val = HL〜LL間の最高値（Tightest用）
+    const scanStart = cvi + len + 1;
+    const scanEnd   = pvi - len - 1;
+    if (scanStart > scanEnd) continue;
+
+    let bv = -Infinity, bIdx = null;
+    for (let k = scanStart; k <= scanEnd; k++) {
+      if (highs[k] > bv) { bv = highs[k]; bIdx = k; }
+    }
+    if (bIdx === null) continue;
+
+    candidates.push({ len, cvi, pvi, currP, prevP, bv, bIdx });
+  }
+
+  // Tightest: break_val（2nd Pivot）が最小の候補を採用
+  let winner = null;
+  for (const c of candidates) {
+    if (!winner || c.bv < winner.bv) winner = c;
+  }
+
+  if (!winner) return { found: false };
+
+  const sClose = closes[0];
+  const sLow   = lows[0];
+  const fib618 = winner.currP + (winner.bv - winner.currP) * 0.618;
+  const rng    = winner.bv - winner.currP;
+
+  // ±5%フィルター: 現在値 or 最安値が 2nd or 1stPivot(0.618) に±5%以内
+  const inRange = (price, pivot) => Math.abs((price - pivot) / pivot * 100) <= 5.0;
+  const pivotInRange =
+    inRange(sClose, winner.bv) || inRange(sLow, winner.bv) ||
+    inRange(sClose, fib618)    || inRange(sLow, fib618);
+
+  // ±2%近接ラベル（MA画面表示用）
+  const touch2 = (price, target) => {
+    const pct = (price - target) / target * 100;
+    return pct >= -2.0 && pct <= 2.0;
+  };
+  let pivotHitLabel = '';
+  if      (touch2(sClose, fib618)    || touch2(sLow, fib618))    pivotHitLabel = `1stPivot(len${winner.len}:$${fib618.toFixed(2)})`;
+  else if (touch2(sClose, winner.bv) || touch2(sLow, winner.bv)) pivotHitLabel = `2ndPivot(len${winner.len}:$${winner.bv.toFixed(2)})`;
+
+  return {
+    found: true,
+    winner,
+    pivotInRange,
+    pivotHitLabel,
+    fib618,
+    tp1: winner.currP + rng * 1.764,
+    tp2: winner.currP + rng * 2.618,
+  };
 }
 
 async function screenTickerWithKey(symbol, apiKey) {
@@ -2882,8 +2978,14 @@ for (let i = 0; i < 30; i++) {
 }
 const hasPP = ppCount >= 1;
 
-const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >= 1000000 && hasPP;
-  const vcsCondition = !isNaN(vcs) && vcs >= 70;
+// ===== LL-HL 構造検出（新ロジック・Pine準拠 Tightest） =====
+const hlResult         = detectHLStructureFull(values, 2, 7);
+const hlStructureFound = hlResult.found;
+const pivotInRange     = hlResult.pivotInRange ?? false;
+const pivotHitLabel    = hlResult.pivotHitLabel ?? '';
+
+const rsCondition  = hlStructureFound && pivotInRange && rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >= 1000000 && hasPP;
+const vcsCondition = hlStructureFound && pivotInRange && !isNaN(vcs) && vcs >= 70;
 
   // MA条件: 21EMA, 21SMA, 50SMAのいずれかに終値が0%~1%以内で接触
   const ema21val = (() => {
@@ -3018,83 +3120,7 @@ const isAdrTouchAnyLine = (cloudHighEma21 === null || sClose <= cloudHighEma21)
   ? true
   : maTouchPct(adrLow2, cloudHighEma21) <= 1.5;
 
-// ===== LL-HL構造 + Pivot近接判定 =====
-// ===== コード1準拠 Pivot計算 =====
-const _closes2 = values.map(d => parseFloat(d.close));
-const _lows2   = values.map(d => parseFloat(d.low));
-const _highs2  = values.map(d => parseFloat(d.high));
 
-function _pivotLows(lows, len) {
-  const N = lows.length, r = [];
-  for (let vi = len; vi <= N-1-len; vi++) {
-    const c = lows[vi]; let ok = true;
-    for (let j = 1; j <= len; j++)
-      if (lows[vi+j] <= c || lows[vi-j] <= c) { ok=false; break; }
-    if (ok) r.push(vi);
-  }
-  return r;
-}
-
-let hlStructureFound = false;
-let pivotHitLabel    = '';
-let _best = null;
-
-for (let len = 2; len <= 5; len++) {
-  const pvs = _pivotLows(_lows2, len);
-  if (pvs.length < 2) continue;
-
-  // コード1準拠：全ペアを走査して最初にHL成立するものを採用
-  let found = null;
-  for (let i = 0; i < pvs.length - 1; i++) {
-    const cvi = pvs[i], pvi = pvs[i + 1];
-    const currP = _lows2[cvi], prevP = _lows2[pvi];
-    if (currP <= prevP) continue;        // HL不成立
-    if (_closes2[0] < currP) continue;   // 現在値がHL安値より下
-
-    let bv = -Infinity;
-    for (let k = cvi + 1; k <= pvi - 1; k++)
-      if (_highs2[k] > bv) bv = _highs2[k];
-    if (bv === -Infinity) continue;
-
-    const rng = bv - currP;
-    const p1  = currP + rng * 0.618;
-
-    found = { len, currP, prevP, bv, p1 };
-    break; // 最初に成立したペアを採用
-  }
-
-  if (!found) continue;
-
-  hlStructureFound = true;
-  _best = found;
-  // len最大を採用するためbreakしない
-}
-
-// ±5%フィルター：closeまたはlowが1st or 2nd Pivotのいずれかに±5%以内
-let pivotInRange = false;
-let pivotHit     = false;
-
-if (_best) {
-  const { bv, p1 } = _best;
-  const checkRange = (price, pivot) =>
-    Math.abs((price - pivot) / pivot * 100) <= 5.0;
-
-  pivotInRange = checkRange(sClose, bv) || checkRange(sLow, bv)
-              || checkRange(sClose, p1) || checkRange(sLow, p1);
-
-  // 既存のPivot近接判定（±2%）も更新
-  const touch2 = (price, target) => {
-    const pct = (price - target) / target * 100;
-    return pct >= -2.0 && pct <= 2.0;
-  };
-  if (touch2(sClose, p1) || touch2(sLow, p1)) {
-    pivotHitLabel = `1stPivot(len${_best.len}:$${p1.toFixed(2)})`;
-    pivotHit = true;
-  } else if (touch2(sClose, bv) || touch2(sLow, bv)) {
-    pivotHitLabel = `2ndPivot(len${_best.len}:$${bv.toFixed(2)})`;
-    pivotHit = true;
-  }
-}
 
 // MA条件：pivotInRangeがfalseなら問答無用でスキップ
 const maCondition = hlStructureFound
@@ -3427,10 +3453,10 @@ if (duplicatesRemoved > 0) {
     (result.adrOk ?? false);
 
       const isMatch = mode === 'vcs'
-    ? (!isNaN(result.vcs) && result.vcs >= 70) && (result.mms ?? 0) >= 5 && (result.adrOk ?? false)
-        : mode === 'ma'
-        ? maConditionCheck
-        : result.match && (result.mms ?? 0) >= 5;
+  ? result.hlStructureFound && (result.pivotInRange ?? false) && (!isNaN(result.vcs) && result.vcs >= 70) && (result.mms ?? 0) >= 5 && (result.adrOk ?? false)
+  : mode === 'ma'
+  ? maConditionCheck
+  : result.match && (result.mms ?? 0) >= 5;
 
       if (isMatch) {
         const matchType = mode === 'vcs' ? 'vcs'
