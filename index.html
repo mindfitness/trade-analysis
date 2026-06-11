@@ -3123,16 +3123,27 @@ const isAdrTouchAnyLine = (cloudHighEma21 === null || sClose <= cloudHighEma21)
 
 
 // MA条件：pivotInRangeがfalseなら問答無用でスキップ
+// O'Neil条件
+const sma200val = closes.slice(0, 200).reduce((a, b) => a + b, 0) / 200;
+const sma50rising  = sma50val2 > (closes.slice(1, 51).reduce((a, b) => a + b, 0) / 50);
+const sma200rising = sma200val > (closes.slice(1, 201).reduce((a, b) => a + b, 0) / 200);
+const high52 = Math.max(...highs.slice(0, Math.min(252, highs.length)));
+const oneilMaCond  = sClose > sma50val2 && sClose > sma200val
+                     && sma50rising && sma200rising;
+const oneilHighCond = sClose >= high52 * 0.85;
+const oneilCond = oneilMaCond && oneilHighCond;
+
 const maCondition = hlStructureFound
   && pivotInRange
   && rsLongOk
   && isAdrTouchAnyLine
   && maHit
-  && adrOk;
+  && adrOk
+  && oneilCond;  // ← 追加
 
 return { symbol, price: sClose, rs10, rs21, rs126, rs252, hasVolSpike, ppCount, vcs, maTouchLabel,
     tlConvPairs, tlConv, mms, adrPct, isAdrTouchAnyLine, adrOk,
-    hlStructureFound, pivotHitLabel,
+    hlStructureFound, pivotHitLabel, oneilCond,
     matchType: rsCondition ? 'rs' : vcsCondition ? 'vcs' : maCondition ? 'ma' : null,
     match: (rsCondition || vcsCondition || maCondition) && mms >= 5 };
 }
@@ -3450,7 +3461,8 @@ if (duplicatesRemoved > 0) {
 　　　const maConditionCheck = result.hlStructureFound && rsLongOk && 
     (result.mms ?? 0) >= 5 && (result.isAdrTouchAnyLine ?? false) &&
     (!!result.maTouchLabel || !!result.pivotHitLabel) &&
-    (result.adrOk ?? false);
+    (result.adrOk ?? false) &&
+    (result.oneilCond ?? false);  // ← 追加
 
       const isMatch = mode === 'vcs'
   ? result.hlStructureFound && (result.pivotInRange ?? false) && (!isNaN(result.vcs) && result.vcs >= 70) && (result.mms ?? 0) >= 5 && (result.adrOk ?? false)
