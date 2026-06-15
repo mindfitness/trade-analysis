@@ -2162,7 +2162,7 @@ function addThemeStock(themeId) {
     saveThemes();
 }
 function removeThemeStock(themeId, index) {
-    if(confirm("銘柄を削除しますか？")){ themes.find(t=>t.id===themeId).stocks.splice(index,1); saveThemes(); }
+    themes.find(t=>t.id===themeId).stocks.splice(index,1); saveThemes();
 }
 function clearThemeStocks(themeId) {
     if (!confirm("この銘柄リストを全件削除しますか？")) return;
