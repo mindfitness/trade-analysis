@@ -2787,6 +2787,7 @@ async function screenTicker(symbol) {
     .map(d => parseFloat(d.close) / screenSpyMap[d.datetime]);
   const rs10  = screenPercentRank(ratios, 10);
   const rs21  = screenPercentRank(ratios, 21);
+  const rs63  = screenPercentRank(ratios, 63);
   const rs126 = screenPercentRank(ratios, 126);
   const rs252 = screenPercentRank(ratios, 252);
   const volumes = values.map(d => parseInt(d.volume));
@@ -2797,7 +2798,7 @@ async function screenTicker(symbol) {
   );
   const isHH = parseFloat(values[0].high) > parseFloat(values[1].high);
   const vcs = screenCalcVCS(values);
-  const rsCondition = rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >= 1000000;
+  const rsCondition = rs10 > 50 && rs21 > 65 && hasVolSpike && isHH && vol60Avg >= 1000000;
   const vcsCondition = hlStructureFound && pivotInRange && !isNaN(vcs) && vcs >= 70;
 
   return { symbol, price: sClose, rs10, rs21, hasVolSpike, ppCount, vcs,
@@ -2951,8 +2952,9 @@ async function screenTickerWithKey(symbol, apiKey) {
   const sClose = closes[0];
   const ratios = values.filter(d => screenSpyMap[d.datetime] !== undefined)
     .map(d => parseFloat(d.close) / screenSpyMap[d.datetime]);
- const rs10  = screenPercentRank(ratios, 10);
+  const rs10  = screenPercentRank(ratios, 10);
   const rs21  = screenPercentRank(ratios, 21);
+  const rs63  = screenPercentRank(ratios, 63);
   const rs126 = screenPercentRank(ratios, 126);
   const rs252 = screenPercentRank(ratios, 252);
   const volumes = values.map(d => parseInt(d.volume));
@@ -2984,8 +2986,9 @@ const hlStructureFound = hlResult.found;
 const pivotInRange     = hlResult.pivotInRange ?? false;
 const pivotHitLabel    = hlResult.pivotHitLabel ?? '';
 
-const rsCondition  = hlStructureFound && pivotInRange && rs10 > 50 && rs21 > 60 && hasVolSpike && isHH && vol60Avg >= 1000000 && hasPP;
-const vcsCondition = hlStructureFound && pivotInRange && !isNaN(vcs) && vcs >= 70;
+const rs21_63_ok = rs21 > 65 && rs63 > 60;
+const rsCondition  = rs21_63_ok && hlStructureFound && pivotInRange && rs10 > 50 && hasVolSpike && isHH && vol60Avg >= 1000000 && hasPP;
+const vcsCondition = rs21_63_ok && hlStructureFound && pivotInRange && !isNaN(vcs) && vcs >= 70;
 
   // MA条件: 21EMA, 21SMA, 50SMAのいずれかに終値が0%~1%以内で接触
   const ema21val = (() => {
@@ -3133,7 +3136,8 @@ const oneilMaCond  = sClose > sma50val2 && sClose > sma200val
 const oneilHighCond = sClose >= high52 * 0.85;
 const oneilCond = oneilMaCond && oneilHighCond;
 
-const maCondition = hlStructureFound
+const maCondition = rs21_63_ok
+  && hlStructureFound
   && pivotInRange
   && rsLongOk
   && isAdrTouchAnyLine
@@ -3141,7 +3145,7 @@ const maCondition = hlStructureFound
   && adrOk
   && oneilCond;  // ← 追加
 
-return { symbol, price: sClose, rs10, rs21, rs126, rs252, hasVolSpike, ppCount, vcs, maTouchLabel,
+return { symbol, price: sClose, rs10, rs21, rs63, rs126, rs252, hasVolSpike, ppCount, vcs, maTouchLabel,
     tlConvPairs, tlConv, mms, adrPct, isAdrTouchAnyLine, adrOk,
     hlStructureFound, pivotHitLabel, oneilCond,
     matchType: rsCondition ? 'rs' : vcsCondition ? 'vcs' : maCondition ? 'ma' : null,
@@ -3202,6 +3206,13 @@ function screenAppendSkipCard(r) {
 
   // MA条件の失敗理由を詳細に解析
   const maReasons = [];
+
+  // 全体必須条件（RS21 / RS63）
+  const rs21ok63 = !isNaN(r.rs21) && r.rs21 > 65;
+  const rs63ok   = !isNaN(r.rs63) && r.rs63 > 60;
+  if (!rs21ok63 || !rs63ok) {
+    maReasons.push(`全体条件NG(R21:${isNaN(r.rs21)?'N/A':r.rs21.toFixed(0)}%${rs21ok63?'':'<67'} R63:${isNaN(r.rs63)?'N/A':r.rs63.toFixed(0)}%${rs63ok?'':'<60'})`);
+  }
 
   // RS長期条件
   const rs126ok = !isNaN(r.rs126) && r.rs126 >= 50;
@@ -3458,14 +3469,15 @@ if (duplicatesRemoved > 0) {
       const sym = result.symbol;
 
       const rsLongOk = (!isNaN(result.rs126) && result.rs126 >= 50) || (!isNaN(result.rs252) && result.rs252 >= 50);
-　　　const maConditionCheck = result.hlStructureFound && rsLongOk && 
+      const rs21_63_ok_chk = (!isNaN(result.rs21) && result.rs21 > 65) && (!isNaN(result.rs63) && result.rs63 > 60);
+　　　const maConditionCheck = rs21_63_ok_chk && result.hlStructureFound && rsLongOk && 
     (result.mms ?? 0) >= 5 && (result.isAdrTouchAnyLine ?? false) &&
     (!!result.maTouchLabel || !!result.pivotHitLabel) &&
     (result.adrOk ?? false) &&
     (result.oneilCond ?? false);  // ← 追加
 
       const isMatch = mode === 'vcs'
-  ? result.hlStructureFound && (result.pivotInRange ?? false) && (!isNaN(result.vcs) && result.vcs >= 70) && (result.mms ?? 0) >= 5 && (result.adrOk ?? false)
+  ? rs21_63_ok_chk && result.hlStructureFound && (result.pivotInRange ?? false) && (!isNaN(result.vcs) && result.vcs >= 70) && (result.mms ?? 0) >= 5 && (result.adrOk ?? false)
   : mode === 'ma'
   ? maConditionCheck
   : result.match && (result.mms ?? 0) >= 5;
