@@ -521,6 +521,11 @@
             <div style="flex:1;"></div>
             <span id="r2-gap-alert" style="font-size:0.72rem;font-weight:900;padding:2px 10px;border-radius:4px;background:#1a2234;color:#4a6080;">--</span>
           </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:0.7rem;color:#8899aa;width:110px;flex-shrink:0;">季節性アノマリー</span>
+            <div style="flex:1;"></div>
+            <span id="r2-seasonal-alert" style="font-size:0.72rem;font-weight:900;padding:2px 10px;border-radius:4px;background:#1a2234;color:#4a6080;">--</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1228,6 +1233,30 @@ function r2DrawGauge(score) {
   if (scoreEl) { scoreEl.innerText = score; scoreEl.style.color = col; }
   if (condEl)  { condEl.innerText = r2CondLabel(score).text; condEl.style.color = col; }
 }
+
+// 季節性アノマリー（2月・8月・9月は弱いとされる月として警告表示）
+const SEASONAL_WEAK_MONTHS = [2, 8, 9];
+function r2RenderSeasonalAlert() {
+  const el = document.getElementById('r2-seasonal-alert');
+  if (!el) return;
+  const month = parseInt(
+    new Intl.DateTimeFormat('ja-JP', { month: 'numeric', timeZone: 'Asia/Tokyo' }).format(new Date()),
+    10
+  );
+  const isWeak = SEASONAL_WEAK_MONTHS.includes(month);
+  if (isWeak) {
+    el.textContent = `⚠ 警戒（${month}月）`;
+    el.style.background = '#7f1d1d';
+    el.style.color = '#ef4444';
+    el.style.border = '1px solid #ef4444';
+  } else {
+    el.textContent = `通常（${month}月）`;
+    el.style.background = '#064e3b';
+    el.style.color = '#10b981';
+    el.style.border = '1px solid #10b981';
+  }
+}
+
 function r2RenderAll(data) {
   r2AllData = data;
   const vix = parseFloat(localStorage.getItem('mcd_vix') || '0');
@@ -1294,6 +1323,9 @@ vixValEl.innerText = sc.vixPenalty > 0
       gapEl.style.border = '1px solid #10b981';
     }
   })();
+
+  // 季節性アノマリー（データ取得とは無関係に即時判定）
+  r2RenderSeasonalAlert();
 
   // 履歴（KV経由でwindow._mcScoreHistに格納されたものを使う）
   const hist = window._mcScoreHist || JSON.parse(localStorage.getItem('mcd_score_history') || '[]');
@@ -4267,7 +4299,7 @@ window.onload = async () => {
     } else {
         r2DrawGauge(0);
     }
-
+    r2RenderSeasonalAlert(); // ETFデータの有無に関わらず常に表示
     // ランキングデータをKVから復元
     if (mc.rankData && Array.isArray(mc.rankData) && mc.rankData.length > 0) {
         rankMarketData = mc.rankData;
