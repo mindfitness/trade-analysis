@@ -689,6 +689,30 @@
       </div>
     </div>
 
+    <div class="rank2-section">
+      <div class="rank2-title">ブレイクアウト銘柄（直近5日：下→上）</div>
+      <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="font-size:0.62rem; color:#4a6080; font-weight:700;">EMA21突破</span>
+          <span id="breakout-ema21-badge" class="ema21-score-badge ema21-score-red">-- / -- &nbsp;(--%)</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="font-size:0.62rem; color:#4a6080; font-weight:700;">SMA50突破</span>
+          <span id="breakout-sma50-badge" class="ema21-score-badge ema21-score-red">-- / -- &nbsp;(--%)</span>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <div style="font-size:0.65rem; font-weight:800; color:#22d3ee; margin-bottom:6px;">EMA21 ブレイクアウト</div>
+          <div id="breakout-ema21-list" style="display:flex; flex-wrap:wrap; gap:5px;"></div>
+        </div>
+        <div>
+          <div style="font-size:0.65rem; font-weight:800; color:#f59e0b; margin-bottom:6px;">SMA50 ブレイクアウト</div>
+          <div id="breakout-sma50-list" style="display:flex; flex-wrap:wrap; gap:5px;"></div>
+        </div>
+      </div>
+    </div>
+
     </div><!-- mc-subtab-mc の閉じ -->
 
     <!-- TTサブタブ本体 -->
@@ -1545,6 +1569,8 @@ async function startRankUpdate() {
           month_change:    ((now - parseFloat(v[21]?.close || v[v.length-1].close)) / parseFloat(v[21]?.close || v[v.length-1].close)) * 100,
           above_ema21: now > ema21val,
           above_sma50: now > sma50val,
+          breakout_ema21: rankDetectBreakout(closes, rankEma21AtOffset),
+          breakout_sma50: rankDetectBreakout(closes, rankSma50AtOffset),
         });
     
         renderRankTable();
@@ -1594,6 +1620,32 @@ function toggleRankPin(symbol) {
   r2PinnedSymbol = (r2PinnedSymbol === symbol) ? null : symbol;
   renderRankTable();
 }
+
+// ===== ブレイクアウト判定（直近5日以内に「下→上」へ転換） =====
+function rankEma21AtOffset(closes, offset) {
+  const window = closes.slice(offset, offset + 21);
+  if (window.length < 21) return null;
+  const k = 2 / 22;
+  let ema = window.reduce((a, b) => a + b, 0) / 21;
+  for (let j = 20; j >= 0; j--) ema = window[j] * k + ema * (1 - k);
+  return ema;
+}
+function rankSma50AtOffset(closes, offset) {
+  const window = closes.slice(offset, offset + 50);
+  if (window.length < 50) return null;
+  return window.reduce((a, b) => a + b, 0) / 50;
+}
+function rankDetectBreakout(closes, maAtFn) {
+  const maNow = maAtFn(closes, 0);
+  if (maNow === null || closes[0] <= maNow) return false; // 現在上回っていなければ対象外
+  for (let off = 1; off <= 5; off++) {
+    const ma = maAtFn(closes, off);
+    if (ma === null) continue;
+    if (closes[off] <= ma) return true; // 直近5日以内に「下」だった日がある
+  }
+  return false;
+}
+
 function renderRankTable() {
   const tbody = document.getElementById('rank-table-body');
   if (!tbody) return;
@@ -1667,7 +1719,39 @@ if (r2ActiveFilters.includes('SMA50↑')) disp = disp.filter(d => d.above_sma50 
       <td>${smaBadge}</td>
     </tr>`;
   }).join('');
+
+  renderBreakoutLists();
 }
+
+function renderBreakoutLists() {
+  const total = rankMarketData.length;
+  const emaList = rankMarketData.filter(d => d.breakout_ema21);
+  const smaList = rankMarketData.filter(d => d.breakout_sma50);
+
+  const setBadge = (id, count) => {
+    const el = document.getElementById(id);
+    if (!el || total === 0) return;
+    const pct = Math.round((count / total) * 100);
+    el.textContent = `${count} / ${total}  (${pct}%)`;
+    el.className = 'ema21-score-badge ' +
+      (pct >= 15 ? 'ema21-score-green' : pct >= 7 ? 'ema21-score-yellow' : 'ema21-score-red');
+  };
+  setBadge('breakout-ema21-badge', emaList.length);
+  setBadge('breakout-sma50-badge', smaList.length);
+
+  const renderTags = (id, list, color) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = list.length
+      ? list.map(d => `<span onclick="showRankInfo('${d.symbol}')"
+          style="font-size:0.78rem;font-weight:800;color:${color};background:#1a2234;
+          border:1px solid ${color};border-radius:12px;padding:2px 9px;cursor:pointer;">${d.symbol}</span>`).join('')
+      : '<span style="font-size:0.65rem;color:#4a6080;">該当なし</span>';
+  };
+  renderTags('breakout-ema21-list', emaList, '#22d3ee');
+  renderTags('breakout-sma50-list', smaList, '#f59e0b');
+}
+
 function showRankInfo(symbol) {
   const info = TICKER_INFO[symbol] || { desc: '説明データがありません。', stocks: '-' };
   document.getElementById('rank-modal-title').innerText  = symbol;
