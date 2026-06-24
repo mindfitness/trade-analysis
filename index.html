@@ -335,7 +335,10 @@
 
 <header>
     <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h1 style="margin:0; font-size:1.05rem; font-weight:900; color:white;">Trade Analysis</h1>
+        <div style="display:flex; align-items:baseline; gap:7px;">
+            <h1 style="margin:0; font-size:1.05rem; font-weight:900; color:white;">Trade Analysis</h1>
+            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.0.0</span>
+        </div>
         <button id="header-action-btn" onclick="headerAction()" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer; font-size:0.82rem;">+ 新規</button>
     </div>
     <div class="nav-tabs">
@@ -1070,6 +1073,8 @@
 </div>
 
 <div id="loading-toast">保存中...</div>
+
+<div id="build-version" style="position:fixed; bottom:2px; right:4px; font-size:0.55rem; color:#334155; opacity:0.6; z-index:9999; pointer-events:none; user-select:none;">v0</div>
 
 <script>
 const a = '09', b = '01';
