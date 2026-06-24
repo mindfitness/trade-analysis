@@ -690,7 +690,7 @@
     </div>
 
     <div class="rank2-section">
-      <div class="rank2-title">ブレイクアウト銘柄（直近5日：下→上）</div>
+      <div class="rank2-title">ブレイクアウト銘柄（直近3日：下→上）</div>
       <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
         <div style="display:flex; align-items:center; gap:6px;">
           <span style="font-size:0.62rem; color:#4a6080; font-weight:700;">EMA21突破</span>
@@ -714,7 +714,7 @@
     </div>
 
     <div class="rank2-section">
-      <div class="rank2-title">ブレイクダウン銘柄（直近5日：上→下）</div>
+      <div class="rank2-title">ブレイクダウン銘柄（直近3日：上→下）</div>
       <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
         <div style="display:flex; align-items:center; gap:6px;">
           <span style="font-size:0.62rem; color:#4a6080; font-weight:700;">EMA21割れ</span>
@@ -1647,7 +1647,7 @@ function toggleRankPin(symbol) {
   renderRankTable();
 }
 
-// ===== ブレイクアウト判定（直近5日以内に「下→上」へ転換） =====
+// ===== ブレイクアウト判定（直近3日以内に「下→上」へ転換） =====
 function rankEma21AtOffset(closes, offset) {
   const window = closes.slice(offset, offset + 21);
   if (window.length < 21) return null;
@@ -1664,20 +1664,20 @@ function rankSma50AtOffset(closes, offset) {
 function rankDetectBreakout(closes, maAtFn) {
   const maNow = maAtFn(closes, 0);
   if (maNow === null || closes[0] <= maNow) return false; // 現在上回っていなければ対象外
-  for (let off = 1; off <= 5; off++) {
+  for (let off = 1; off <= 3; off++) {
     const ma = maAtFn(closes, off);
     if (ma === null) continue;
-    if (closes[off] <= ma) return true; // 直近5日以内に「下」だった日がある
+    if (closes[off] <= ma) return true; // 直近3営業日以内に「下」だった日がある
   }
   return false;
 }
 function rankDetectBreakdown(closes, maAtFn) {
   const maNow = maAtFn(closes, 0);
   if (maNow === null || closes[0] >= maNow) return false; // 現在下回っていなければ対象外
-  for (let off = 1; off <= 5; off++) {
+  for (let off = 1; off <= 3; off++) {
     const ma = maAtFn(closes, off);
     if (ma === null) continue;
-    if (closes[off] >= ma) return true; // 直近5日以内に「上」だった日がある
+    if (closes[off] >= ma) return true; // 直近3営業日以内に「上」だった日がある
   }
   return false;
 }
