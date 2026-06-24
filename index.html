@@ -337,7 +337,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:baseline; gap:7px;">
             <h1 style="margin:0; font-size:1.05rem; font-weight:900; color:white;">Trade Analysis</h1>
-            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.0.2</span>
+            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.0.3</span>
         </div>
         <button id="header-action-btn" onclick="headerAction()" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer; font-size:0.82rem;">+ 新規</button>
     </div>
@@ -786,11 +786,21 @@
 </div>
 
 <!-- テーマトラッカーページ -->
+<!-- 変更後 -->
 <div id="page-theme" class="page">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-    <button id="watch-refresh-all-btn" onclick="refreshAllThemePerf()" style="padding:6px 14px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:8px; font-weight:800; cursor:pointer; font-size:0.78rem;">📊 一括更新</button>
-    <button onclick="openThemeModal()" style="padding:6px 14px; background:var(--theme-accent); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.78rem;">+ テーマ追加</button>
-</div>
+        <button id="watch-refresh-all-btn" onclick="refreshAllThemePerf()" style="padding:6px 14px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:8px; font-weight:800; cursor:pointer; font-size:0.78rem;">📊 一括更新</button>
+        <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:0.65rem; font-weight:700; color:var(--text-sub); white-space:nowrap;">💵 買付余力</span>
+            <div style="position:relative;">
+                <span style="position:absolute; left:8px; top:50%; transform:translateY(-50%); font-size:0.78rem; color:var(--text-sub); pointer-events:none;">$</span>
+                <input type="number" id="watch-budget-input" placeholder="2000"
+                    style="width:90px; padding:5px 8px 5px 18px; background:var(--input-bg); border:1px solid var(--border); border-radius:6px; color:white; font-size:0.82rem; font-weight:700;"
+                    oninput="renderThemes()">
+            </div>
+        </div>
+        <button onclick="openThemeModal()" style="padding:6px 14px; background:var(--theme-accent); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.78rem;">+ テーマ追加</button>
+    </div>
     <div id="theme-list"></div>
 </div>
 
@@ -2391,6 +2401,21 @@ function deleteTheme(id) {
 // テーマごとの騰落率キャッシュ: { [themeId]: { pct: number|null, loading: bool, updatedAt: string } }
 const themePerfCache = {};
 
+// ======== テーマ配分額計算 ========
+function renderThemeAlloc(theme) {
+    const budgetEl = document.getElementById('watch-budget-input');
+    const budget = budgetEl ? parseFloat(budgetEl.value) : NaN;
+    if (!budget || isNaN(budget) || budget <= 0) return '';
+    const count = theme.stocks.length;
+    if (count === 0) return '';
+    const perStock = Math.floor(budget / count);
+    const color = perStock >= 1000 ? 'var(--win-deep)' : perStock >= 500 ? '#f59e0b' : 'var(--text-sub)';
+    const bg    = perStock >= 1000 ? '#064e3b'          : perStock >= 500 ? '#451a03' : '#334155';
+    return `<span style="font-size:0.65rem;font-weight:900;color:${color};background:${bg};border:1px solid ${color};border-radius:4px;padding:1px 7px;white-space:nowrap;">
+        $${perStock.toLocaleString()} / 銘柄 (${count}銘柄)
+    </span>`;
+}
+
 function renderThemePerfBadge(themeId) {
     const cache = themePerfCache[themeId];
     if (!cache) {
@@ -2479,6 +2504,7 @@ function renderThemes() {
                         <h2 class="theme-title">${theme.name}</h2>
                         <span class="theme-date">${theme.date}</span>
                         ${renderThemePerfBadge(theme.id)}
+                        ${renderThemeAlloc(theme)}
                     </div>
                     <div class="theme-tag-row" style="margin-top:3px;">
                         ${theme.tags.map(tag => `<span class="theme-tag"># ${tag}</span>`).join('')}
