@@ -337,7 +337,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:baseline; gap:7px;">
             <h1 style="margin:0; font-size:1.05rem; font-weight:900; color:white;">Trade Analysis</h1>
-            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.0.4</span>
+            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.0.5</span>
         </div>
         <button id="header-action-btn" onclick="headerAction()" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer; font-size:0.82rem;">+ 新規</button>
     </div>
@@ -2604,16 +2604,16 @@ async function autoFetchPrice() {
             );
             const adrPct = (ratios.reduce((a, b) => a + b, 0) / adrLen - 1) * 100;
             const base    = cur;
-            const shallow = (base * (1 - adrPct * 0.007)).toFixed(2);
+            const shallow = (base * (1 - adrPct * 0.006)).toFixed(2);
             const mid     = (base * (1 - adrPct * 0.01)).toFixed(2);
-            const deep    = (base * (1 - adrPct * 0.015)).toFixed(2);
+            const deep    = (base * (1 - adrPct * 0.013)).toFixed(2);
             const adrColor = adrPct >= 3.5 && adrPct <= 8.0
                 ? 'var(--win-deep)' : 'var(--lose-deep)';
             adrDiv.style.display = 'block';
-            // 利確ゾーン計算
-        const tp1 = (base * (1 + adrPct * 0.01)).toFixed(2);   // ×1.0
-        const tp15 = (base * (1 + adrPct * 0.015)).toFixed(2); // ×1.5
-        const tp2  = (base * (1 + adrPct * 0.02)).toFixed(2);  // ×2.0
+            // 利確ゾーン計算（×0.6 / ×1.0 / ×1.3）
+        const tp06 = (base * (1 + adrPct * 0.006)).toFixed(2); // ×0.6
+        const tp1  = (base * (1 + adrPct * 0.01)).toFixed(2);  // ×1.0
+        const tp13 = (base * (1 + adrPct * 0.013)).toFixed(2); // ×1.3
 
         adrDiv.innerHTML = `
             <div style="display:flex; align-items:center; gap:6px; margin-bottom:5px;">
@@ -2626,38 +2626,38 @@ async function autoFetchPrice() {
             <div style="font-size:0.58rem; font-weight:800; color:var(--lose-deep); margin-bottom:3px; letter-spacing:0.05em;">▼ 押し目ゾーン</div>
             <div style="display:flex; gap:4px; margin-bottom:8px;">
                 <div style="flex:1; background:#0f172a; border-radius:5px; padding:5px 6px; border:1px solid #334155; text-align:center;">
-                    <div style="font-size:0.52rem; color:var(--text-sub); margin-bottom:2px;">浅い ×1.0</div>
+                    <div style="font-size:0.52rem; color:var(--text-sub); margin-bottom:2px;">浅い ×0.6</div>
                     <div style="font-size:0.82rem; font-weight:900; color:#f59e0b;">$${shallow}</div>
-                    <div style="font-size:0.55rem; color:var(--text-sub);">-${(adrPct*1.0).toFixed(2)}%</div>
+                    <div style="font-size:0.55rem; color:var(--text-sub);">-${(adrPct*0.6).toFixed(2)}%</div>
                 </div>
                 <div style="flex:1; background:#0f172a; border-radius:5px; padding:5px 6px; border:1px solid var(--primary); text-align:center;">
-                    <div style="font-size:0.52rem; color:#93c5fd; margin-bottom:2px;">標準 ×1.5 ★</div>
+                    <div style="font-size:0.52rem; color:#93c5fd; margin-bottom:2px;">標準 ×1.0 ★</div>
                     <div style="font-size:0.85rem; font-weight:900; color:var(--primary);">$${mid}</div>
-                    <div style="font-size:0.55rem; color:var(--text-sub);">-${(adrPct*1.5).toFixed(2)}%</div>
+                    <div style="font-size:0.55rem; color:var(--text-sub);">-${(adrPct*1.0).toFixed(2)}%</div>
                 </div>
                 <div style="flex:1; background:#0f172a; border-radius:5px; padding:5px 6px; border:1px solid #334155; text-align:center;">
-                    <div style="font-size:0.52rem; color:var(--text-sub); margin-bottom:2px;">深い ×2.0</div>
+                    <div style="font-size:0.52rem; color:var(--text-sub); margin-bottom:2px;">深い ×1.3</div>
                     <div style="font-size:0.85rem; font-weight:900; color:#818cf8;">$${deep}</div>
-                    <div style="font-size:0.55rem; color:var(--text-sub);">-${(adrPct*2.0).toFixed(2)}%</div>
+                    <div style="font-size:0.55rem; color:var(--text-sub);">-${(adrPct*1.3).toFixed(2)}%</div>
                 </div>
             </div>
 
             <div style="font-size:0.58rem; font-weight:800; color:var(--win-deep); margin-bottom:3px; letter-spacing:0.05em;">▲ 利確ゾーン</div>
             <div style="display:flex; gap:4px;">
                 <div style="flex:1; background:#0f172a; border-radius:5px; padding:5px 6px; border:1px solid #334155; text-align:center;">
-                    <div style="font-size:0.52rem; color:var(--text-sub); margin-bottom:2px;">浅い ×1.0</div>
-                    <div style="font-size:0.82rem; font-weight:900; color:#f59e0b;">$${tp1}</div>
-                    <div style="font-size:0.55rem; color:var(--text-sub);">+${(adrPct*1.0).toFixed(2)}%</div>
+                    <div style="font-size:0.52rem; color:var(--text-sub); margin-bottom:2px;">浅い ×0.6</div>
+                    <div style="font-size:0.82rem; font-weight:900; color:#f59e0b;">$${tp06}</div>
+                    <div style="font-size:0.55rem; color:var(--text-sub);">+${(adrPct*0.6).toFixed(2)}%</div>
                 </div>
                 <div style="flex:1; background:#0f172a; border-radius:5px; padding:5px 6px; border:1px solid var(--win-deep); text-align:center;">
-                    <div style="font-size:0.52rem; color:#6ee7b7; margin-bottom:2px;">標準 ×1.5 ★</div>
-                    <div style="font-size:0.85rem; font-weight:900; color:var(--win-deep);">$${tp15}</div>
-                    <div style="font-size:0.55rem; color:var(--text-sub);">+${(adrPct*1.5).toFixed(2)}%</div>
+                    <div style="font-size:0.52rem; color:#6ee7b7; margin-bottom:2px;">標準 ×1.0 ★</div>
+                    <div style="font-size:0.85rem; font-weight:900; color:var(--win-deep);">$${tp1}</div>
+                    <div style="font-size:0.55rem; color:var(--text-sub);">+${(adrPct*1.0).toFixed(2)}%</div>
                 </div>
                 <div style="flex:1; background:#0f172a; border-radius:5px; padding:5px 6px; border:1px solid #334155; text-align:center;">
-                    <div style="font-size:0.52rem; color:var(--text-sub); margin-bottom:2px;">深い ×2.0</div>
-                    <div style="font-size:0.85rem; font-weight:900; color:#34d399;">$${tp2}</div>
-                    <div style="font-size:0.55rem; color:var(--text-sub);">+${(adrPct*2.0).toFixed(2)}%</div>
+                    <div style="font-size:0.52rem; color:var(--text-sub); margin-bottom:2px;">深い ×1.3</div>
+                    <div style="font-size:0.85rem; font-weight:900; color:#34d399;">$${tp13}</div>
+                    <div style="font-size:0.55rem; color:var(--text-sub);">+${(adrPct*1.3).toFixed(2)}%</div>
                 </div>
             </div>`;
         }
