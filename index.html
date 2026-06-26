@@ -865,6 +865,12 @@
   ▶ MA
 </button>
 </div>
+<div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+  <button id="screen-revtrend-btn" onclick="startReversalScreening()"
+  style="flex:1; min-width:0; padding:10px; background:#06b6d4; color:#0f172a; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
+  ▶ LONG
+</button>
+</div>
 
   <div id="screen-progress" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:12px;">
     <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
@@ -912,6 +918,31 @@
       🔄 エラー銘柄を再試行
     </button>
   </div><!-- /screen-error-section -->
+
+  <!-- ▼ 反転スクリーナー（完全独立） -->
+  <div id="reversal-progress" style="display:none; background:var(--card); border:1px solid #06b6d4; border-radius:10px; padding:12px; margin-top:16px;">
+    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+      <span style="font-size:0.62rem; color:#06b6d4; letter-spacing:0.08em;">REVERSAL SCAN</span>
+      <span id="reversal-progress-count" style="font-size:0.62rem; font-weight:700; color:#06b6d4;">0 / 0</span>
+    </div>
+    <div style="height:3px; background:var(--border); border-radius:2px; overflow:hidden; margin-bottom:6px;">
+      <div id="reversal-progress-bar" style="height:100%; background:#06b6d4; border-radius:2px; width:0%; transition:width 0.3s;"></div>
+    </div>
+    <div id="reversal-progress-ticker" style="font-size:0.65rem; color:var(--text-sub); margin-bottom:6px;">待機中...</div>
+    <div id="reversal-log" style="background:var(--input-bg); border:1px solid var(--border); border-radius:6px; padding:6px 10px; max-height:100px; overflow-y:auto; font-size:0.6rem; color:var(--text-sub); line-height:1.7; font-family:monospace;"></div>
+  </div>
+
+  <div id="reversal-results" style="display:none; margin-top:10px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <span style="font-size:0.65rem; font-weight:700; color:#06b6d4; letter-spacing:0.1em; text-transform:uppercase;">Reversal Results</span>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span id="reversal-results-count" style="font-size:0.65rem; font-weight:700; color:#06b6d4;">0 matches</span>
+        <button id="copy-reversal-results-btn" onclick="copyReversalResults()" style="padding:3px 10px; background:#334155; border:1px solid #06b6d4; color:#67e8f9; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 コピー</button>
+      </div>
+    </div>
+    <div id="reversal-results-body"></div>
+  </div>
+  <!-- ▲ 反転スクリーナー（完全独立） -->
 
   </div><!-- /screen-subtab-screen (screen本体の外側div も閉じる) -->
   </div><!-- /screen-ticker入力エリア -->
@@ -3795,6 +3826,143 @@ if (duplicatesRemoved > 0) {
   btn.innerText    = '▶ RS(ALL)';
   vcsBtn.innerText = '▶ VCSのみ';
   maBtn.innerText  = '▶ MAのみ';
+}
+
+// ======== 反転スクリーナー（完全独立・MA50/150/200 ±2%のみ） ========
+async function fetchTimeSeriesForReversal(symbol, apiKey) {
+  const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=1day&outputsize=210&apikey=${apiKey}`;
+  const res = await fetch(url);
+  const json = await res.json();
+  if (json.status === 'error') { const err = new Error(json.message); err._sym = symbol; throw err; }
+  if (!json.values || json.values.length === 0) { const err = new Error('No data'); err._sym = symbol; throw err; }
+  return json.values;
+}
+
+function calcSmaSimple(closes, period) {
+  if (closes.length < period) return null;
+  return closes.slice(0, period).reduce((a, b) => a + b, 0) / period;
+}
+
+async function screenReversalTicker(symbol, apiKey) {
+  const values = await fetchTimeSeriesForReversal(symbol, apiKey);
+  const closes = values.map(d => parseFloat(d.close));
+  const cur = closes[0];
+  const sma50  = calcSmaSimple(closes, 50);
+  const sma150 = calcSmaSimple(closes, 150);
+  const sma200 = calcSmaSimple(closes, 200);
+  const distPct = ma => ma === null ? null : ((cur - ma) / ma) * 100;
+  const d50  = distPct(sma50);
+  const d150 = distPct(sma150);
+  const d200 = distPct(sma200);
+  const hit50  = d50  !== null && Math.abs(d50)  <= 2;
+  const hit150 = d150 !== null && Math.abs(d150) <= 2;
+  const hit200 = d200 !== null && Math.abs(d200) <= 2;
+  const hitLabel = [];
+  if (hit50)  hitLabel.push(`MA50(${d50  >= 0 ? '+' : ''}${d50.toFixed(2)}%)`);
+  if (hit150) hitLabel.push(`MA150(${d150 >= 0 ? '+' : ''}${d150.toFixed(2)}%)`);
+  if (hit200) hitLabel.push(`MA200(${d200 >= 0 ? '+' : ''}${d200.toFixed(2)}%)`);
+  return { symbol, price: cur, d50, d150, d200, match: hit50 || hit150 || hit200, hitLabel: hitLabel.join(' / ') };
+}
+
+function reversalAddLog(msg, type = '') {
+  const area = document.getElementById('reversal-log');
+  if (!area) return;
+  const line = document.createElement('div');
+  if (type === 'match') { line.style.color = 'var(--win-deep)'; line.style.fontWeight = '700'; }
+  if (type === 'err')   line.style.color = 'var(--lose-deep)';
+  if (type === 'skip')  line.style.color = '#2a3f5f';
+  line.innerText = msg;
+  area.appendChild(line);
+  area.scrollTop = area.scrollHeight;
+}
+
+function reversalAppendCard(r) {
+  const body = document.getElementById('reversal-results-body');
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;border-left:3px solid #06b6d4;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+      <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${r.symbol}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
+        <span style="font-size:0.88rem;font-weight:900;color:#22d3ee;text-decoration:underline;">${r.symbol}</span>
+      </a>
+      <span style="font-size:0.72rem;color:var(--text-sub);">$${r.price.toFixed(2)}</span>
+      <span style="font-size:0.7rem;font-weight:700;color:#06b6d4;">${r.hitLabel}</span>
+    </div>`;
+  body.appendChild(div.firstElementChild);
+}
+
+async function startReversalScreening() {
+  const input = document.getElementById('screen-ticker-input').value;
+  const tickers = [...new Set(
+    input.split(/[\s,\n]+/)
+      .map(t => t.trim().replace(/^\$/, '').toUpperCase())
+      .filter(t => /^[A-Z]{1,5}$/.test(t))
+  )];
+  if (tickers.length === 0) { alert('銘柄を入力してください'); return; }
+
+  const btn = document.getElementById('screen-revtrend-btn');
+  btn.disabled = true; btn.innerText = '... 実行中';
+  document.getElementById('reversal-progress').style.display = 'block';
+  document.getElementById('reversal-log').innerHTML = '';
+  document.getElementById('reversal-results-body').innerHTML = '';
+  document.getElementById('reversal-results').style.display = 'none';
+  document.getElementById('copy-reversal-results-btn').style.display = 'none';
+
+  let matchCount = 0;
+  const API_KEYS = [SCREEN_API_KEY, SCREEN_API_KEY_2, SCREEN_API_KEY_3, SCREEN_API_KEY_4, SCREEN_API_KEY_5];
+
+  for (let i = 0; i < tickers.length; i += 5) {
+    const pair = tickers.slice(i, i + 5);
+    const pct = Math.round((i / tickers.length) * 100);
+    document.getElementById('reversal-progress-bar').style.width = pct + '%';
+    document.getElementById('reversal-progress-count').innerText = `${i} / ${tickers.length}`;
+    document.getElementById('reversal-progress-ticker').innerText = `スキャン中: ${pair.join(' + ')}`;
+
+    const results = await Promise.allSettled(pair.map((sym, idx) => screenReversalTicker(sym, API_KEYS[idx])));
+
+    results.forEach((res, idx) => {
+      const sym = pair[idx];
+      if (res.status === 'rejected') {
+        reversalAddLog(`✗ error  ${sym}  ${res.reason?.message || ''}`, 'err');
+        return;
+      }
+      const r = res.value;
+      if (r.match) {
+        matchCount++;
+        reversalAddLog(`✓ MATCH  ${sym}  ${r.hitLabel}`, 'match');
+        document.getElementById('reversal-results').style.display = 'block';
+        document.getElementById('reversal-results-count').innerText = `${matchCount} match${matchCount !== 1 ? 'es' : ''}`;
+        document.getElementById('copy-reversal-results-btn').style.display = 'inline-block';
+        reversalAppendCard(r);
+      } else {
+        reversalAddLog(`— skip  ${sym}  MA50:${r.d50 !== null ? r.d50.toFixed(2) + '%' : 'N/A'} MA150:${r.d150 !== null ? r.d150.toFixed(2) + '%' : 'N/A'} MA200:${r.d200 !== null ? r.d200.toFixed(2) + '%' : 'N/A'}`, 'skip');
+      }
+    });
+
+    if (i + 5 < tickers.length) await new Promise(r => setTimeout(r, SCREEN_DELAY));
+  }
+
+  document.getElementById('reversal-progress-bar').style.width = '100%';
+  document.getElementById('reversal-progress-count').innerText = `${tickers.length} / ${tickers.length}`;
+  document.getElementById('reversal-progress-ticker').innerText = '完了';
+
+  if (matchCount === 0) {
+    document.getElementById('reversal-results').style.display = 'block';
+    document.getElementById('reversal-results-body').innerHTML = '<div style="text-align:center;color:var(--text-sub);padding:20px;font-size:0.75rem;">条件に合致する銘柄はありませんでした</div>';
+  }
+
+  btn.disabled = false; btn.innerText = '▶ LONG';
+}
+
+function copyReversalResults() {
+  const cards = document.querySelectorAll('#reversal-results-body > div');
+  const lines = Array.from(cards).map(c => c.querySelector('a span')?.innerText?.trim()).filter(Boolean);
+  if (lines.length === 0) return;
+  navigator.clipboard.writeText(lines.join(', ')).then(() => {
+    const btn = document.getElementById('copy-reversal-results-btn');
+    const orig = btn.innerText;
+    btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
+    setTimeout(() => { btn.innerText = orig; btn.style.background = '#334155'; }, 2000);
+  });
 }
 
 // ======== Screen サブタブ切替 ========
