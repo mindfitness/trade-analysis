@@ -337,7 +337,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:baseline; gap:7px;">
             <h1 style="margin:0; font-size:1.05rem; font-weight:900; color:white;">Trade Analysis</h1>
-            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.0.6</span>
+            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.0.7</span>
         </div>
         <button id="header-action-btn" onclick="headerAction()" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer; font-size:0.82rem;">+ 新規</button>
     </div>
@@ -906,6 +906,18 @@
     </div>
     <div id="screen-skip-body"></div>
   </div><!-- /screen-skip-section -->
+
+  <!-- MAスキャンと同時実行・独立判定: MA50/150/200 ±2% -->
+  <div id="reversal-section" style="display:none; margin-top:12px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <span style="font-size:0.65rem; font-weight:700; color:#06b6d4; letter-spacing:0.1em; text-transform:uppercase;">MA50/150/200 ±2%（反転候補）</span>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span id="reversal-count" style="font-size:0.65rem; font-weight:700; color:#06b6d4;">0 matches</span>
+        <button id="copy-reversal-btn" onclick="copyReversalResults()" style="padding:3px 10px; background:#334155; border:1px solid #06b6d4; color:#67e8f9; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 コピー</button>
+      </div>
+    </div>
+    <div id="reversal-body"></div>
+  </div><!-- /reversal-section -->
 
   <div id="screen-error-section" style="display:none; margin-top:12px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -2825,6 +2837,33 @@ function copyScreenResults(type) {
     });
 }
 
+// ======== MA50/150/200 反転候補（MAスキャンと同時実行・結果は別パネル） ========
+function reversalAppendCard(r) {
+    const body = document.getElementById('reversal-body');
+    const div = document.createElement('div');
+    div.innerHTML = `
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;border-left:3px solid #06b6d4;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${r.symbol}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
+          <span style="font-size:0.88rem;font-weight:900;color:#22d3ee;text-decoration:underline;">${r.symbol}</span>
+        </a>
+        <span style="font-size:0.72rem;color:var(--text-sub);">$${r.price.toFixed(2)}</span>
+        <span style="font-size:0.7rem;font-weight:700;color:#06b6d4;">${r.reversalLabel}</span>
+      </div>`;
+    body.appendChild(div.firstElementChild);
+}
+
+function copyReversalResults() {
+    const cards = document.querySelectorAll('#reversal-body > div');
+    const lines = Array.from(cards).map(c => c.querySelector('a span')?.innerText?.trim()).filter(Boolean);
+    if (lines.length === 0) return;
+    navigator.clipboard.writeText(lines.join(', ')).then(() => {
+        const btn = document.getElementById('copy-reversal-btn');
+        const orig = btn.innerText;
+        btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
+        setTimeout(() => { btn.innerText = orig; btn.style.background = '#334155'; }, 2000);
+    });
+}
+
 // ======== Ticker Intersect ========
 function parseTickers(raw) {
     return [...new Set(
@@ -3440,9 +3479,25 @@ const maCondition = rs21_63_ok
   && adrOk
   && oneilCond;  // ← 追加
 
+// ===== MA50/150/200 ±2%（反転候補・他条件と完全独立・既存closesを再利用） =====
+const sma50_rev  = closes.length >= 50  ? closes.slice(0, 50).reduce((a,b)=>a+b,0)/50   : null;
+const sma150_rev = closes.length >= 150 ? closes.slice(0,150).reduce((a,b)=>a+b,0)/150 : null;
+const sma200_rev = closes.length >= 200 ? closes.slice(0,200).reduce((a,b)=>a+b,0)/200 : null;
+const revDistPct = ma => ma === null ? null : ((sClose - ma) / ma) * 100;
+const revD50  = revDistPct(sma50_rev);
+const revD150 = revDistPct(sma150_rev);
+const revD200 = revDistPct(sma200_rev);
+const revHits = [];
+if (revD50  !== null && Math.abs(revD50)  <= 2) revHits.push(`MA50(${revD50  >= 0 ? '+' : ''}${revD50.toFixed(2)}%)`);
+if (revD150 !== null && Math.abs(revD150) <= 2) revHits.push(`MA150(${revD150 >= 0 ? '+' : ''}${revD150.toFixed(2)}%)`);
+if (revD200 !== null && Math.abs(revD200) <= 2) revHits.push(`MA200(${revD200 >= 0 ? '+' : ''}${revD200.toFixed(2)}%)`);
+const reversalHit   = revHits.length > 0;
+const reversalLabel = revHits.join(' / ');
+
 return { symbol, price: sClose, rs10, rs21, rs63, rs126, rs252, hasVolSpike, ppCount, vcs, maTouchLabel,
     tlConvPairs, tlConv, mms, adrPct, isAdrTouchAnyLine, adrOk,
     hlStructureFound, pivotHitLabel, oneilCond,
+    reversalHit, reversalLabel,
     matchType: rsCondition ? 'rs' : vcsCondition ? 'vcs' : maCondition ? 'ma' : null,
     match: (rsCondition || vcsCondition || maCondition) && mms >= 5 };
 }
@@ -3716,6 +3771,10 @@ if (duplicatesRemoved > 0) {
   document.getElementById('copy-screen-vcs-btn').style.display = 'none';
   document.getElementById('copy-screen-ma-btn').style.display = 'none';
   document.getElementById('screen-skip-section').style.display = 'none';
+  document.getElementById('reversal-section').style.display = 'none';
+  document.getElementById('reversal-body').innerHTML = '';
+  document.getElementById('reversal-count').innerText = '0 matches';
+  document.getElementById('copy-reversal-btn').style.display = 'none';
   document.getElementById('screen-progress').style.display = 'block';
 
   const spyOk = await screenEnsureSpy();
@@ -3731,6 +3790,7 @@ if (duplicatesRemoved > 0) {
 
   let matchCount = 0;
   let skipCount = 0;
+  let reversalCount = 0;
   const API_KEYS = [SCREEN_API_KEY, SCREEN_API_KEY_2, SCREEN_API_KEY_3, SCREEN_API_KEY_4, SCREEN_API_KEY_5];
 
   // 5件同時並列処理
@@ -3798,6 +3858,15 @@ if (duplicatesRemoved > 0) {
         document.getElementById('screen-skip-section').style.display = 'block';
         document.getElementById('screen-skip-count').innerText = `${skipCount} skipped`;
         screenAppendSkipCard(result);
+      }
+
+      // ===== MAスキャンと同時実行・独立判定（メイン条件のmatch/skipには影響しない） =====
+      if (mode === 'ma' && result.reversalHit) {
+        reversalCount++;
+        document.getElementById('reversal-section').style.display = 'block';
+        document.getElementById('reversal-count').innerText = `${reversalCount} match${reversalCount !== 1 ? 'es' : ''}`;
+        document.getElementById('copy-reversal-btn').style.display = 'inline-block';
+        reversalAppendCard(result);
       }
     }
       
