@@ -337,7 +337,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:baseline; gap:7px;">
             <h1 style="margin:0; font-size:1.05rem; font-weight:900; color:white;">Trade Analysis</h1>
-            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.0.8</span>
+            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.0.9</span>
         </div>
         <button id="header-action-btn" onclick="headerAction()" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer; font-size:0.82rem;">+ 新規</button>
     </div>
@@ -1374,7 +1374,7 @@ function r2CalcSectorBreadthAdjustment() {
   const emaPct = (emaUp / total) * 100;
   const smaPct = (smaUp / total) * 100;
   const avgPct = (emaPct + smaPct) / 2; // 等重み
-  const adj = (avgPct - 50) * 0.4;
+  const adj = (avgPct - 50) * 0.3;
   return Math.max(-10, Math.min(10, adj));
 }
 
