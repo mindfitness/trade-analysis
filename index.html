@@ -337,7 +337,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:baseline; gap:7px;">
             <h1 style="margin:0; font-size:1.05rem; font-weight:900; color:white;">Trade Analysis</h1>
-            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.0.9</span>
+            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.1.0</span>
         </div>
         <button id="header-action-btn" onclick="headerAction()" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer; font-size:0.82rem;">+ 新規</button>
     </div>
@@ -890,10 +890,19 @@
   </div>
 
   <div id="screen-results" style="display:none;">
+   <button onclick="toggleScreenResults()" id="screen-results-toggle-btn"
+     style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#1a2234;border:1px solid #2a3f5f;border-radius:8px;cursor:pointer;margin-bottom:6px;">
+     <span style="font-size:0.68rem;font-weight:800;color:#22d3ee;letter-spacing:0.1em;text-transform:uppercase;">▶ Results</span>
+     <div style="display:flex;align-items:center;gap:8px;">
+       <span id="screen-results-count" style="font-size:0.65rem;font-weight:700;color:var(--win-deep);">0 matches</span>
+       <span id="screen-results-chevron" style="font-size:0.7rem;color:#22d3ee;">▼ 開く</span>
+     </div>
+   </button>
+   <div id="screen-results-inner" style="display:none;">
    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
          <span style="font-size:0.65rem; font-weight:700; color:var(--text-sub); letter-spacing:0.1em; text-transform:uppercase;">Results</span>
          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
-           <span id="screen-results-count" style="font-size:0.65rem; font-weight:700; color:var(--win-deep);">0 matches</span>
+           <span style="font-size:0.65rem; font-weight:700; color:var(--text-sub); letter-spacing:0.1em; text-transform:uppercase;"></span>
            <button id="copy-screen-results-btn" onclick="copyScreenResults(null)" style="padding:3px 10px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 ALL</button>
            <button id="copy-screen-rs-btn" onclick="copyScreenResults('RS')" style="padding:3px 10px; background:#334155; border:1px solid #10b981; color:#6ee7b7; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 RS</button>
            <button id="copy-screen-vcs-btn" onclick="copyScreenResults('VCS')" style="padding:3px 10px; background:#334155; border:1px solid #8b5cf6; color:#c4b5fd; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 VCS</button>
@@ -902,14 +911,21 @@
          </div>
        </div>
     <div id="screen-results-body"></div>
-  </div>
+  </div><!-- /screen-results-inner -->
+  </div><!-- /screen-results -->
 
   <div id="screen-skip-section" style="display:none; margin-top:12px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-      <span style="font-size:0.65rem; font-weight:700; color:var(--text-sub); letter-spacing:0.1em; text-transform:uppercase;">Non-Match</span>
-      <span id="screen-skip-count" style="font-size:0.65rem; font-weight:700; color:var(--text-sub);">0 skipped</span>
+    <button onclick="toggleScreenSkip()" id="screen-skip-toggle-btn"
+      style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#1a2234;border:1px solid #2a3f5f;border-radius:8px;cursor:pointer;margin-bottom:6px;">
+      <span style="font-size:0.68rem;font-weight:800;color:var(--text-sub);letter-spacing:0.1em;text-transform:uppercase;">▶ Non-Match</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span id="screen-skip-count" style="font-size:0.65rem;font-weight:700;color:var(--text-sub);">0 skipped</span>
+        <span id="screen-skip-chevron" style="font-size:0.7rem;color:var(--text-sub);">▼ 開く</span>
+      </div>
+    </button>
+    <div id="screen-skip-inner" style="display:none;">
+      <div id="screen-skip-body"></div>
     </div>
-    <div id="screen-skip-body"></div>
   </div><!-- /screen-skip-section -->
 
   <!-- MAスキャンと同時実行・独立判定: MA50/150/200 ±2% -->
@@ -1127,7 +1143,13 @@
 <div id="rank-modal" style="display:none;position:fixed;z-index:300;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.75);">
   <div style="background:#111827;margin:15% auto;padding:20px;border-radius:14px;width:88%;max-width:440px;position:relative;border:1px solid #1e2d45;">
     <button onclick="closeRankModal()" style="position:absolute;right:16px;top:12px;font-size:22px;cursor:pointer;color:#8899aa;background:none;border:none;">×</button>
-    <div id="rank-modal-title" style="font-size:1.2rem;font-weight:900;color:#22d3ee;margin-bottom:10px;border-bottom:1px solid #1e2d45;padding-bottom:10px;"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid #1e2d45;padding-bottom:10px;margin-bottom:10px;">
+      <div id="rank-modal-title" style="font-size:1.2rem;font-weight:900;color:#22d3ee;"></div>
+      <a id="rank-modal-tv-link" href="#" target="_blank" rel="noopener noreferrer"
+        style="font-size:0.72rem;font-weight:800;color:#3b82f6;background:#1e2d45;border:1px solid #2a3f5f;border-radius:6px;padding:4px 10px;text-decoration:none;white-space:nowrap;">
+        📈 TV
+      </a>
+    </div>
     <div style="font-size:0.72rem;font-weight:800;color:#8899aa;margin-top:12px;">セクター概要</div>
     <div id="rank-modal-desc" style="font-size:0.88rem;color:#e2e8f0;margin-top:4px;"></div>
     <div style="font-size:0.72rem;font-weight:800;color:#8899aa;margin-top:12px;">代表的な銘柄</div>
@@ -1661,7 +1683,7 @@ async function startRankUpdate() {
           if (json.code === 429) { hit429 = true; return; }
           throw new Error(json.message);
         }
-        mainData.push(r2ProcessValues(sym, json.values));
+        if (!mainData.some(d => d.symbol === sym)) mainData.push(r2ProcessValues(sym, json.values));
       } catch(e) { console.error(sym, e); }
     }));
     if (hit429) {
@@ -1716,6 +1738,7 @@ async function startRankUpdate() {
         const k = 2 / 22;
         let ema21val = closes.slice(0, 21).reduce((a, b) => a + b, 0) / 21;
         for (let j = 20; j >= 0; j--) ema21val = closes[j] * k + ema21val * (1 - k);
+        if (rankMarketData.some(d => d.symbol === sym)) return; // 重複スキップ
         rankMarketData.push({
           symbol: sym,
           day_change:      ((now - parseFloat(v[1].close))  / parseFloat(v[1].close))  * 100,
@@ -1941,6 +1964,8 @@ function showRankInfo(symbol) {
   document.getElementById('rank-modal-title').innerText  = symbol;
   document.getElementById('rank-modal-desc').innerText   = info.desc;
   document.getElementById('rank-modal-stocks').innerText = info.stocks;
+  const tvLink = `https://jp.tradingview.com/chart/2heIjlhI/?symbol=${symbol}`;
+  document.getElementById('rank-modal-tv-link').href = tvLink;
   document.getElementById('rank-modal').style.display    = 'block';
 }
 function closeRankModal() { document.getElementById('rank-modal').style.display = 'none'; }
@@ -2837,6 +2862,27 @@ function copyTheme(themeId) {
     });
 }
 
+// ======== スクリーン結果アコーディオン ========
+function toggleScreenResults() {
+  const inner   = document.getElementById('screen-results-inner');
+  const chevron = document.getElementById('screen-results-chevron');
+  const btn     = document.getElementById('screen-results-toggle-btn');
+  const isOpen  = inner.style.display !== 'none';
+  inner.style.display   = isOpen ? 'none' : 'block';
+  chevron.textContent   = isOpen ? '▼ 開く' : '▲ 閉じる';
+  btn.style.borderRadius = isOpen ? '8px' : '8px 8px 0 0';
+}
+
+function toggleScreenSkip() {
+  const inner   = document.getElementById('screen-skip-inner');
+  const chevron = document.getElementById('screen-skip-chevron');
+  const btn     = document.getElementById('screen-skip-toggle-btn');
+  const isOpen  = inner.style.display !== 'none';
+  inner.style.display    = isOpen ? 'none' : 'block';
+  chevron.textContent    = isOpen ? '▼ 開く' : '▲ 閉じる';
+  btn.style.borderRadius = isOpen ? '8px' : '8px 8px 0 0';
+}
+
 // ======== スクリーニング結果コピー ========
 function copyScreenResults(type) {
     const cards = document.querySelectorAll('#screen-results-body > div');
@@ -2887,15 +2933,18 @@ function reversalAppendCard(r) {
 }
 
 function copyReversalResults() {
-    const cards = document.querySelectorAll('#reversal-body > div');
-    const lines = Array.from(cards).map(c => c.querySelector('a span')?.innerText?.trim()).filter(Boolean);
-    if (lines.length === 0) return;
-    navigator.clipboard.writeText(lines.join(', ')).then(() => {
-        const btn = document.getElementById('copy-reversal-btn');
-        const orig = btn.innerText;
-        btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
-        setTimeout(() => { btn.innerText = orig; btn.style.background = '#334155'; }, 2000);
+  const cards = document.querySelectorAll('#reversal-results-body > div');
+  const lines = Array.from(cards).map(c => c.querySelector('a span')?.innerText?.trim()).filter(Boolean);
+  if (lines.length === 0) return;
+  navigator.clipboard.writeText(lines.join(', ')).then(() => {
+    ['copy-reversal-btn', 'copy-reversal-results-btn'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      const orig = btn.innerText;
+      btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
+      setTimeout(() => { btn.innerText = orig; btn.style.background = '#334155'; }, 2000);
     });
+  });
 }
 
 // ======== Ticker Intersect ========
@@ -3925,6 +3974,15 @@ if (duplicatesRemoved > 0) {
     document.getElementById('screen-results').style.display = 'block';
     document.getElementById('screen-results-body').innerHTML = '<div style="text-align:center;color:var(--text-sub);padding:20px;font-size:0.75rem;">条件に合致する銘柄はありませんでした</div>';
   }
+  // スキャン完了後に結果を自動展開
+  const resInner = document.getElementById('screen-results-inner');
+  const resChevron = document.getElementById('screen-results-chevron');
+  if (resInner && resInner.style.display === 'none') {
+    resInner.style.display = 'block';
+    if (resChevron) resChevron.textContent = '▲ 閉じる';
+    const togBtn = document.getElementById('screen-results-toggle-btn');
+    if (togBtn) togBtn.style.borderRadius = '8px 8px 0 0';
+  }
   btn.disabled = false; vcsBtn.disabled = false; maBtn.disabled = false;
   btn.innerText    = '▶ RS(ALL)';
   vcsBtn.innerText = '▶ VCSのみ';
@@ -4056,17 +4114,7 @@ async function startReversalScreening() {
   btn.disabled = false; btn.innerText = '▶ LONG';
 }
 
-function copyReversalResults() {
-  const cards = document.querySelectorAll('#reversal-results-body > div');
-  const lines = Array.from(cards).map(c => c.querySelector('a span')?.innerText?.trim()).filter(Boolean);
-  if (lines.length === 0) return;
-  navigator.clipboard.writeText(lines.join(', ')).then(() => {
-    const btn = document.getElementById('copy-reversal-results-btn');
-    const orig = btn.innerText;
-    btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
-    setTimeout(() => { btn.innerText = orig; btn.style.background = '#334155'; }, 2000);
-  });
-}
+
 
 // ======== Screen サブタブ切替 ========
 function switchScreenSubtab(tab) {
