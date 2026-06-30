@@ -337,7 +337,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:baseline; gap:7px;">
             <h1 style="margin:0; font-size:1.05rem; font-weight:900; color:white;">Trade Analysis</h1>
-            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.1.0</span>
+            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.1.1</span>
         </div>
         <button id="header-action-btn" onclick="headerAction()" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer; font-size:0.82rem;">+ 新規</button>
     </div>
@@ -934,7 +934,7 @@
       <span style="font-size:0.65rem; font-weight:700; color:#06b6d4; letter-spacing:0.1em; text-transform:uppercase;">MA50/150/200 ±2%（反転候補）</span>
       <div style="display:flex; align-items:center; gap:6px;">
         <span id="reversal-count" style="font-size:0.65rem; font-weight:700; color:#06b6d4;">0 matches</span>
-        <button id="copy-reversal-btn" onclick="copyReversalResults()" style="padding:3px 10px; background:#334155; border:1px solid #06b6d4; color:#67e8f9; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 コピー</button>
+        <button id="copy-reversal-btn" onclick="copyReversalResultsMA()" style="padding:3px 10px; background:#334155; border:1px solid #06b6d4; color:#67e8f9; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 コピー</button>
       </div>
     </div>
     <div id="reversal-body"></div>
@@ -970,7 +970,7 @@
       <span style="font-size:0.65rem; font-weight:700; color:#06b6d4; letter-spacing:0.1em; text-transform:uppercase;">Reversal Results</span>
       <div style="display:flex; align-items:center; gap:6px;">
         <span id="reversal-results-count" style="font-size:0.65rem; font-weight:700; color:#06b6d4;">0 matches</span>
-        <button id="copy-reversal-results-btn" onclick="copyReversalResults()" style="padding:3px 10px; background:#334155; border:1px solid #06b6d4; color:#67e8f9; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 コピー</button>
+        <button id="copy-reversal-results-btn" onclick="copyReversalResultsLong()" style="padding:3px 10px; background:#334155; border:1px solid #06b6d4; color:#67e8f9; border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem; display:none;">📋 コピー</button>
       </div>
     </div>
     <div id="reversal-results-body"></div>
@@ -2918,7 +2918,7 @@ function copyScreenResults(type) {
 }
 
 // ======== MA50/150/200 反転候補（MAスキャンと同時実行・結果は別パネル） ========
-function reversalAppendCard(r) {
+function reversalAppendCardMA(r) {
     const body = document.getElementById('reversal-body');
     const div = document.createElement('div');
     div.innerHTML = `
@@ -2932,18 +2932,31 @@ function reversalAppendCard(r) {
     body.appendChild(div.firstElementChild);
 }
 
-function copyReversalResults() {
+// MA画面「反転候補」用
+function copyReversalResultsMA() {
+  const cards = document.querySelectorAll('#reversal-body > div');
+  const lines = Array.from(cards).map(c => c.querySelector('a span')?.innerText?.trim()).filter(Boolean);
+  if (lines.length === 0) return;
+  navigator.clipboard.writeText(lines.join(', ')).then(() => {
+    const btn = document.getElementById('copy-reversal-btn');
+    if (!btn) return;
+    const orig = btn.innerText;
+    btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
+    setTimeout(() => { btn.innerText = orig; btn.style.background = '#334155'; }, 2000);
+  });
+}
+
+// LONGボタン独立スキャナー用
+function copyReversalResultsLong() {
   const cards = document.querySelectorAll('#reversal-results-body > div');
   const lines = Array.from(cards).map(c => c.querySelector('a span')?.innerText?.trim()).filter(Boolean);
   if (lines.length === 0) return;
   navigator.clipboard.writeText(lines.join(', ')).then(() => {
-    ['copy-reversal-btn', 'copy-reversal-results-btn'].forEach(id => {
-      const btn = document.getElementById(id);
-      if (!btn) return;
-      const orig = btn.innerText;
-      btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
-      setTimeout(() => { btn.innerText = orig; btn.style.background = '#334155'; }, 2000);
-    });
+    const btn = document.getElementById('copy-reversal-results-btn');
+    if (!btn) return;
+    const orig = btn.innerText;
+    btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
+    setTimeout(() => { btn.innerText = orig; btn.style.background = '#334155'; }, 2000);
   });
 }
 
@@ -3945,12 +3958,12 @@ if (duplicatesRemoved > 0) {
 
       // ===== MAスキャンと同時実行・独立判定（メイン条件のmatch/skipには影響しない） =====
       if (mode === 'ma' && result.reversalHit) {
-        reversalCount++;
-        document.getElementById('reversal-section').style.display = 'block';
-        document.getElementById('reversal-count').innerText = `${reversalCount} match${reversalCount !== 1 ? 'es' : ''}`;
-        document.getElementById('copy-reversal-btn').style.display = 'inline-block';
-        reversalAppendCard(result);
-      }
+    reversalCount++;
+    document.getElementById('reversal-section').style.display = 'block';
+    document.getElementById('reversal-count').innerText = `${reversalCount} match${reversalCount !== 1 ? 'es' : ''}`;
+    document.getElementById('copy-reversal-btn').style.display = 'inline-block';
+    reversalAppendCardMA(result);
+}
     }
       
 
@@ -4037,7 +4050,7 @@ function reversalAddLog(msg, type = '') {
   area.scrollTop = area.scrollHeight;
 }
 
-function reversalAppendCard(r) {
+function reversalAppendCardLong(r) {
   const body = document.getElementById('reversal-results-body');
   const div = document.createElement('div');
   div.innerHTML = `
@@ -4088,13 +4101,13 @@ async function startReversalScreening() {
       }
       const r = res.value;
       if (r.match) {
-        matchCount++;
-        reversalAddLog(`✓ MATCH  ${sym}  ${r.hitLabel}`, 'match');
-        document.getElementById('reversal-results').style.display = 'block';
-        document.getElementById('reversal-results-count').innerText = `${matchCount} match${matchCount !== 1 ? 'es' : ''}`;
-        document.getElementById('copy-reversal-results-btn').style.display = 'inline-block';
-        reversalAppendCard(r);
-      } else {
+    matchCount++;
+    reversalAddLog(`✓ MATCH  ${sym}  ${r.hitLabel}`, 'match');
+    document.getElementById('reversal-results').style.display = 'block';
+    document.getElementById('reversal-results-count').innerText = `${matchCount} match${matchCount !== 1 ? 'es' : ''}`;
+    document.getElementById('copy-reversal-results-btn').style.display = 'inline-block';
+    reversalAppendCardLong(r);
+} else {
         reversalAddLog(`— skip  ${sym}  MA50:${r.d50 !== null ? r.d50.toFixed(2) + '%' : 'N/A'} MA150:${r.d150 !== null ? r.d150.toFixed(2) + '%' : 'N/A'} MA200:${r.d200 !== null ? r.d200.toFixed(2) + '%' : 'N/A'}`, 'skip');
       }
     });
