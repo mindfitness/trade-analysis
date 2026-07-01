@@ -337,7 +337,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:baseline; gap:7px;">
             <h1 style="margin:0; font-size:1.05rem; font-weight:900; color:white;">Trade Analysis</h1>
-            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.1.1</span>
+            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.1.2</span>
         </div>
         <button id="header-action-btn" onclick="headerAction()" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer; font-size:0.82rem;">+ 新規</button>
     </div>
@@ -796,14 +796,14 @@
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
         <button id="watch-refresh-all-btn" onclick="refreshAllThemePerf()" style="padding:6px 14px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:8px; font-weight:800; cursor:pointer; font-size:0.78rem;">📊 一括更新</button>
         <div style="display:flex; align-items:center; gap:6px;">
-            <span style="font-size:0.65rem; font-weight:700; color:var(--text-sub); white-space:nowrap;">💵 買付余力</span>
+            <span style="font-size:0.65rem; font-weight:700; color:var(--text-sub); white-space:nowrap;">💵 買付余力(×1000)</span>
             <div style="position:relative;">
                 <span style="position:absolute; left:8px; top:50%; transform:translateY(-50%); font-size:0.78rem; color:var(--text-sub); pointer-events:none;">$</span>
-                <input type="number" id="watch-budget-input" placeholder="2000"
+                <input type="number" id="watch-budget-input" placeholder="1"
                     style="width:90px; padding:5px 8px 5px 18px; background:var(--input-bg); border:1px solid var(--border); border-radius:6px; color:white; font-size:0.82rem; font-weight:700;"
                     oninput="renderThemes()">
-            </div>
-        </div>
+            </div><!-- ★position:relative の閉じタグ -->
+        </div><!-- ★gap:6px flex の閉じタグ -->
         <button onclick="openThemeModal()" style="padding:6px 14px; background:var(--theme-accent); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.78rem;">+ テーマ追加</button>
     </div>
     <div id="theme-list"></div>
@@ -2506,7 +2506,7 @@ const themePerfCache = {};
 // ======== テーマ配分額計算 ========
 function renderThemeAlloc(theme) {
     const budgetEl = document.getElementById('watch-budget-input');
-    const budget = budgetEl ? parseFloat(budgetEl.value) : NaN;
+    const budget = budgetEl ? parseFloat(budgetEl.value) * 1000 : NaN;  // ★入力値×1000ドルとして扱う
     if (!budget || isNaN(budget) || budget <= 0) return '';
     const count = theme.stocks.length;
     if (count === 0) return '';
@@ -3587,7 +3587,7 @@ const revHits = [];
 if (revD50  !== null && Math.abs(revD50)  <= 2) revHits.push(`MA50(${revD50  >= 0 ? '+' : ''}${revD50.toFixed(2)}%)`);
 if (revD150 !== null && Math.abs(revD150) <= 2) revHits.push(`MA150(${revD150 >= 0 ? '+' : ''}${revD150.toFixed(2)}%)`);
 if (revD200 !== null && Math.abs(revD200) <= 2) revHits.push(`MA200(${revD200 >= 0 ? '+' : ''}${revD200.toFixed(2)}%)`);
-const reversalHit   = revHits.length > 0;
+const reversalHit   = revHits.length > 0 && (adrOk ?? false);  // ★同一関数内で既に計算済みのadrOkを流用
 const reversalLabel = revHits.join(' / ');
 
 return { symbol, price: sClose, rs10, rs21, rs63, rs126, rs252, hasVolSpike, ppCount, vcs, maTouchLabel,
@@ -4035,7 +4035,23 @@ async function screenReversalTicker(symbol, apiKey) {
   if (hit50)  hitLabel.push(`MA50(${d50  >= 0 ? '+' : ''}${d50.toFixed(2)}%)`);
   if (hit150) hitLabel.push(`MA150(${d150 >= 0 ? '+' : ''}${d150.toFixed(2)}%)`);
   if (hit200) hitLabel.push(`MA200(${d200 >= 0 ? '+' : ''}${d200.toFixed(2)}%)`);
-  return { symbol, price: cur, d50, d150, d200, match: hit50 || hit150 || hit200, hitLabel: hitLabel.join(' / ') };
+
+  // ★追加: ADR% 計算（既存ロジックと同一）
+  const adrLen = 20;
+  let adrPct = null;
+  if (values.length >= adrLen) {
+    const ratios = values.slice(0, adrLen).map(d =>
+      parseFloat(d.high) / parseFloat(d.low)
+    );
+    adrPct = (ratios.reduce((a, b) => a + b, 0) / adrLen - 1) * 100;
+  }
+  const adrOk = adrPct !== null && adrPct >= 3.5;
+
+  return {
+    symbol, price: cur, d50, d150, d200, adrPct, adrOk,
+    match: (hit50 || hit150 || hit200) && adrOk,   // ★ADR%条件を追加
+    hitLabel: hitLabel.join(' / ')
+  };
 }
 
 function reversalAddLog(msg, type = '') {
