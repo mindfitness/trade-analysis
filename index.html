@@ -337,7 +337,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:baseline; gap:7px;">
             <h1 style="margin:0; font-size:1.05rem; font-weight:900; color:white;">Trade Analysis</h1>
-            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.1.2</span>
+            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.1.3</span>
         </div>
         <button id="header-action-btn" onclick="headerAction()" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer; font-size:0.82rem;">+ 新規</button>
     </div>
@@ -674,6 +674,10 @@
         <button id="rank-update-btn" onclick="startRankUpdate()"
           style="padding:5px 12px;background:#f59e0b;color:#0a0e1a;border:none;border-radius:6px;font-weight:800;cursor:pointer;font-size:0.78rem;white-space:nowrap;">
           更新
+        </button>
+        <button id="rank-copy-tickers-btn" onclick="copyRankTickers()"
+          style="padding:5px 12px;background:#334155;border:1px solid #2a3f5f;color:#e2e8f0;border-radius:6px;font-weight:800;cursor:pointer;font-size:0.78rem;white-space:nowrap;">
+          📋 コピー
         </button>
       </div>
       <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
@@ -2842,6 +2846,16 @@ function copyMC() {
         const btn = document.getElementById('copy-mc-btn');
         btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
         setTimeout(() => { btn.innerText = '📋 コピー'; btn.style.background = '#334155'; }, 2000);
+    });
+}
+
+function copyRankTickers() {
+    const text = RANK_TICKERS.join(', '); // "AIPO, POWR, ITA, ..." の形式でそのままスクリーナー欄に貼り付け可
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('rank-copy-tickers-btn');
+        const orig = btn.innerText;
+        btn.innerText = '✅ コピー済み'; btn.style.background = '#064e3b';
+        setTimeout(() => { btn.innerText = orig; btn.style.background = '#334155'; }, 2000);
     });
 }
 
