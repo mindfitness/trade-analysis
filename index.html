@@ -337,7 +337,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:baseline; gap:7px;">
             <h1 style="margin:0; font-size:1.05rem; font-weight:900; color:white;">Trade Analysis</h1>
-            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.1.3</span>
+            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.1.4</span>
         </div>
         <button id="header-action-btn" onclick="headerAction()" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer; font-size:0.82rem;">+ 新規</button>
     </div>
@@ -1192,18 +1192,31 @@ if (!['admin','user'].includes(sessionStorage.getItem('auth'))) {
 }
 
 // ======== 共通設定 ========
-const TWELVE_DATA_API_KEY = "4745e87ea2404681a5c9fa6376aac35a"; 
-const WATCH_PERF_API_KEY = "47ad088398004b0b9f76f2c3993438eb"; // 
-const PERF_API_KEY = 'f550f672515b4cd6b4c2966f1e2cc0fb';
+// ======== Twelve Data APIキー 共有プール ========
+// Perf / Rank / Screen / Theme / TT のすべての機能がこの1つのプールを共有する
+const TD_API_KEY_POOL = [
+    "4745e87ea2404681a5c9fa6376aac35a",
+    "47ad088398004b0b9f76f2c3993438eb",
+    "f550f672515b4cd6b4c2966f1e2cc0fb",
+    "c99eeb783e064f2ead679a9c48564a32",
+    "10f03734e47d4c5fb02dd591d7928e8c",
+    "fce650259e7d4981bd2c2e8579a9d9a6",
+    "3f8004b1d81c49c699e4011a2cdf0745",
+    "ca4b29c03e4d426f8314ee517137193d",
+    "12343bfe66954ec39519d3c3834578d5",
+];
+
+// 既存コードの変数名をそのまま使えるよう互換エイリアスを用意
+const TWELVE_DATA_API_KEY = TD_API_KEY_POOL[0];
+const WATCH_PERF_API_KEY  = TD_API_KEY_POOL[0];
+const PERF_API_KEY        = TD_API_KEY_POOL[0];
 const TRADE_API_URL = "/api";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbw8bphx9s_QhCLbgKbhkI1iAMu22EBIfsR0YVeEE4MoF0qYWcxyE9AKhm3yCzafO40_2g/exec";
 const SECTOR_GAS_URL = "https://script.google.com/macros/s/AKfycby1lo_XSLpA6OIFvX9MbyEqO6RzCWaSzSJuFtrKy6tuTZPEOjzBWfKxQ_7Fczd_fbV0/exec";
 const MC_API_URL = "/api/mc"; 
     
 // ======== Rank移植（コード1） ========
-const RANK_API_KEY   = "4745e87ea2404681a5c9fa6376aac35a";
-const RANK_API_KEY_2 = "c99eeb783e064f2ead679a9c48564a32";
-const RANK_API_KEYS  = [RANK_API_KEY, RANK_API_KEY_2];
+const RANK_API_KEYS = TD_API_KEY_POOL; // 2本→プール全9本に拡張
 
 const R2_TICKERS_MAIN = [
   "RSP","QQQ","IWM","QQQE",
@@ -1675,8 +1688,8 @@ async function startRankUpdate() {
   await r2Sleep(8500);
 
   // ---- Phase1: メインETF 2件ずつ並列 ----
-  for (let i = 0; i < R2_TICKERS_MAIN.length; i += 2) {
-    const pair = [R2_TICKERS_MAIN[i], R2_TICKERS_MAIN[i+1]].filter(Boolean);
+  for (let i = 0; i < R2_TICKERS_MAIN.length; i += RANK_API_KEYS.length) {
+    const pair = R2_TICKERS_MAIN.slice(i, i + RANK_API_KEYS.length);
     statusEl.innerText = `スコア計算用取得 ${i+1}/${R2_TICKERS_MAIN.length}: ${pair.join(' + ')}`;
     let hit429 = false;
     await Promise.all(pair.map(async (sym, idx) => {
@@ -1693,10 +1706,9 @@ async function startRankUpdate() {
     if (hit429) {
       statusEl.innerText = 'レート制限 - 60秒待機中...';
       await r2Sleep(60000);
-      i -= 2; // ペアごと再試行
-      continue;
+      i -= RANK_API_KEYS.length; continue;
     }
-    if (i + 2 < R2_TICKERS_MAIN.length) await r2Sleep(8500);
+    if (i + RANK_API_KEYS.length < R2_TICKERS_MAIN.length) await r2Sleep(8500);
   }
 
  // スコア保存・描画
@@ -1723,8 +1735,8 @@ async function startRankUpdate() {
 
   // ---- Phase2: ランキングETF 2件ずつ並列 ----
   rankMarketData = [];
-  for (let i = 0; i < RANK_TICKERS.length; i += 2) {
-    const pair = [RANK_TICKERS[i], RANK_TICKERS[i+1]].filter(Boolean);
+  for (let i = 0; i < RANK_TICKERS.length; i += RANK_API_KEYS.length) {
+    const pair = RANK_TICKERS.slice(i, i + RANK_API_KEYS.length);
     statusEl.innerText = `ランキング取得 ${i+1}/${RANK_TICKERS.length}: ${pair.join(' + ')}`;
     let hit429 = false;
     await Promise.all(pair.map(async (sym, idx) => {
@@ -1763,10 +1775,10 @@ async function startRankUpdate() {
     if (hit429) {
       statusEl.innerText = 'レート制限 - 60秒待機中...';
       await r2Sleep(60000);
-      i -= 2;
+      i -= RANK_API_KEYS.length;
       continue;
     }
-    if (i + 2 < RANK_TICKERS.length) await r2Sleep(8500);
+    if (i + RANK_API_KEYS.length < RANK_TICKERS.length) await r2Sleep(8500);
   }
 
   // ランキングデータをKVに保存
@@ -2553,21 +2565,22 @@ async function fetchThemePerf(themeId) {
     if (badge) badge.outerHTML = renderThemePerfBadge(themeId);
 
     const results = [];
-    for (const sym of theme.stocks) {
-        try {
-            const res = await fetch(
-                `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(sym)}&interval=1day&outputsize=2&apikey=${WATCH_PERF_API_KEY}`
-            );
-            const json = await res.json();
-            if (json.status === 'error' || !json.values || json.values.length < 2) continue;
-            const cur  = parseFloat(json.values[0].close);
-            const prev = parseFloat(json.values[1].close);
-            if (!isNaN(cur) && !isNaN(prev) && prev !== 0) {
-                results.push((cur - prev) / prev * 100);
-            }
-        } catch(e) { /* skip */ }
-        // レート制限対策
-        await new Promise(r => setTimeout(r, 250));
+    for (let i = 0; i < theme.stocks.length; i += TD_API_KEY_POOL.length) {
+        const batch = theme.stocks.slice(i, i + TD_API_KEY_POOL.length);
+        await Promise.all(batch.map(async (sym, idx) => {
+            try {
+                const res = await fetch(
+                    `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(sym)}&interval=1day&outputsize=2&apikey=${TD_API_KEY_POOL[idx]}`
+                );
+                const json = await res.json();
+                if (json.status === 'error' || !json.values || json.values.length < 2) return;
+                const cur  = parseFloat(json.values[0].close);
+                const prev = parseFloat(json.values[1].close);
+                if (!isNaN(cur) && !isNaN(prev) && prev !== 0) {
+                    results.push((cur - prev) / prev * 100);
+                }
+            } catch(e) { /* skip */ }
+        }));
     }
 
     const avg = results.length > 0
@@ -3058,13 +3071,6 @@ function copyIntersect() {
     });
 }
 
-// ======== スクリーナー ========
-const SCREEN_API_KEY = 'f550f672515b4cd6b4c2966f1e2cc0fb';
-const SCREEN_API_KEY_2 = '10f03734e47d4c5fb02dd591d7928e8c';
-const SCREEN_API_KEY_3 = 'fce650259e7d4981bd2c2e8579a9d9a6';
-const SCREEN_API_KEY_4 = '3f8004b1d81c49c699e4011a2cdf0745';
-const SCREEN_API_KEY_5 = 'ca4b29c03e4d426f8314ee517137193d';
-
 
 let screenSaveToWatch = false;
 const SCREEN_DELAY = 7000;
@@ -3124,8 +3130,8 @@ async function screenEnsureSpy() {
   if (screenSpyMap) return true;
   screenSetSpyStatus('loading', 'SPY: 取得中...');
   try {
-    // SPY取得はAPI2を使い、API1のレート枠を温存
-    const url = `https://api.twelvedata.com/time_series?symbol=SPY&interval=1day&outputsize=252&apikey=${SCREEN_API_KEY_2}`;
+    // SPY取得はプールの2本目を使う
+    const url = `https://api.twelvedata.com/time_series?symbol=SPY&interval=1day&outputsize=252&apikey=${TD_API_KEY_POOL[1]}`;
     const res = await fetch(url);
     const json = await res.json();
     if (json.status === 'error') throw new Error(json.message);
@@ -3901,11 +3907,11 @@ if (duplicatesRemoved > 0) {
   let matchCount = 0;
   let skipCount = 0;
   let reversalCount = 0;
-  const API_KEYS = [SCREEN_API_KEY, SCREEN_API_KEY_2, SCREEN_API_KEY_3, SCREEN_API_KEY_4, SCREEN_API_KEY_5];
+  const API_KEYS = TD_API_KEY_POOL;
 
-  // 5件同時並列処理
-  for (let i = 0; i < tickers.length; i += 5) {
-    const pair = [tickers[i], tickers[i + 1], tickers[i + 2], tickers[i + 3], tickers[i + 4]].filter(Boolean);
+  // プール全体(9キー)で同時並列処理
+  for (let i = 0; i < tickers.length; i += API_KEYS.length) {
+    const pair = tickers.slice(i, i + API_KEYS.length);
     const pct = Math.round((i / tickers.length) * 100);
     document.getElementById('screen-progress-bar').style.width = pct + '%';
     document.getElementById('screen-progress-count').innerText = `${i} / ${tickers.length}`;
@@ -3981,7 +3987,7 @@ if (duplicatesRemoved > 0) {
     }
       
 
-    if (i + 5 < tickers.length) await new Promise(r => setTimeout(r, SCREEN_DELAY));
+    if (i + API_KEYS.length < tickers.length) await new Promise(r => setTimeout(r, SCREEN_DELAY));
   }
   document.getElementById('screen-progress-bar').style.width = '100%';
   document.getElementById('screen-progress-count').innerText = `${tickers.length} / ${tickers.length}`;
@@ -4112,10 +4118,10 @@ async function startReversalScreening() {
   document.getElementById('copy-reversal-results-btn').style.display = 'none';
 
   let matchCount = 0;
-  const API_KEYS = [SCREEN_API_KEY, SCREEN_API_KEY_2, SCREEN_API_KEY_3, SCREEN_API_KEY_4, SCREEN_API_KEY_5];
+  const API_KEYS = TD_API_KEY_POOL;
 
-  for (let i = 0; i < tickers.length; i += 5) {
-    const pair = tickers.slice(i, i + 5);
+  for (let i = 0; i < tickers.length; i += API_KEYS.length) {
+    const pair = tickers.slice(i, i + API_KEYS.length);
     const pct = Math.round((i / tickers.length) * 100);
     document.getElementById('reversal-progress-bar').style.width = pct + '%';
     document.getElementById('reversal-progress-count').innerText = `${i} / ${tickers.length}`;
@@ -4142,7 +4148,7 @@ async function startReversalScreening() {
       }
     });
 
-    if (i + 5 < tickers.length) await new Promise(r => setTimeout(r, SCREEN_DELAY));
+    if (i + API_KEYS.length < tickers.length) await new Promise(r => setTimeout(r, SCREEN_DELAY));
   }
 
   document.getElementById('reversal-progress-bar').style.width = '100%';
@@ -4503,9 +4509,7 @@ const TT_RAW_DATA = [
   {n:207,name:"宇宙：地球観測",change:0.0,tickers:["BKSY","PL","SATL","SPIR"]},
 ];
 
-const TT_API_KEY = '12343bfe66954ec39519d3c3834578d5';
-const TT_API_KEY_2 = 'c99eeb783e064f2ead679a9c48564a32';
-const TT_API_KEYS = [TT_API_KEY, TT_API_KEY_2];
+const TT_API_KEYS = TD_API_KEY_POOL; // 2本→プール全9本に拡張
 const TT_RATE_DELAY = 8000;
 const TT_MAX_BATCH = 8;
 
@@ -4638,7 +4642,8 @@ async function ttFetchPerf(n, tickers, period, onProgress) {
       const batch = batches[bi];
       onProgress && onProgress(`1D ${bi*TT_MAX_BATCH+1}〜${Math.min((bi+1)*TT_MAX_BATCH, tickers.length)}/${tickers.length}`);
       try {
-        const resp = await fetch(`https://api.twelvedata.com/quote?symbol=${batch.join(',')}&apikey=${TT_API_KEY}`);
+        const apiKey = TT_API_KEYS[bi % TT_API_KEYS.length];
+        const resp = await fetch(`https://api.twelvedata.com/quote?symbol=${batch.join(',')}&apikey=${apiKey}`);
         const data = await resp.json();
         for (const sym of batch) {
           const q = batch.length === 1 ? data : data[sym];
@@ -4648,8 +4653,8 @@ async function ttFetchPerf(n, tickers, period, onProgress) {
     }
   } else {
     const outputSize = period === '5day' ? 6 : 11;
-    for (let i = 0; i < tickers.length; i += 2) {
-      const pair = [tickers[i], tickers[i+1]].filter(Boolean);
+    for (let i = 0; i < tickers.length; i += TT_API_KEYS.length) {
+      const pair = tickers.slice(i, i + TT_API_KEYS.length);
       if (i > 0) {
         for (let t = TT_RATE_DELAY/1000; t > 0; t--) {
           onProgress && onProgress(`待機 ${t}s (${i}/${tickers.length})`);
@@ -4659,7 +4664,7 @@ async function ttFetchPerf(n, tickers, period, onProgress) {
       onProgress && onProgress(`${period==='5day'?'5D':'10D'} ${pair.join('+')} (${i+1}/${tickers.length})`);
 
       await Promise.all(pair.map(async (sym, idx) => {
-        const apiKey = TT_API_KEYS[idx % TT_API_KEYS.length];
+        const apiKey = TT_API_KEYS[idx];
         let retries = 2;
         while (retries > 0) {
           try {
