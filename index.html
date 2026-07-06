@@ -342,14 +342,9 @@
         <button id="header-action-btn" onclick="headerAction()" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer; font-size:0.82rem;">+ 新規</button>
     </div>
     <div class="nav-tabs">
-        <button class="tab active" id="tab-active" onclick="switchPage('active')">
-            <div style="font-size:0.9rem;">📈</div>
-            <div>PF</div>
-        </button>
-        <button class="tab" id="tab-history" onclick="switchPage('history')">
-            <div style="font-size:0.9rem;">📋</div>
-            <div>Log</div>
-        </button>
+        <button class="tab active" id="tab-pf" onclick="switchPage('pf')">
+    <span>📈📋</span><div>PF / Log</div>
+</button>
         <button class="tab rank-tab" id="tab-rank" onclick="switchPage('rank')">
             <div style="font-size:0.9rem;">🌐</div>
             <div>MC</div>
@@ -429,41 +424,29 @@
 </div>
 
 <!-- 取引中ページ -->
-<div id="page-active" class="page active">
-    <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
-        <button onclick="copyPF()" style="padding:5px 14px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:8px; font-weight:800; cursor:pointer; font-size:0.75rem;" id="copy-pf-btn">📋 コピー</button>
+<div id="page-pf" class="page active">
+    <div style="display:flex;gap:4px;margin-bottom:14px;background:#1a2535;border-radius:8px;padding:3px;max-width:300px;">
+        <button id="pf-subtab-btn-active" onclick="switchPFSubtab('active')"
+            style="flex:1;padding:7px;border:none;border-radius:6px;font-size:0.8rem;font-weight:800;cursor:pointer;background:var(--primary);color:white;">📈 PF</button>
+        <button id="pf-subtab-btn-history" onclick="switchPFSubtab('history')"
+            style="flex:1;padding:7px;border:none;border-radius:6px;font-size:0.8rem;font-weight:800;cursor:pointer;background:transparent;color:var(--text-sub);">📋 Log</button>
     </div>
-    <div id="active-container"></div>
-</div>
 
-<!-- 分析ページ -->
-<div id="page-history" class="page">
-    <div class="history-summary">
-    <div id="box-win" class="summary-box active-win" onclick="setHistoryFilter('win')">
-        <div class="summary-count" style="color: var(--win-deep);" id="count-win">0</div>
-        <div class="summary-label" style="color: var(--win-deep);">WIN</div>
+    <div id="pf-subtab-active">
+        <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
+            <button onclick="copyPF()" ...>📋 コピー</button>
+        </div>
+        <div id="active-container"></div>
     </div>
-    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px 12px; background:var(--card); border-radius:10px; border:2px solid var(--border); min-width:70px;">
-        <div id="win-rate-display" style="font-size:1.3rem; font-weight:900; line-height:1;">--%</div>
-        <div style="font-size:0.68rem; font-weight:800; color:var(--text-sub); margin-top:2px;">WR</div>
+
+    <div id="pf-subtab-history" style="display:none;">
+        <div class="history-summary">...</div>
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <button onclick="switchPage('cross')" ...>WIN×LOSE分析</button>
+        </div>
+        <section id="analysis-section" ...>...</section>
+        <div id="history-container"></div>
     </div>
-    <div id="box-lose" class="summary-box" onclick="setHistoryFilter('lose')">
-        <div class="summary-count" style="color: var(--lose-deep);" id="count-lose">0</div>
-        <div class="summary-label" style="color: var(--lose-deep);">LOSE</div>
-    </div>
-</div>
-<div style="display:flex; gap:8px; margin-bottom:10px;">
-    <button onclick="switchPage('cross')" 
-        style="flex:1; padding:8px; background:#1e1b4b; border:1px solid #4f46e5; 
-        color:#a5b4fc; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.75rem;">
-        WIN×LOSE分析
-    </button>
-</div>
-    <section id="analysis-section" style="display:none; margin-bottom: 10px; padding: 10px 12px;">
-        <h3 id="analysis-title" style="margin: 0 0 8px 0; font-size: 0.82rem; font-weight: 800;"></h3>
-        <div id="analysis-content"></div>
-    </section>
-    <div id="history-container"></div>
 </div>
 
 <!-- ランキングページ (コード1移植) -->
@@ -781,7 +764,7 @@
 <!-- WIN×LOSE分析ページ -->
 <div id="page-cross" class="page">
     <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
-        <button onclick="switchPage('history')" 
+        <button onclick="switchPage('pf'); switchPFSubtab('history');" 
             style="background:none; border:none; color:var(--text-sub); cursor:pointer; font-size:0.8rem;">
             ← 戻る
         </button>
@@ -2005,6 +1988,8 @@ let currentHistoryFilter = 'win';
 let currentPage = 'active';
 
 // ======== ページ切替 ========
+let currentPFSubtab = 'active'; // 既存のデフォルト表示(取引中を最初に見せる)を維持
+
 function switchPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -2013,11 +1998,22 @@ function switchPage(pageId) {
     if(tab) tab.classList.add('active');
     currentPage = pageId;
     const btn = document.getElementById('header-action-btn');
-btn.textContent = '+ 新規';
-btn.style.color = 'var(--primary)';
+    btn.textContent = '+ 新規'; btn.style.color = 'var(--primary)';
     if (pageId === 'cross') renderCrossAnalysis();
     if (pageId === 'rank' && rankMarketData.length > 0) renderRankTable();
-if(window.lucide) lucide.createIcons();
+    if (pageId === 'pf') switchPFSubtab(currentPFSubtab);
+    if(window.lucide) lucide.createIcons();
+}
+
+function switchPFSubtab(tab) {
+    currentPFSubtab = tab;
+    const isActive = tab === 'active';
+    document.getElementById('pf-subtab-active').style.display  = isActive ? 'block' : 'none';
+    document.getElementById('pf-subtab-history').style.display = isActive ? 'none'  : 'block';
+    document.getElementById('pf-subtab-btn-active').style.background  = isActive ? 'var(--primary)' : 'transparent';
+    document.getElementById('pf-subtab-btn-active').style.color       = isActive ? 'white' : 'var(--text-sub)';
+    document.getElementById('pf-subtab-btn-history').style.background = isActive ? 'transparent' : 'var(--primary)';
+    document.getElementById('pf-subtab-btn-history').style.color      = isActive ? 'var(--text-sub)' : 'white';
 }
 
 function headerAction() {
@@ -2096,7 +2092,7 @@ async function registerTrade() {
     try {
         await fetch(TRADE_API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newTrade)});
         nameEl.value=''; priceEl.value=''; memoEl.value='';
-        renderEntryChecks(); await loadTrades(); switchPage('active');
+renderEntryChecks(); await loadTrades(); switchPage('pf'); switchPFSubtab('active');
     } catch(err){ console.error(err); }
 }
 
