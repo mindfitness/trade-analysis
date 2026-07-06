@@ -337,7 +337,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:baseline; gap:7px;">
             <h1 style="margin:0; font-size:1.05rem; font-weight:900; color:white;">Trade Analysis</h1>
-            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.1.4</span>
+            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.1.5</span>
         </div>
         <button id="header-action-btn" onclick="headerAction()" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer; font-size:0.82rem;">+ 新規</button>
     </div>
@@ -1106,7 +1106,30 @@
             </section>
         </div>
     </div>
- 
+
+    <!-- トレードメモ（コード内に直接記述・表示専用） -->
+    <div style="margin-bottom:10px;">
+        <button onclick="toggleTradeMemo(this)"
+            style="width:100%; display:flex; justify-content:space-between; align-items:center;
+                   padding:8px 12px; background:#0f2a1e; border:1px solid #10b981;
+                   border-radius:8px; cursor:pointer; color:var(--win-deep);">
+            <div style="display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:800;">
+                <i data-lucide="notebook-pen" style="width:14px;"></i> メモ
+            </div>
+            <span id="trade-memo-chevron" style="font-size:0.7rem; color:#10b981;">▼ 開く</span>
+        </button>
+        <div id="trade-memo-body" style="display:none; margin-top:6px;">
+            <section style="margin-bottom:0;">
+                <!--
+                    ↓↓↓ ここに直接メモを書いて保存（このHTMLコード自体が保存場所）↓↓↓
+                    改行やタグはそのまま反映されます。
+                -->
+                <div style="font-size:0.82rem; line-height:1.8; color:var(--text-main); white-space:pre-wrap;">段階指値、ETFオプションデータ、陽線引けのみホールド、ETFのボリンジャータッチ
+</div>
+                <!-- ↑↑↑ ここまで ↑↑↑ -->
+            </section>
+        </div>
+    </div>
 
   </div><!-- /screen-subtab-func -->
 
@@ -2667,6 +2690,16 @@ function copyStaticPrompt(elementId, btn) {
 function togglePromptStock(btn) {
     const body = document.getElementById('prompt-stock-body');
     const chevron = document.getElementById('prompt-stock-chevron');
+    const isOpen = body.style.display !== 'none';
+    body.style.display = isOpen ? 'none' : 'block';
+    chevron.textContent = isOpen ? '▼ 開く' : '▲ 閉じる';
+    btn.style.borderRadius = isOpen ? '8px' : '8px 8px 0 0';
+    if (window.lucide) lucide.createIcons();
+}
+
+function toggleTradeMemo(btn) {
+    const body = document.getElementById('trade-memo-body');
+    const chevron = document.getElementById('trade-memo-chevron');
     const isOpen = body.style.display !== 'none';
     body.style.display = isOpen ? 'none' : 'block';
     chevron.textContent = isOpen ? '▼ 開く' : '▲ 閉じる';
