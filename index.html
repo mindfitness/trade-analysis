@@ -337,7 +337,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:baseline; gap:7px;">
             <h1 style="margin:0; font-size:1.05rem; font-weight:900; color:white;">Trade Analysis</h1>
-            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.1.5</span>
+            <span id="build-version" style="font-size:0.65rem; font-weight:700; color:#64748b;">v1.1.6</span>
         </div>
         <button id="header-action-btn" onclick="headerAction()" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer; font-size:0.82rem;">+ 新規</button>
     </div>
@@ -539,6 +539,17 @@
     <div style="flex:1;"></div>
     <span id="r2-breadth-adj" style="font-size:0.72rem;font-weight:900;padding:2px 10px;border-radius:4px;background:#1a2234;color:#4a6080;">--</span>
   </div>
+  <!-- 既存の「セクター広がり補正」行の直後に追加 -->
+<div style="display:flex;align-items:center;gap:8px;">
+  <span style="font-size:0.7rem;color:#8899aa;width:110px;flex-shrink:0;">連続陽線/陰線補正</span>
+  <div style="flex:1;"></div>
+  <span id="r2-candle-adj" style="font-size:0.72rem;font-weight:900;padding:2px 10px;border-radius:4px;background:#1a2234;color:#4a6080;">--</span>
+</div>
+<div style="display:flex;align-items:center;gap:8px;">
+  <span style="font-size:0.7rem;color:#8899aa;width:110px;flex-shrink:0;">Pocket Pivot補正</span>
+  <div style="flex:1;"></div>
+  <span id="r2-pp-adj" style="font-size:0.72rem;font-weight:900;padding:2px 10px;border-radius:4px;background:#1a2234;color:#4a6080;">--</span>
+</div>
         </div>
       </div>
     </div>
@@ -753,6 +764,54 @@
         </div>
       </div>
     </div>
+    
+    <div class="rank2-section">
+  <div class="rank2-title">陽線3連続 / 陰線3連続（反転するまで継続）</div>
+  <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
+    <div style="display:flex; align-items:center; gap:6px;">
+      <span style="font-size:0.62rem; color:#4a6080; font-weight:700;">陽線継続中</span>
+      <span id="candle-bull-badge" class="ema21-score-badge ema21-score-red">-- / -- &nbsp;(--%)</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <span style="font-size:0.62rem; color:#4a6080; font-weight:700;">陰線継続中</span>
+      <span id="candle-bear-badge" class="ema21-score-badge ema21-score-green">-- / -- &nbsp;(--%)</span>
+    </div>
+  </div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+    <div>
+      <div style="font-size:0.65rem; font-weight:800; color:#10b981; margin-bottom:6px;">陽線3連続 継続中</div>
+      <div id="candle-bull-list" style="display:flex; flex-wrap:wrap; gap:5px;"></div>
+    </div>
+    <div>
+      <div style="font-size:0.65rem; font-weight:800; color:#ef4444; margin-bottom:6px;">陰線3連続 継続中</div>
+      <div id="candle-bear-list" style="display:flex; flex-wrap:wrap; gap:5px;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="rank2-section">
+  <div class="rank2-title">Pocket Pivot（陽線 / 陰線・反転するまで継続）</div>
+  <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
+    <div style="display:flex; align-items:center; gap:6px;">
+      <span style="font-size:0.62rem; color:#4a6080; font-weight:700;">陽線PP継続中</span>
+      <span id="pp-bull-badge" class="ema21-score-badge ema21-score-red">-- / -- &nbsp;(--%)</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <span style="font-size:0.62rem; color:#4a6080; font-weight:700;">陰線PP継続中</span>
+      <span id="pp-bear-badge" class="ema21-score-badge ema21-score-green">-- / -- &nbsp;(--%)</span>
+    </div>
+  </div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+    <div>
+      <div style="font-size:0.65rem; font-weight:800; color:#10b981; margin-bottom:6px;">陽線Pocket Pivot 継続中</div>
+      <div id="pp-bull-list" style="display:flex; flex-wrap:wrap; gap:5px;"></div>
+    </div>
+    <div>
+      <div style="font-size:0.65rem; font-weight:800; color:#ef4444; margin-bottom:6px;">陰線Pocket Pivot 継続中</div>
+      <div id="pp-bear-list" style="display:flex; flex-wrap:wrap; gap:5px;"></div>
+    </div>
+  </div>
+</div>
 
     </div><!-- mc-subtab-mc の閉じ -->
 
@@ -1440,11 +1499,35 @@ function r2CalcSectorBreadthAdjustment() {
   return Math.max(-10, Math.min(10, adj));
 }
 
+// ★追加: 連続陽線/陰線シグナルによるスコア補正
+function r2CalcCandleStreakAdjustment() {
+  const total = rankMarketData.length;
+  if (total === 0) return 0;
+  const bull = rankMarketData.filter(d => d.candle_streak === 'bull').length;
+  const bear = rankMarketData.filter(d => d.candle_streak === 'bear').length;
+  const net = ((bull - bear) / total) * 100;
+  return Math.max(-10, Math.min(10, net * 0.15));
+}
+
+// ★追加: Pocket Pivotシグナルによるスコア補正
+function r2CalcPocketPivotAdjustment() {
+  const total = rankMarketData.length;
+  if (total === 0) return 0;
+  const bull = rankMarketData.filter(d => d.pocket_pivot === 'bull').length;
+  const bear = rankMarketData.filter(d => d.pocket_pivot === 'bear').length;
+  const net = ((bull - bear) / total) * 100;
+  return Math.max(-10, Math.min(10, net * 0.15));
+}
+
 function r2RenderScoreWithBreakout() {
   if (!r2BaseScore) return;
   const breakAdj   = r2CalcBreakAdjustment();
   const breadthAdj = r2CalcSectorBreadthAdjustment();
-  const total = Math.max(0, Math.min(100, Math.round(r2BaseScore.total + breakAdj + breadthAdj)));
+  const candleAdj  = r2CalcCandleStreakAdjustment();
+  const ppAdj      = r2CalcPocketPivotAdjustment();
+  const total = Math.max(0, Math.min(100, Math.round(
+    r2BaseScore.total + breakAdj + breadthAdj + candleAdj + ppAdj
+  )));
   r2DrawGauge(total);
 
   const adjEl = document.getElementById('r2-break-adj');
@@ -1470,6 +1553,32 @@ function r2RenderScoreWithBreakout() {
       breadthAdjEl.textContent = `${sign}${breadthAdj.toFixed(1)}点`;
       breadthAdjEl.style.background = breadthAdj > 0 ? '#064e3b' : breadthAdj < 0 ? '#7f1d1d' : '#1a2234';
       breadthAdjEl.style.color      = breadthAdj > 0 ? '#10b981' : breadthAdj < 0 ? '#ef4444' : '#4a6080';
+    }
+  }
+
+  const candleAdjEl = document.getElementById('r2-candle-adj');
+  if (candleAdjEl) {
+    if (rankMarketData.length === 0) {
+      candleAdjEl.textContent = '未取得';
+      candleAdjEl.style.background = '#1a2234'; candleAdjEl.style.color = '#4a6080';
+    } else {
+      const sign = candleAdj >= 0 ? '+' : '';
+      candleAdjEl.textContent = `${sign}${candleAdj.toFixed(1)}点`;
+      candleAdjEl.style.background = candleAdj > 0 ? '#064e3b' : candleAdj < 0 ? '#7f1d1d' : '#1a2234';
+      candleAdjEl.style.color      = candleAdj > 0 ? '#10b981' : candleAdj < 0 ? '#ef4444' : '#4a6080';
+    }
+  }
+
+  const ppAdjEl = document.getElementById('r2-pp-adj');
+  if (ppAdjEl) {
+    if (rankMarketData.length === 0) {
+      ppAdjEl.textContent = '未取得';
+      ppAdjEl.style.background = '#1a2234'; ppAdjEl.style.color = '#4a6080';
+    } else {
+      const sign = ppAdj >= 0 ? '+' : '';
+      ppAdjEl.textContent = `${sign}${ppAdj.toFixed(1)}点`;
+      ppAdjEl.style.background = ppAdj > 0 ? '#064e3b' : ppAdj < 0 ? '#7f1d1d' : '#1a2234';
+      ppAdjEl.style.color      = ppAdj > 0 ? '#10b981' : ppAdj < 0 ? '#ef4444' : '#4a6080';
     }
   }
 }
@@ -1764,35 +1873,38 @@ async function startRankUpdate() {
     let hit429 = false;
     await Promise.all(pair.map(async (sym, idx) => {
       try {
-        const res  = await fetch(`https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=60&apikey=${RANK_API_KEYS[idx]}`);
-        const data = await res.json();
-        if (data.status === 'error') {
-          if (data.code === 429) { hit429 = true; return; }
-          throw new Error(data.message);
-        }
-        const v = data.values;
-        const now = parseFloat(v[0].close);
-        const closes = v.map(x => parseFloat(x.close));
-        const sma50val = closes.slice(0, 50).reduce((a, b) => a + b, 0) / 50;
-        const k = 2 / 22;
-        let ema21val = closes.slice(0, 21).reduce((a, b) => a + b, 0) / 21;
-        for (let j = 20; j >= 0; j--) ema21val = closes[j] * k + ema21val * (1 - k);
-        if (rankMarketData.some(d => d.symbol === sym)) return; // 重複スキップ
-        rankMarketData.push({
-          symbol: sym,
-          day_change:      ((now - parseFloat(v[1].close))  / parseFloat(v[1].close))  * 100,
-          five_day_change: ((now - parseFloat(v[5]?.close  || v[v.length-1].close)) / parseFloat(v[5]?.close  || v[v.length-1].close)) * 100,
-          ten_day_change:  ((now - parseFloat(v[10]?.close || v[v.length-1].close)) / parseFloat(v[10]?.close || v[v.length-1].close)) * 100,
-          month_change:    ((now - parseFloat(v[21]?.close || v[v.length-1].close)) / parseFloat(v[21]?.close || v[v.length-1].close)) * 100,
-          above_ema21: now > ema21val,
-          above_sma50: now > sma50val,
-          breakout_ema21: rankDetectBreakout(closes, rankEma21AtOffset),
-          breakout_sma50: rankDetectBreakout(closes, rankSma50AtOffset),
-          breakdown_ema21: rankDetectBreakdown(closes, rankEma21AtOffset),
-          breakdown_sma50: rankDetectBreakdown(closes, rankSma50AtOffset),
-        });
-    
-        renderRankTable();
+        const res  = await fetch(`https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=90&apikey=${RANK_API_KEYS[idx]}`);
+const data = await res.json();
+if (data.status === 'error') {
+  if (data.code === 429) { hit429 = true; return; }
+  throw new Error(data.message);
+}
+const v = data.values;
+const now = parseFloat(v[0].close);
+const closes = v.map(x => parseFloat(x.close));
+const sma50val = closes.slice(0, 50).reduce((a, b) => a + b, 0) / 50;
+const k = 2 / 22;
+let ema21val = closes.slice(0, 21).reduce((a, b) => a + b, 0) / 21;
+for (let j = 20; j >= 0; j--) ema21val = closes[j] * k + ema21val * (1 - k);
+if (rankMarketData.some(d => d.symbol === sym)) return;
+rankMarketData.push({
+  symbol: sym,
+  day_change:      ((now - parseFloat(v[1].close))  / parseFloat(v[1].close))  * 100,
+  five_day_change: ((now - parseFloat(v[5]?.close  || v[v.length-1].close)) / parseFloat(v[5]?.close  || v[v.length-1].close)) * 100,
+  ten_day_change:  ((now - parseFloat(v[10]?.close || v[v.length-1].close)) / parseFloat(v[10]?.close || v[v.length-1].close)) * 100,
+  month_change:    ((now - parseFloat(v[21]?.close || v[v.length-1].close)) / parseFloat(v[21]?.close || v[v.length-1].close)) * 100,
+  above_ema21: now > ema21val,
+  above_sma50: now > sma50val,
+  breakout_ema21: rankDetectBreakout(closes, rankEma21AtOffset),
+  breakout_sma50: rankDetectBreakout(closes, rankSma50AtOffset),
+  breakdown_ema21: rankDetectBreakdown(closes, rankEma21AtOffset),
+  breakdown_sma50: rankDetectBreakdown(closes, rankSma50AtOffset),
+  // ★追加: 連続陽線/陰線・Pocket Pivotの持続状態
+  candle_streak: rankDetectCandleStreakState(v),
+  pocket_pivot:  rankDetectPocketPivotState(v),
+});
+
+renderRankTable();
       } catch(e) { console.error(e); }
     }));
     if (hit429) {
@@ -1873,6 +1985,47 @@ function rankDetectBreakdown(closes, maAtFn) {
     if (closes[off] >= ma) return true; // 直近3営業日以内に「上」だった日がある
   }
   return false;
+}
+
+// ===== 陽線3連続 / 陰線3連続の持続状態判定 =====
+// 反対の3連続が出るまで状態を維持する（最新側から遡り、最初に成立した3連続の方向を採用）
+function rankDetectCandleStreakState(values) {
+  const isBull = i => parseFloat(values[i].close) > parseFloat(values[i].open);
+  const isBear = i => parseFloat(values[i].close) < parseFloat(values[i].open);
+  for (let i = 0; i <= values.length - 3; i++) {
+    if (isBull(i) && isBull(i + 1) && isBull(i + 2)) return 'bull';
+    if (isBear(i) && isBear(i + 1) && isBear(i + 2)) return 'bear';
+  }
+  return null;
+}
+
+// ===== Pocket Pivot（陽線/陰線）の持続状態判定 =====
+// 既存スキャナー（screenTickerWithKey内のPP判定）と同一ロジックを流用
+// 陽線PP: 陽線 & 出来高>直近10日最大 & close>SMA50
+// 陰線PP: 陰線 & 出来高>直近10日最大 & close<SMA50（鏡合わせ）
+// 反対のPPが出るまで状態を維持する
+function rankDetectPocketPivotState(values) {
+  const closes  = values.map(v => parseFloat(v.close));
+  const opens   = values.map(v => parseFloat(v.open));
+  const volumes = values.map(v => parseFloat(v.volume));
+  const sma50arr = closes.map((_, i) => {
+    if (i + 50 > closes.length) return null;
+    return closes.slice(i, i + 50).reduce((a, b) => a + b, 0) / 50;
+  });
+  const maxScan = Math.max(0, Math.min(closes.length - 50, 40));
+  for (let i = 0; i < maxScan; i++) {
+    const prevVols = volumes.slice(i + 1, i + 11);
+    if (prevVols.length < 10) break;
+    const sma = sma50arr[i];
+    if (sma === null) continue;
+    const volOk = volumes[i] > Math.max(...prevVols);
+    if (!volOk) continue;
+    const isBull = closes[i] > opens[i];
+    const isBear = closes[i] < opens[i];
+    if (isBull && closes[i] > sma) return 'bull';
+    if (isBear && closes[i] < sma) return 'bear';
+  }
+  return null;
 }
 
 function renderRankTable() {
@@ -1958,6 +2111,10 @@ function renderBreakoutLists() {
   const smaUpList = rankMarketData.filter(d => d.breakout_sma50);
   const emaDnList = rankMarketData.filter(d => d.breakdown_ema21);
   const smaDnList = rankMarketData.filter(d => d.breakdown_sma50);
+  const candleBullList = rankMarketData.filter(d => d.candle_streak === 'bull');
+  const candleBearList = rankMarketData.filter(d => d.candle_streak === 'bear');
+  const ppBullList     = rankMarketData.filter(d => d.pocket_pivot === 'bull');
+  const ppBearList     = rankMarketData.filter(d => d.pocket_pivot === 'bear');
 
   const setUpBadge = (id, count) => {
     const el = document.getElementById(id);
@@ -1980,6 +2137,10 @@ function renderBreakoutLists() {
   setUpBadge('breakout-sma50-badge', smaUpList.length);
   setDnBadge('breakdown-ema21-badge', emaDnList.length);
   setDnBadge('breakdown-sma50-badge', smaDnList.length);
+  setUpBadge('candle-bull-badge', candleBullList.length);
+  setDnBadge('candle-bear-badge', candleBearList.length);
+  setUpBadge('pp-bull-badge', ppBullList.length);
+  setDnBadge('pp-bear-badge', ppBearList.length);
 
   const renderTags = (id, list, color) => {
     const el = document.getElementById(id);
@@ -1994,6 +2155,10 @@ function renderBreakoutLists() {
   renderTags('breakout-sma50-list', smaUpList, '#10b981');
   renderTags('breakdown-ema21-list', emaDnList, '#ef4444');
   renderTags('breakdown-sma50-list', smaDnList, '#ef4444');
+  renderTags('candle-bull-list', candleBullList, '#10b981');
+  renderTags('candle-bear-list', candleBearList, '#ef4444');
+  renderTags('pp-bull-list', ppBullList, '#10b981');
+  renderTags('pp-bear-list', ppBearList, '#ef4444');
 
   r2RenderScoreWithBreakout();
 }
