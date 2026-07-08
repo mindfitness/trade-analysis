@@ -696,6 +696,10 @@
 <button class="rank2-filter-btn" id="r2-rf-10d1m" onclick="r2ToggleFilter('10D>1M')">10D&gt;1M</button>
 <button class="rank2-filter-btn" id="r2-rf-ema21" onclick="r2ToggleFilter('EMA21↑')">EMA21↑</button>
 <button class="rank2-filter-btn" id="r2-rf-sma50" onclick="r2ToggleFilter('SMA50↑')">SMA50↑</button>
+<button class="rank2-filter-btn" id="r2-rf-candlebull" onclick="r2ToggleFilter('陽線3連続')">陽線3連続</button>
+<button class="rank2-filter-btn" id="r2-rf-candlebear" onclick="r2ToggleFilter('陰線3連続')">陰線3連続</button>
+<button class="rank2-filter-btn" id="r2-rf-ppbull" onclick="r2ToggleFilter('PP陽線')">PP陽線</button>
+<button class="rank2-filter-btn" id="r2-rf-ppbear" onclick="r2ToggleFilter('PP陰線')">PP陰線</button>
 <button class="rank2-filter-btn" onclick="r2ClearFilters()">解除</button>
       </div>
       <div id="rank-status" style="font-size:0.68rem;color:#4a6080;margin-bottom:8px;">Ready</div>
@@ -1283,7 +1287,7 @@
 <script>
 const a = '00', b = '00';
 const _h = btoa(a + b);
-const _u1 = '19', _u2 = '40';
+const _u1 = '11', _u2 = '11';
 const _hu = btoa(_u1 + _u2);
 
 function checkAuth() {
@@ -1970,6 +1974,10 @@ function r2ToggleFilter(f) {
   document.getElementById('r2-rf-10d1m').classList.toggle('active', r2ActiveFilters.includes('10D>1M'));
   document.getElementById('r2-rf-ema21').classList.toggle('active', r2ActiveFilters.includes('EMA21↑'));
   document.getElementById('r2-rf-sma50').classList.toggle('active', r2ActiveFilters.includes('SMA50↑'));
+  document.getElementById('r2-rf-candlebull').classList.toggle('active', r2ActiveFilters.includes('陽線3連続'));
+  document.getElementById('r2-rf-candlebear').classList.toggle('active', r2ActiveFilters.includes('陰線3連続'));
+  document.getElementById('r2-rf-ppbull').classList.toggle('active', r2ActiveFilters.includes('PP陽線'));
+  document.getElementById('r2-rf-ppbear').classList.toggle('active', r2ActiveFilters.includes('PP陰線'));
   renderRankTable();
 }
 function r2ClearFilters() {
@@ -1978,6 +1986,10 @@ function r2ClearFilters() {
   document.getElementById('r2-rf-10d1m').classList.remove('active');
   document.getElementById('r2-rf-ema21').classList.remove('active');
   document.getElementById('r2-rf-sma50').classList.remove('active');
+  document.getElementById('r2-rf-candlebull').classList.remove('active');
+  document.getElementById('r2-rf-candlebear').classList.remove('active');
+  document.getElementById('r2-rf-ppbull').classList.remove('active');
+  document.getElementById('r2-rf-ppbear').classList.remove('active');
   renderRankTable();
 }
 function toggleRankPin(symbol) {
@@ -2091,6 +2103,10 @@ function renderRankTable() {
   if (r2ActiveFilters.includes('10D>1M')) disp = disp.filter(d => d.ten_day_change  > d.month_change);
   if (r2ActiveFilters.includes('EMA21↑')) disp = disp.filter(d => d.above_ema21 === true);
 if (r2ActiveFilters.includes('SMA50↑')) disp = disp.filter(d => d.above_sma50 === true);
+if (r2ActiveFilters.includes('陽線3連続')) disp = disp.filter(d => d.candle_streak === 'bull');
+if (r2ActiveFilters.includes('陰線3連続')) disp = disp.filter(d => d.candle_streak === 'bear');
+if (r2ActiveFilters.includes('PP陽線')) disp = disp.filter(d => d.pocket_pivot === 'bull');
+if (r2ActiveFilters.includes('PP陰線')) disp = disp.filter(d => d.pocket_pivot === 'bear');
   disp.sort((a, b) => {
     if (rankCurrentSort.key === 'symbol')
       return rankCurrentSort.asc ? a.symbol.localeCompare(b.symbol) : b.symbol.localeCompare(a.symbol);
