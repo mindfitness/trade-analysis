@@ -1118,10 +1118,23 @@
     </section>
     
     <section style="margin-bottom:10px;">
-        <div style="display:flex; align-items:center; gap:6px; margin-bottom:10px;">
-            <i data-lucide="calculator" style="width:14px; color:var(--ai-accent);"></i>
-            <span style="font-size:0.8rem; font-weight:800; color:var(--ai-accent);">利益率カリキュレーター</span>
-        </div>
+    <div style="display:flex; align-items:center; gap:6px; margin-bottom:10px;">
+        <i data-lucide="calculator" style="width:14px; color:var(--ai-accent);"></i>
+        <span style="font-size:0.8rem; font-weight:800; color:var(--ai-accent);">利益率カリキュレーター</span>
+    </div>
+    <!-- モード切替 -->
+    <div style="display:flex; gap:4px; margin-bottom:10px; background:#1e1b4b; border-radius:8px; padding:3px;">
+        <button id="calc-mode-price" onclick="switchCalcMode('price')"
+            style="flex:1; padding:5px; border:none; border-radius:6px; font-size:0.68rem; font-weight:800; cursor:pointer; background:var(--ai-accent); color:white;">
+            価格 → 騰落率
+        </button>
+        <button id="calc-mode-pct" onclick="switchCalcMode('pct')"
+            style="flex:1; padding:5px; border:none; border-radius:6px; font-size:0.68rem; font-weight:800; cursor:pointer; background:transparent; color:var(--text-sub);">
+            騰落率 → 価格
+        </button>
+    </div>
+    <!-- モード①: 価格→騰落率 -->
+    <div id="calc-panel-price">
         <div style="display:flex; gap:8px; margin-bottom:8px;">
             <div style="flex:1;">
                 <div style="font-size:0.62rem; color:var(--text-sub); font-weight:700; margin-bottom:3px;">現在価格 ($)</div>
@@ -1134,7 +1147,7 @@
         </div>
         <div id="calc-result" style="display:none; background:var(--input-bg); border-radius:8px; border:1px solid var(--border); padding:10px 14px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-size:0.72rem; color:var(--text-sub); font-weight:600;">利益率</span>
+                <span style="font-size:0.72rem; color:var(--text-sub); font-weight:600;">騰落率</span>
                 <span id="calc-percent" style="font-size:1.6rem; font-weight:900;"></span>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
@@ -1142,7 +1155,31 @@
                 <span id="calc-diff" style="font-size:0.9rem; font-weight:800;"></span>
             </div>
         </div>
-    </section>
+    </div>
+    <!-- モード②: 騰落率→価格 -->
+    <div id="calc-panel-pct" style="display:none;">
+        <div style="display:flex; gap:8px; margin-bottom:8px;">
+            <div style="flex:1;">
+                <div style="font-size:0.62rem; color:var(--text-sub); font-weight:700; margin-bottom:3px;">現在価格 ($)</div>
+                <input type="number" id="calc-base-price" placeholder="例: 100.00" oninput="calcFromPct()" style="font-size:0.9rem;">
+            </div>
+            <div style="flex:1;">
+                <div style="font-size:0.62rem; color:var(--text-sub); font-weight:700; margin-bottom:3px;">騰落率 (%)</div>
+                <input type="number" id="calc-pct-input" placeholder="例: +30 or -10" oninput="calcFromPct()" style="font-size:0.9rem;">
+            </div>
+        </div>
+        <div id="calc-pct-result" style="display:none; background:var(--input-bg); border-radius:8px; border:1px solid var(--border); padding:10px 14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.72rem; color:var(--text-sub); font-weight:600;">目標価格</span>
+                <span id="calc-pct-price" style="font-size:1.6rem; font-weight:900;"></span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                <span style="font-size:0.72rem; color:var(--text-sub); font-weight:600;">差額</span>
+                <span id="calc-pct-diff" style="font-size:0.9rem; font-weight:800;"></span>
+            </div>
+        </div>
+    </div>
+</section>
 
      <!-- プロンプトストック アコーディオン -->
     <div style="margin-bottom:10px;">
@@ -1187,7 +1224,10 @@
                     ↓↓↓ ここに直接メモを書いて保存（このHTMLコード自体が保存場所）↓↓↓
                     改行やタグはそのまま反映されます。
                 -->
-                <div style="font-size:0.82rem; line-height:1.8; color:var(--text-main); white-space:pre-wrap;">NISA、基本単位2000ドル、強いセクタ×0.6指値、その他×1、段階指値(売買)、ORAT×反発(調整終了)、ETFのボリンジャータッチ
+                <div style="font-size:0.82rem; line-height:1.8; color:var(--text-main); white-space:pre-wrap;">①2K3%トレード(1day only)
+②MAロング(50,150,200)：スタート2000→3000(-20%)→5000(高値から-70％程度)
+③ブレイクアウト：スタート2000→3000(-30%)→5000(高値から-70％程度)
+NISA、強いセクタ×0.6指値、その他×1、段階指値(売買)、ORAT×反発(調整終了)、ETFのボリンジャータッチ
 </div>
                 <!-- ↑↑↑ ここまで ↑↑↑ -->
             </section>
@@ -3107,6 +3147,17 @@ function clearAutoPrice() {
 }
 
 // ======== カリキュレーター ========
+// ======== カリキュレーター ========
+function switchCalcMode(mode) {
+    const isPrice = mode === 'price';
+    document.getElementById('calc-panel-price').style.display = isPrice ? 'block' : 'none';
+    document.getElementById('calc-panel-pct').style.display   = isPrice ? 'none'  : 'block';
+    document.getElementById('calc-mode-price').style.background = isPrice ? 'var(--ai-accent)' : 'transparent';
+    document.getElementById('calc-mode-price').style.color      = isPrice ? 'white' : 'var(--text-sub)';
+    document.getElementById('calc-mode-pct').style.background   = isPrice ? 'transparent' : 'var(--ai-accent)';
+    document.getElementById('calc-mode-pct').style.color        = isPrice ? 'var(--text-sub)' : 'white';
+}
+
 function calcProfit() {
     const entry = parseFloat(document.getElementById('calc-entry').value);
     const target = parseFloat(document.getElementById('calc-target').value);
@@ -3120,6 +3171,22 @@ function calcProfit() {
     document.getElementById('calc-percent').style.color = color;
     document.getElementById('calc-diff').innerText = (isPos ? '+' : '') + '$' + diff.toFixed(2);
     document.getElementById('calc-diff').style.color = color;
+    resultEl.style.display = 'block';
+}
+
+function calcFromPct() {
+    const base = parseFloat(document.getElementById('calc-base-price').value);
+    const pct  = parseFloat(document.getElementById('calc-pct-input').value);
+    const resultEl = document.getElementById('calc-pct-result');
+    if (!base || isNaN(pct) || base <= 0) { resultEl.style.display = 'none'; return; }
+    const targetPrice = base * (1 + pct / 100);
+    const diff = targetPrice - base;
+    const isPos = pct >= 0;
+    const color = isPos ? 'var(--win-deep)' : 'var(--lose-deep)';
+    document.getElementById('calc-pct-price').innerText = '$' + targetPrice.toFixed(2);
+    document.getElementById('calc-pct-price').style.color = color;
+    document.getElementById('calc-pct-diff').innerText = (isPos ? '+' : '') + '$' + diff.toFixed(2);
+    document.getElementById('calc-pct-diff').style.color = color;
     resultEl.style.display = 'block';
 }
 
