@@ -1363,10 +1363,32 @@
             <div id="strat-wr-val" style="font-size:0.9rem; font-weight:900; color:#94a3b8;"></div>
           </div>
         </div>
+
+        <!-- 損益率バー -->
+        <div style="border-top:1px solid var(--border); padding-top:8px; margin-bottom:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span style="font-size:0.55rem; color:var(--lose-deep); font-weight:700;">損失率 (Stop)</span>
+            <span id="strat-loss-pct" style="font-size:0.82rem; font-weight:900; color:var(--lose-deep);"></span>
+          </div>
+          <div style="height:5px; background:#334155; border-radius:3px; overflow:hidden; margin-bottom:6px;">
+            <div id="strat-loss-bar" style="height:100%; background:var(--lose-deep); border-radius:3px; width:0%; transition:width 0.3s;"></div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span style="font-size:0.55rem; color:var(--win-deep); font-weight:700;">利益率 (1st Target)</span>
+            <span id="strat-gain-pct" style="font-size:0.82rem; font-weight:900; color:var(--win-deep);"></span>
+          </div>
+          <div style="height:5px; background:#334155; border-radius:3px; overflow:hidden;">
+            <div id="strat-gain-bar" style="height:100%; background:var(--win-deep); border-radius:3px; width:0%; transition:width 0.3s;"></div>
+          </div>
+        </div>
+
         <div style="border-top:1px solid var(--border); padding-top:8px; display:grid; grid-template-columns:1fr 1fr; gap:6px;">
           <div style="background:#064e3b; border:1px solid #10b981; border-radius:6px; padding:6px 8px;">
             <div style="font-size:0.55rem; color:#6ee7b7; font-weight:700; margin-bottom:2px;">① BE移動 (+1R到達時)</div>
-            <div id="strat-be-val" style="font-size:0.85rem; font-weight:900; color:#10b981;"></div>
+            <div style="display:flex; align-items:baseline; gap:5px;">
+              <div id="strat-be-val" style="font-size:0.85rem; font-weight:900; color:#10b981;"></div>
+              <div id="strat-be-pct" style="font-size:0.65rem; font-weight:800; color:#6ee7b7;"></div>
+            </div>
           </div>
           <div style="background:#1e1b4b; border:1px solid #6366f1; border-radius:6px; padding:6px 8px;">
             <div style="font-size:0.55rem; color:#a5b4fc; font-weight:700; margin-bottom:2px;">② 一部利確 (1:3到達時)</div>
@@ -1383,7 +1405,7 @@
 
       <!-- 保存ボタン -->
       <button onclick="stratSave()" style="width:100%; padding:10px; background:#06b6d4; color:#0f172a; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.85rem;">
-        💾 戦略を保存
+        💾 保存
       </button>
     </section>
   </div>
@@ -5006,12 +5028,24 @@ function stratCalcRR() {
   const rrNum = parseFloat(rr);
   const rrColor = rrNum >= 3 ? 'var(--win-deep)' : rrNum >= 2 ? '#f59e0b' : 'var(--lose-deep)';
 
+  const lossPct = Math.abs((stop - entry) / entry * 100);
+  const gainPct = Math.abs((target - entry) / entry * 100);
+  // バー幅: 損失を基準(100%)としてそれぞれ相対表示、最大100%でキャップ
+  const lossBarW = Math.min(lossPct / 20 * 100, 100);
+  const gainBarW = Math.min(gainPct / 20 * 100, 100);
+
   document.getElementById('strat-risk-val').innerText   = risk.toFixed(2);
   document.getElementById('strat-reward-val').innerText = reward.toFixed(2);
   document.getElementById('strat-rr-val').innerText     = `1 : ${rr}`;
   document.getElementById('strat-rr-val').style.color   = rrColor;
   document.getElementById('strat-wr-val').innerText     = `${wr}%`;
+  document.getElementById('strat-loss-pct').innerText   = `-${lossPct.toFixed(2)}%`;
+  document.getElementById('strat-gain-pct').innerText   = `+${gainPct.toFixed(2)}%`;
+  document.getElementById('strat-loss-bar').style.width = lossBarW + '%';
+  document.getElementById('strat-gain-bar').style.width = gainBarW + '%';
+  const bePct = Math.abs((beTrigger - entry) / entry * 100);
   document.getElementById('strat-be-val').innerText     = `$${beTrigger.toFixed(2)}`;
+  document.getElementById('strat-be-pct').innerText     = `(+${bePct.toFixed(2)}%)`;
   document.getElementById('strat-tp-val').innerText     = `$${partialTP.toFixed(2)}`;
   box.style.display = 'block';
 }
@@ -5047,7 +5081,7 @@ async function stratSave() {
       body: JSON.stringify(payload)
     });
     if (!res.ok) throw new Error('保存失敗');
-    alert(`${ticker} の戦略を保存しました`);
+    alert(`${ticker} を保存しました`);
     document.getElementById('strat-ticker').value = '';
     document.getElementById('strat-memo').value   = '';
     stratClearAuto();
@@ -5165,7 +5199,7 @@ async function stratRefreshAll() {
 }
 
 async function stratDelete(key) {
-  if (!confirm('この戦略を削除しますか？')) return;
+  if (!confirm('削除しますか？')) return;
   try {
     await fetch(`${STRAT_DB_URL}/${key}.json`, { method: 'DELETE' });
     const card = document.getElementById(`strat-card-${key}`);
