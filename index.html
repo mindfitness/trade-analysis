@@ -525,7 +525,7 @@
             <span id="r2-gap-alert" style="font-size:0.72rem;font-weight:900;padding:2px 10px;border-radius:4px;background:#1a2234;color:#4a6080;">--</span>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:0.7rem;color:#8899aa;width:110px;flex-shrink:0;">SPX vs SMA50</span>
+            <span style="font-size:0.7rem;color:#8899aa;width:110px;flex-shrink:0;">SPY vs SMA50</span>
             <div style="flex:1;"></div>
             <span id="r2-spx-sma50-alert" style="font-size:0.72rem;font-weight:900;padding:2px 10px;border-radius:4px;background:#1a2234;color:#4a6080;">--</span>
           </div>
@@ -1665,8 +1665,8 @@ function r2RenderScoreWithBreakout() {
   }
 }
 
-// SPX vs SMA50 アラート
-async function r2FetchSpxSma50Alert() {
+// SPY vs SMA50 アラート
+async function r2FetchSpySma50Alert() {
   const el = document.getElementById('r2-spx-sma50-alert');
   if (!el) return;
   el.textContent = '確認中...';
@@ -1675,7 +1675,7 @@ async function r2FetchSpxSma50Alert() {
   el.style.border = '';
   try {
     const res = await fetch(
-      `https://api.twelvedata.com/time_series?symbol=SPX&interval=1day&outputsize=51&apikey=${RANK_API_KEYS[0]}`
+      `https://api.twelvedata.com/time_series?symbol=SPY&interval=1day&outputsize=51&apikey=${RANK_API_KEYS[0]}`
     );
     const json = await res.json();
     if (!json.values || json.values.length < 51) throw new Error('データ不足');
@@ -1794,8 +1794,8 @@ vixValEl.innerText = sc.vixPenalty > 0
     }
   })();
 
-  // SPX vs SMA50 アラート
-  r2FetchSpxSma50Alert();
+  // SPY vs SMA50 アラート
+  r2FetchSpySma50Alert();
 
   // 季節性アノマリー（データ取得とは無関係に即時判定）
   r2RenderSeasonalAlert();
@@ -5323,7 +5323,7 @@ window.onload = async () => {
         r2DrawGauge(0);
     }
     r2RenderSeasonalAlert(); // ETFデータの有無に関わらず常に表示
-    r2FetchSpxSma50Alert();  // SPX vs SMA50 常時表示
+    r2FetchSpySma50Alert();  // SPY vs SMA50 常時表示
     // ランキングデータをKVから復元
     if (mc.rankData && Array.isArray(mc.rankData) && mc.rankData.length > 0) {
         rankMarketData = mc.rankData;
