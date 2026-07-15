@@ -343,13 +343,9 @@
     </div>
     <div class="nav-tabs">
         <button class="tab active" id="tab-active" onclick="switchPage('active')">
-            <div style="font-size:0.9rem;">📈</div>
-            <div>PF</div>
-        </button>
-        <button class="tab" id="tab-history" onclick="switchPage('history')">
-            <div style="font-size:0.9rem;">📋</div>
-            <div>Log</div>
-        </button>
+    <div style="font-size:0.9rem;">📈</div>
+    <div>PF</div>
+</button>
         <button class="tab rank-tab" id="tab-rank" onclick="switchPage('rank')">
             <div style="font-size:0.9rem;">🌐</div>
             <div>MC</div>
@@ -428,43 +424,62 @@
     </section>
 </div>
 
-<!-- 取引中ページ -->
+<!-- PF + Log 統合ページ -->
 <div id="page-active" class="page active">
+
+  <!-- サブタブ -->
+  <div style="display:flex; gap:4px; margin-bottom:10px; background:#334155; border-radius:8px; padding:3px;">
+    <button id="subtab-pf" onclick="switchPFSubtab('pf')"
+      style="flex:1; padding:5px; border:none; border-radius:6px; font-size:0.68rem; font-weight:800; cursor:pointer; background:var(--primary); color:white;">
+      PF
+    </button>
+    <button id="subtab-log" onclick="switchPFSubtab('log')"
+      style="flex:1; padding:5px; border:none; border-radius:6px; font-size:0.68rem; font-weight:800; cursor:pointer; background:transparent; color:var(--text-sub);">
+      Log
+    </button>
+  </div>
+
+  <!-- PF本体 -->
+  <div id="pf-subtab-pf">
     <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
-        <button onclick="copyPF()" style="padding:5px 14px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:8px; font-weight:800; cursor:pointer; font-size:0.75rem;" id="copy-pf-btn">📋 コピー</button>
+      <button onclick="copyPF()" style="padding:5px 14px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:8px; font-weight:800; cursor:pointer; font-size:0.75rem;" id="copy-pf-btn">📋 コピー</button>
     </div>
     <div id="active-container"></div>
-</div>
+  </div>
 
-<!-- 分析ページ -->
-<div id="page-history" class="page">
+  <!-- Log本体 -->
+  <div id="pf-subtab-log" style="display:none;">
     <div class="history-summary">
-    <div id="box-win" class="summary-box active-win" onclick="setHistoryFilter('win')">
+      <div id="box-win" class="summary-box active-win" onclick="setHistoryFilter('win')">
         <div class="summary-count" style="color: var(--win-deep);" id="count-win">0</div>
         <div class="summary-label" style="color: var(--win-deep);">WIN</div>
-    </div>
-    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px 12px; background:var(--card); border-radius:10px; border:2px solid var(--border); min-width:70px;">
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px 12px; background:var(--card); border-radius:10px; border:2px solid var(--border); min-width:70px;">
         <div id="win-rate-display" style="font-size:1.3rem; font-weight:900; line-height:1;">--%</div>
         <div style="font-size:0.68rem; font-weight:800; color:var(--text-sub); margin-top:2px;">WR</div>
-    </div>
-    <div id="box-lose" class="summary-box" onclick="setHistoryFilter('lose')">
+      </div>
+      <div id="box-lose" class="summary-box" onclick="setHistoryFilter('lose')">
         <div class="summary-count" style="color: var(--lose-deep);" id="count-lose">0</div>
         <div class="summary-label" style="color: var(--lose-deep);">LOSE</div>
+      </div>
     </div>
-</div>
-<div style="display:flex; gap:8px; margin-bottom:10px;">
-    <button onclick="switchPage('cross')" 
-        style="flex:1; padding:8px; background:#1e1b4b; border:1px solid #4f46e5; 
+    <div style="display:flex; gap:8px; margin-bottom:10px;">
+      <button onclick="switchPage('cross')"
+        style="flex:1; padding:8px; background:#1e1b4b; border:1px solid #4f46e5;
         color:#a5b4fc; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.75rem;">
         WIN×LOSE分析
-    </button>
-</div>
+      </button>
+    </div>
     <section id="analysis-section" style="display:none; margin-bottom: 10px; padding: 10px 12px;">
-        <h3 id="analysis-title" style="margin: 0 0 8px 0; font-size: 0.82rem; font-weight: 800;"></h3>
-        <div id="analysis-content"></div>
+      <h3 id="analysis-title" style="margin: 0 0 8px 0; font-size: 0.82rem; font-weight: 800;"></h3>
+      <div id="analysis-content"></div>
     </section>
     <div id="history-container"></div>
+  </div>
+
 </div>
+
+
 
 <!-- ランキングページ (コード1移植) -->
 <div id="page-rank" class="page">
@@ -849,7 +864,7 @@
 <!-- WIN×LOSE分析ページ -->
 <div id="page-cross" class="page">
     <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
-        <button onclick="switchPage('history')" 
+        <button onclick="switchPage('active'); switchPFSubtab('log')"
             style="background:none; border:none; color:var(--text-sub); cursor:pointer; font-size:0.8rem;">
             ← 戻る
         </button>
@@ -2348,11 +2363,23 @@ function switchPage(pageId) {
     if(tab) tab.classList.add('active');
     currentPage = pageId;
     const btn = document.getElementById('header-action-btn');
-btn.textContent = '+ 新規';
-btn.style.color = 'var(--primary)';
+    btn.textContent = '+ 新規';
+    btn.style.color = 'var(--primary)';
     if (pageId === 'cross') renderCrossAnalysis();
     if (pageId === 'rank' && rankMarketData.length > 0) renderRankTable();
-if(window.lucide) lucide.createIcons();
+    if(window.lucide) lucide.createIcons();
+}
+
+function switchPFSubtab(tab) {
+    const isPF = tab === 'pf';
+    document.getElementById('pf-subtab-pf').style.display  = isPF ? 'block' : 'none';
+    document.getElementById('pf-subtab-log').style.display = isPF ? 'none'  : 'block';
+    const btnPF  = document.getElementById('subtab-pf');
+    const btnLog = document.getElementById('subtab-log');
+    btnPF.style.background  = isPF ? 'var(--primary)' : 'transparent';
+    btnPF.style.color       = isPF ? 'white' : 'var(--text-sub)';
+    btnLog.style.background = isPF ? 'transparent' : '#334155';
+    btnLog.style.color      = isPF ? 'var(--text-sub)' : 'white';
 }
 
 function headerAction() {
