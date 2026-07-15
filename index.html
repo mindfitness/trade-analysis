@@ -49,6 +49,7 @@
         .tab.theme-tab.active { background: var(--theme-accent); color: white; }
         .tab.perfSector-tab.active { background: var(--perf-accent); color: #0f172a; }
         .tab.rank-tab.active { background: var(--rank-accent); color: white; }
+.tab.strategy-tab.active { background: #06b6d4; color: #0f172a; }
 
         .page { padding: 8px; display: none; }
         .page.active { display: block; }
@@ -346,6 +347,10 @@
     <div style="font-size:0.9rem;">📈</div>
     <div>PF</div>
 </button>
+        <button class="tab strategy-tab" id="tab-strategy" onclick="switchPage('strategy')">
+            <div style="font-size:0.9rem;">⚔</div>
+            <div>Strategy</div>
+        </button>
         <button class="tab rank-tab" id="tab-rank" onclick="switchPage('rank')">
             <div style="font-size:0.9rem;">🌐</div>
             <div>MC</div>
@@ -1290,6 +1295,115 @@
   </div><!-- /screen-subtab-func -->
 
 </div><!-- /page-screen -->
+
+<!-- Strategyページ -->
+<div id="page-strategy" class="page">
+
+  <div style="display:flex; gap:4px; margin-bottom:10px; background:#334155; border-radius:8px; padding:3px;">
+    <button id="strat-subtab-entry-btn" onclick="stratSwitchSubtab('entry')"
+      style="flex:1; padding:5px; border:none; border-radius:6px; font-size:0.68rem; font-weight:800; cursor:pointer; background:#06b6d4; color:#0f172a;">
+      新規エントリー
+    </button>
+    <button id="strat-subtab-list-btn" onclick="stratSwitchSubtab('list')"
+      style="flex:1; padding:5px; border:none; border-radius:6px; font-size:0.68rem; font-weight:800; cursor:pointer; background:transparent; color:var(--text-sub);">
+      保存済み
+    </button>
+  </div>
+
+  <!-- 新規エントリーサブタブ -->
+  <div id="strat-subtab-entry">
+    <section>
+      <div style="font-size:0.78rem; font-weight:800; color:#06b6d4; margin-bottom:8px; letter-spacing:0.05em;">⚔ STRATEGY ENTRY</div>
+
+      <!-- Ticker入力 -->
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
+        <div style="flex:1; position:relative;">
+          <input type="text" id="strat-ticker" placeholder="NVDA"
+            style="width:100%; text-transform:uppercase; font-size:0.95rem; font-weight:800;"
+            autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
+            oninput="stratClearAuto()"
+            onblur="this.value=this.value.toUpperCase(); stratAutoFetch()">
+        </div>
+        <span id="strat-fetch-status" style="display:flex; align-items:center; font-size:0.65rem; color:var(--text-sub); min-width:40px;"></span>
+      </div>
+
+      <!-- Entry / Stop / Target 入力行 -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:8px;">
+        <div>
+          <div style="font-size:0.58rem; color:var(--text-sub); font-weight:700; margin-bottom:3px;">Entry ($)</div>
+          <input type="number" id="strat-entry" placeholder="自動取得" oninput="stratCalcRR()" style="font-size:0.85rem;">
+        </div>
+        <div>
+          <div style="font-size:0.58rem; color:var(--lose-deep); font-weight:700; margin-bottom:3px;">Stop ($) <span style="color:#475569; font-weight:400;">← EMA21 Low</span></div>
+          <input type="number" id="strat-stop" placeholder="自動計算" oninput="stratCalcRR()" style="font-size:0.85rem;">
+        </div>
+        <div>
+          <div style="font-size:0.58rem; color:var(--win-deep); font-weight:700; margin-bottom:3px;">1st Target ($) <span style="color:#475569; font-weight:400;">RR=3</span></div>
+          <input type="number" id="strat-target" placeholder="自動計算" oninput="stratCalcRR()" style="font-size:0.85rem;">
+        </div>
+      </div>
+
+      <!-- RR結果 -->
+      <div id="strat-rr-box" style="display:none; background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:8px;">
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:8px;">
+          <div style="text-align:center;">
+            <div style="font-size:0.55rem; color:var(--text-sub); font-weight:700; margin-bottom:2px;">Risk(1R)</div>
+            <div id="strat-risk-val" style="font-size:0.9rem; font-weight:900;"></div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:0.55rem; color:var(--text-sub); font-weight:700; margin-bottom:2px;">Reward</div>
+            <div id="strat-reward-val" style="font-size:0.9rem; font-weight:900;"></div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:0.55rem; color:var(--text-sub); font-weight:700; margin-bottom:2px;">RR</div>
+            <div id="strat-rr-val" style="font-size:1.1rem; font-weight:900; color:#06b6d4;"></div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:0.55rem; color:var(--text-sub); font-weight:700; margin-bottom:2px;">必要勝率</div>
+            <div id="strat-wr-val" style="font-size:0.9rem; font-weight:900; color:#94a3b8;"></div>
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--border); padding-top:8px; display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <div style="background:#064e3b; border:1px solid #10b981; border-radius:6px; padding:6px 8px;">
+            <div style="font-size:0.55rem; color:#6ee7b7; font-weight:700; margin-bottom:2px;">① BE移動 (+1R到達時)</div>
+            <div id="strat-be-val" style="font-size:0.85rem; font-weight:900; color:#10b981;"></div>
+          </div>
+          <div style="background:#1e1b4b; border:1px solid #6366f1; border-radius:6px; padding:6px 8px;">
+            <div style="font-size:0.55rem; color:#a5b4fc; font-weight:700; margin-bottom:2px;">② 一部利確 (1:3到達時)</div>
+            <div id="strat-tp-val" style="font-size:0.9rem; font-weight:900; color:#818cf8;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADR表示エリア -->
+      <div id="strat-adr-area" style="display:none; margin-bottom:8px;"></div>
+
+      <!-- メモ -->
+      <textarea id="strat-memo" placeholder="メモ" rows="2" style="margin-bottom:8px;"></textarea>
+
+      <!-- 保存ボタン -->
+      <button onclick="stratSave()" style="width:100%; padding:10px; background:#06b6d4; color:#0f172a; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.85rem;">
+        💾 戦略を保存
+      </button>
+    </section>
+  </div>
+
+  <!-- 保存済みリストサブタブ -->
+  <div id="strat-subtab-list" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <span style="font-size:0.72rem; font-weight:700; color:var(--text-sub);">保存済み戦略</span>
+      <button onclick="stratRefreshAll()" id="strat-refresh-all-btn"
+        style="padding:5px 14px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:8px; font-weight:800; cursor:pointer; font-size:0.72rem;">
+        📊 一括更新
+      </button>
+    </div>
+    <div id="strat-list-container">
+      <p style="text-align:center; color:var(--text-sub); padding:20px; font-size:0.78rem;">読み込み中...</p>
+    </div>
+  </div>
+
+</div>
+<!-- /Strategyページ -->
 
 <!-- テーマ作成モーダル -->
 <div id="theme-overlay">
@@ -2366,6 +2480,7 @@ function switchPage(pageId) {
     btn.textContent = '+ 新規';
     btn.style.color = 'var(--primary)';
     if (pageId === 'cross') renderCrossAnalysis();
+if (pageId === 'strategy') stratLoadList();
     if (pageId === 'rank' && rankMarketData.length > 0) renderRankTable();
     if(window.lucide) lucide.createIcons();
 }
@@ -4732,6 +4847,336 @@ async function mcLoadAll() {
     mcLoad("rank_data"),
   ]);
   return { etfData, scoreHist, vix, rankData };
+}
+
+// ======== Strategy機能 ========
+const STRAT_DB_URL = "https://privatedb-53988-default-rtdb.asia-southeast1.firebasedatabase.app/strategies";
+
+function stratSwitchSubtab(tab) {
+  const isEntry = tab === 'entry';
+  document.getElementById('strat-subtab-entry').style.display = isEntry ? 'block' : 'none';
+  document.getElementById('strat-subtab-list').style.display  = isEntry ? 'none'  : 'block';
+  const btnE = document.getElementById('strat-subtab-entry-btn');
+  const btnL = document.getElementById('strat-subtab-list-btn');
+  btnE.style.background = isEntry ? '#06b6d4' : 'transparent';
+  btnE.style.color      = isEntry ? '#0f172a' : 'var(--text-sub)';
+  btnL.style.background = isEntry ? 'transparent' : '#06b6d4';
+  btnL.style.color      = isEntry ? 'var(--text-sub)' : '#0f172a';
+  if (!isEntry) stratLoadList();
+}
+
+function stratClearAuto() {
+  document.getElementById('strat-entry').value  = '';
+  document.getElementById('strat-stop').value   = '';
+  document.getElementById('strat-target').value = '';
+  document.getElementById('strat-rr-box').style.display  = 'none';
+  document.getElementById('strat-adr-area').style.display = 'none';
+  document.getElementById('strat-adr-area').innerHTML    = '';
+  document.getElementById('strat-fetch-status').innerText = '';
+}
+
+async function stratAutoFetch() {
+  const ticker = document.getElementById('strat-ticker').value.trim().toUpperCase();
+  if (!ticker) return;
+  const statusEl = document.getElementById('strat-fetch-status');
+  statusEl.innerText = '取得中...';
+  statusEl.style.color = 'var(--text-sub)';
+
+  try {
+    const apiKey = TD_API_KEY_POOL[0];
+    const res  = await fetch(
+      `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(ticker)}&interval=1day&outputsize=30&apikey=${apiKey}`
+    );
+    const json = await res.json();
+    if (json.status === 'error') throw new Error(json.message);
+
+    const values = json.values;
+    const closes = values.map(d => parseFloat(d.close));
+    const lows   = values.map(d => parseFloat(d.low));
+    const highs  = values.map(d => parseFloat(d.high));
+
+    const curPrice = closes[0];
+
+    // EMA21 of low (= MALow in Pine: getMa(low, 21, 'EMA'))
+    const k = 2 / 22;
+    let ema21Low = lows.slice(0, 21).reduce((a, b) => a + b, 0) / 21;
+    for (let j = 20; j >= 0; j--) ema21Low = lows[j] * k + ema21Low * (1 - k);
+
+    document.getElementById('strat-entry').value  = curPrice.toFixed(2);
+    document.getElementById('strat-stop').value   = ema21Low.toFixed(2);
+
+    // RR=3 target
+    const risk   = curPrice - ema21Low;
+    const target = curPrice + risk * 3;
+    document.getElementById('strat-target').value = target.toFixed(2);
+
+    statusEl.innerText = '✓';
+    statusEl.style.color = 'var(--win-deep)';
+
+    // ADR計算 (20日)
+    const adrLen = 20;
+    if (values.length >= adrLen) {
+      const ratios = values.slice(0, adrLen).map(d =>
+        parseFloat(d.high) / parseFloat(d.low)
+      );
+      const adrPct = (ratios.reduce((a, b) => a + b, 0) / adrLen - 1) * 100;
+      const base   = curPrice;
+      const shallow = (base * (1 - adrPct * 0.006)).toFixed(2);
+      const mid     = (base * (1 - adrPct * 0.01)).toFixed(2);
+      const deep    = (base * (1 - adrPct * 0.013)).toFixed(2);
+      const tp06    = (base * (1 + adrPct * 0.006)).toFixed(2);
+      const tp1     = (base * (1 + adrPct * 0.01)).toFixed(2);
+      const tp13    = (base * (1 + adrPct * 0.013)).toFixed(2);
+      const adrColor = adrPct >= 3.5 && adrPct <= 8.0 ? 'var(--win-deep)' : 'var(--lose-deep)';
+
+      const adrDiv = document.getElementById('strat-adr-area');
+      adrDiv.style.display = 'block';
+      adrDiv.innerHTML = `
+        <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:8px 10px;">
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:5px;">
+            <span style="font-size:0.65rem; font-weight:900; color:${adrColor};">📐 ADR% ${adrPct.toFixed(2)}%</span>
+            <span style="font-size:0.58rem; color:var(--text-sub);">終値 $${base.toFixed(2)} ベース</span>
+          </div>
+          <div style="font-size:0.58rem; font-weight:800; color:var(--lose-deep); margin-bottom:3px;">▼ 押し目ゾーン</div>
+          <div style="display:flex; gap:4px; margin-bottom:8px;">
+            <div style="flex:1; background:#0f172a; border-radius:5px; padding:4px 6px; border:1px solid #334155; text-align:center;">
+              <div style="font-size:0.5rem; color:var(--text-sub); margin-bottom:1px;">浅い ×0.6</div>
+              <div style="font-size:0.78rem; font-weight:900; color:#f59e0b;">$${shallow}</div>
+              <div style="font-size:0.52rem; color:var(--text-sub);">-${(adrPct*0.6).toFixed(2)}%</div>
+            </div>
+            <div style="flex:1; background:#0f172a; border-radius:5px; padding:4px 6px; border:1px solid var(--primary); text-align:center;">
+              <div style="font-size:0.5rem; color:#93c5fd; margin-bottom:1px;">標準 ×1.0 ★</div>
+              <div style="font-size:0.82rem; font-weight:900; color:var(--primary);">$${mid}</div>
+              <div style="font-size:0.52rem; color:var(--text-sub);">-${(adrPct*1.0).toFixed(2)}%</div>
+            </div>
+            <div style="flex:1; background:#0f172a; border-radius:5px; padding:4px 6px; border:1px solid #334155; text-align:center;">
+              <div style="font-size:0.5rem; color:var(--text-sub); margin-bottom:1px;">深い ×1.3</div>
+              <div style="font-size:0.82rem; font-weight:900; color:#818cf8;">$${deep}</div>
+              <div style="font-size:0.52rem; color:var(--text-sub);">-${(adrPct*1.3).toFixed(2)}%</div>
+            </div>
+          </div>
+          <div style="font-size:0.58rem; font-weight:800; color:var(--win-deep); margin-bottom:3px;">▲ 利確ゾーン</div>
+          <div style="display:flex; gap:4px;">
+            <div style="flex:1; background:#0f172a; border-radius:5px; padding:4px 6px; border:1px solid #334155; text-align:center;">
+              <div style="font-size:0.5rem; color:var(--text-sub); margin-bottom:1px;">浅い ×0.6</div>
+              <div style="font-size:0.78rem; font-weight:900; color:#f59e0b;">$${tp06}</div>
+              <div style="font-size:0.52rem; color:var(--text-sub);">+${(adrPct*0.6).toFixed(2)}%</div>
+            </div>
+            <div style="flex:1; background:#0f172a; border-radius:5px; padding:4px 6px; border:1px solid var(--win-deep); text-align:center;">
+              <div style="font-size:0.5rem; color:#6ee7b7; margin-bottom:1px;">標準 ×1.0 ★</div>
+              <div style="font-size:0.85rem; font-weight:900; color:var(--win-deep);">$${tp1}</div>
+              <div style="font-size:0.52rem; color:var(--text-sub);">+${(adrPct*1.0).toFixed(2)}%</div>
+            </div>
+            <div style="flex:1; background:#0f172a; border-radius:5px; padding:4px 6px; border:1px solid #334155; text-align:center;">
+              <div style="font-size:0.5rem; color:var(--text-sub); margin-bottom:1px;">深い ×1.3</div>
+              <div style="font-size:0.82rem; font-weight:900; color:#34d399;">$${tp13}</div>
+              <div style="font-size:0.52rem; color:var(--text-sub);">+${(adrPct*1.3).toFixed(2)}%</div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    stratCalcRR();
+
+  } catch(e) {
+    statusEl.innerText = '✗ ' + (e.message || 'エラー');
+    statusEl.style.color = 'var(--lose-deep)';
+  }
+}
+
+function stratCalcRR() {
+  const entry  = parseFloat(document.getElementById('strat-entry').value);
+  const stop   = parseFloat(document.getElementById('strat-stop').value);
+  const target = parseFloat(document.getElementById('strat-target').value);
+  const box    = document.getElementById('strat-rr-box');
+
+  if (isNaN(entry) || isNaN(stop) || isNaN(target) || entry === stop) {
+    box.style.display = 'none';
+    return;
+  }
+
+  const risk   = Math.abs(entry - stop);
+  const reward = Math.abs(target - entry);
+  const rr     = (reward / risk).toFixed(2);
+  const wr     = ((1 / (1 + parseFloat(rr))) * 100).toFixed(1);
+  const isLong = target > entry;
+  const beTrigger  = isLong ? entry + risk   : entry - risk;
+  const partialTP  = isLong ? entry + risk*3 : entry - risk*3;
+
+  const rrNum = parseFloat(rr);
+  const rrColor = rrNum >= 3 ? 'var(--win-deep)' : rrNum >= 2 ? '#f59e0b' : 'var(--lose-deep)';
+
+  document.getElementById('strat-risk-val').innerText   = risk.toFixed(2);
+  document.getElementById('strat-reward-val').innerText = reward.toFixed(2);
+  document.getElementById('strat-rr-val').innerText     = `1 : ${rr}`;
+  document.getElementById('strat-rr-val').style.color   = rrColor;
+  document.getElementById('strat-wr-val').innerText     = `${wr}%`;
+  document.getElementById('strat-be-val').innerText     = `$${beTrigger.toFixed(2)}`;
+  document.getElementById('strat-tp-val').innerText     = `$${partialTP.toFixed(2)}`;
+  box.style.display = 'block';
+}
+
+async function stratSave() {
+  const ticker = document.getElementById('strat-ticker').value.trim().toUpperCase();
+  const entry  = parseFloat(document.getElementById('strat-entry').value);
+  const stop   = parseFloat(document.getElementById('strat-stop').value);
+  const target = parseFloat(document.getElementById('strat-target').value);
+  const memo   = document.getElementById('strat-memo').value.trim();
+
+  if (!ticker || isNaN(entry) || isNaN(stop) || isNaN(target)) {
+    alert('Ticker・Entry・Stop・Targetを入力してください');
+    return;
+  }
+
+  const now = new Date();
+  const jst = new Intl.DateTimeFormat('ja-JP', {
+    year:'numeric', month:'2-digit', day:'2-digit',
+    hour:'2-digit', minute:'2-digit', timeZone:'Asia/Tokyo'
+  }).format(now);
+
+  const risk   = Math.abs(entry - stop);
+  const reward = Math.abs(target - entry);
+  const rr     = (reward / risk).toFixed(2);
+
+  const payload = { ticker, entry, stop, target, rr, memo, date: jst };
+
+  try {
+    const res = await fetch(`${STRAT_DB_URL}.json`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('保存失敗');
+    alert(`${ticker} の戦略を保存しました`);
+    document.getElementById('strat-ticker').value = '';
+    document.getElementById('strat-memo').value   = '';
+    stratClearAuto();
+    stratSwitchSubtab('list');
+  } catch(e) {
+    alert('保存に失敗しました: ' + e.message);
+  }
+}
+
+async function stratLoadList() {
+  const container = document.getElementById('strat-list-container');
+  container.innerHTML = '<p style="text-align:center; color:var(--text-sub); padding:20px; font-size:0.78rem;">読み込み中...</p>';
+  try {
+    const res  = await fetch(`${STRAT_DB_URL}.json`);
+    const data = await res.json();
+    if (!data) {
+      container.innerHTML = '<p style="text-align:center; color:var(--text-sub); padding:20px; font-size:0.78rem;">保存された戦略はありません</p>';
+      return;
+    }
+    const entries = Object.entries(data)
+      .map(([key, val]) => ({ key, ...val }))
+      .sort((a, b) => b.date.localeCompare(a.date));
+    container.innerHTML = entries.map(e => stratRenderCard(e)).join('');
+    if (window.lucide) lucide.createIcons();
+  } catch(err) {
+    container.innerHTML = `<p style="text-align:center; color:var(--lose-deep); padding:20px; font-size:0.78rem;">読み込みに失敗しました</p>`;
+  }
+}
+
+function stratRenderCard(e) {
+  const rrNum   = parseFloat(e.rr);
+  const rrColor = rrNum >= 3 ? 'var(--win-deep)' : rrNum >= 2 ? '#f59e0b' : 'var(--lose-deep)';
+  const rrBg    = rrNum >= 3 ? '#064e3b' : rrNum >= 2 ? '#451a03' : '#7f1d1d';
+  return `
+    <div class="trade-card" id="strat-card-${e.key}" style="border-left:3px solid #06b6d4;">
+      <div class="card-top">
+        <div class="stock-info">
+          <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${e.ticker}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
+            <span class="stock-name" style="color:#06b6d4; text-decoration:underline;">${e.ticker}</span>
+          </a>
+          <span class="stock-price-label">Entry $${Number(e.entry).toFixed(2)}</span>
+          <span style="font-size:0.65rem; font-weight:900; color:${rrColor}; background:${rrBg}; border:1px solid ${rrColor}; border-radius:4px; padding:1px 6px;">RR ${rrNum.toFixed(2)}</span>
+          <div id="strat-live-${e.key}" style="display:inline-flex; align-items:center; gap:3px;"></div>
+        </div>
+        <div class="card-actions">
+          <button class="edit-btn" id="strat-refresh-btn-${e.key}" onclick="stratRefreshOne('${e.key}','${e.ticker}',${e.entry},${e.stop})" title="現在価格取得">
+            <i data-lucide="refresh-cw" style="width:10px;"></i>
+          </button>
+          <button class="del-btn" onclick="stratDelete('${e.key}')"><i data-lucide="x" style="width:12px;"></i></button>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; margin-top:6px;">
+        <div style="background:var(--input-bg); border-radius:5px; padding:4px 6px; border:1px solid var(--border);">
+          <div style="font-size:0.52rem; color:var(--text-sub);">Entry</div>
+          <div style="font-size:0.78rem; font-weight:900;">$${Number(e.entry).toFixed(2)}</div>
+        </div>
+        <div style="background:var(--input-bg); border-radius:5px; padding:4px 6px; border:1px solid #7f1d1d;">
+          <div style="font-size:0.52rem; color:var(--lose-deep);">Stop (EMA21L)</div>
+          <div style="font-size:0.78rem; font-weight:900; color:var(--lose-deep);">$${Number(e.stop).toFixed(2)}</div>
+        </div>
+        <div style="background:var(--input-bg); border-radius:5px; padding:4px 6px; border:1px solid #064e3b;">
+          <div style="font-size:0.52rem; color:var(--win-deep);">1st Target</div>
+          <div style="font-size:0.78rem; font-weight:900; color:var(--win-deep);">$${Number(e.target).toFixed(2)}</div>
+        </div>
+      </div>
+      ${e.memo ? `<div class="memo-area" style="margin-top:5px;">${e.memo}</div>` : ''}
+      <div style="font-size:0.58rem; color:#475569; margin-top:4px;">${e.date}</div>
+    </div>`;
+}
+
+async function stratRefreshOne(key, ticker, entry, stop) {
+  const btn     = document.getElementById(`strat-refresh-btn-${key}`);
+  const liveEl  = document.getElementById(`strat-live-${key}`);
+  if (btn) { btn.disabled = true; btn.innerText = '...'; }
+  try {
+    const res  = await fetch(`https://api.twelvedata.com/price?symbol=${encodeURIComponent(ticker)}&apikey=${TD_API_KEY_POOL[0]}`);
+    const json = await res.json();
+    if (!json.price) throw new Error('取得失敗');
+    const cur  = parseFloat(json.price);
+    const risk = Math.abs(entry - stop);
+    const curRR = risk > 0 ? ((cur - entry) / risk).toFixed(2) : '--';
+    const pnl  = ((cur - entry) / entry * 100).toFixed(2);
+    const isPos = parseFloat(pnl) >= 0;
+    const col   = isPos ? 'var(--win-deep)' : 'var(--lose-deep)';
+    liveEl.innerHTML = `
+      <span style="font-size:0.62rem; color:var(--text-sub);">$${cur.toFixed(2)}</span>
+      <span style="font-size:0.72rem; font-weight:800; color:${col};">${isPos?'+':''}${pnl}%</span>
+      <span style="font-size:0.62rem; color:#06b6d4; font-weight:700;">RR現在:${curRR}</span>`;
+  } catch(e) {
+    if (liveEl) liveEl.innerHTML = `<span style="font-size:0.62rem; color:var(--lose-deep);">取得失敗</span>`;
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="refresh-cw" style="width:10px;"></i>';
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+}
+
+async function stratRefreshAll() {
+  const btn = document.getElementById('strat-refresh-all-btn');
+  if (btn) { btn.disabled = true; btn.innerText = '更新中...'; }
+  try {
+    const res  = await fetch(`${STRAT_DB_URL}.json`);
+    const data = await res.json();
+    if (!data) return;
+    const entries = Object.entries(data).map(([key, val]) => ({ key, ...val }));
+    for (const e of entries) {
+      await stratRefreshOne(e.key, e.ticker, e.entry, e.stop);
+      await new Promise(r => setTimeout(r, 500));
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerText = '📊 一括更新'; }
+  }
+}
+
+async function stratDelete(key) {
+  if (!confirm('この戦略を削除しますか？')) return;
+  try {
+    await fetch(`${STRAT_DB_URL}/${key}.json`, { method: 'DELETE' });
+    const card = document.getElementById(`strat-card-${key}`);
+    if (card) card.remove();
+    const container = document.getElementById('strat-list-container');
+    if (container && !container.querySelector('.trade-card')) {
+      container.innerHTML = '<p style="text-align:center; color:var(--text-sub); padding:20px; font-size:0.78rem;">保存された戦略はありません</p>';
+    }
+  } catch(e) {
+    alert('削除に失敗しました');
+  }
 }
 
 // ======== 初期化 ========
