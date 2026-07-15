@@ -1703,8 +1703,8 @@ async function r2FetchSpySma50Alert() {
   }
 }
 
-（2月・7月・8月・9月は弱いとされる月として警告表示）
-const SEASONAL_WEAK_MONTHS = [2, 7, 8, 9];
+// （2月・7月・8月・9月は弱いとされる月として警告表示）
+const SEASONAL_WEAK_MONTHS = [2, 6, 7, 8, 9];
 function r2RenderSeasonalAlert() {
   const el = document.getElementById('r2-seasonal-alert');
   if (!el) return;
