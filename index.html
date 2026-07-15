@@ -1302,11 +1302,11 @@
   <div style="display:flex; gap:4px; margin-bottom:10px; background:#334155; border-radius:8px; padding:3px;">
     <button id="strat-subtab-entry-btn" onclick="stratSwitchSubtab('entry')"
       style="flex:1; padding:5px; border:none; border-radius:6px; font-size:0.68rem; font-weight:800; cursor:pointer; background:#06b6d4; color:#0f172a;">
-      新規エントリー
+      Entry
     </button>
     <button id="strat-subtab-list-btn" onclick="stratSwitchSubtab('list')"
       style="flex:1; padding:5px; border:none; border-radius:6px; font-size:0.68rem; font-weight:800; cursor:pointer; background:transparent; color:var(--text-sub);">
-      保存済み
+      Monitor
     </button>
   </div>
 
@@ -4997,6 +4997,86 @@ async function stratAutoFetch() {
           </div>
         </div>`;
     }
+
+    // EMA21 close（closeのEMA21）
+    const kc = 2 / 22;
+    let ema21Close = closes.slice(0, 21).reduce((a, b) => a + b, 0) / 21;
+    for (let j = 20; j >= 0; j--) ema21Close = closes[j] * kc + ema21Close * (1 - kc);
+
+    // SMA50 close
+    const sma50Close = closes.slice(0, 50).reduce((a, b) => a + b, 0) / 50;
+
+    // EMA21 Low距離（%）
+    const ema21LowDistPct = ((curPrice - ema21Low) / curPrice * 100);
+
+    // 1R（Risk）
+    const oneR = curPrice - ema21Low;
+
+    // ATR 21 EMA距離（R単位）
+    const distEma21R = oneR > 0 ? (curPrice - ema21Close) / oneR : null;
+
+    // ATR 50 SMA距離（R単位）
+    const distSma50R = oneR > 0 ? (curPrice - sma50Close) / oneR : null;
+
+    // 条件判定
+    const condEma21  = distEma21R !== null && distEma21R >= -0.5 && distEma21R <= 1.0;
+    const condSma50  = distSma50R !== null && distSma50R >= 0    && distSma50R <= 3.0;
+    const condEmaLow = ema21LowDistPct >= 0 && ema21LowDistPct <= 8.0;
+
+    // 条件パネル描画
+    const condArea = document.getElementById('strat-adr-area');
+    const condHtml = `
+      <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin-bottom:6px;">
+        <div style="font-size:0.62rem; font-weight:800; color:#06b6d4; margin-bottom:6px; letter-spacing:0.05em;">⚡ エントリー条件チェック</div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; background:#0f172a; border-radius:6px; border:1px solid ${condEma21 ? '#10b981' : '#7f1d1d'};">
+            <div>
+              <span style="font-size:0.6rem; color:var(--text-sub); font-weight:700;">ATR 21 EMA距離　</span>
+              <span style="font-size:0.58rem; color:#475569;">目標: −0.5R ～ +1.0R</span>
+            </div>
+            <div style="text-align:right;">
+              <span style="font-size:0.85rem; font-weight:900; color:${condEma21 ? '#10b981' : '#ef4444'};">${distEma21R !== null ? (distEma21R >= 0 ? '+' : '') + distEma21R.toFixed(2) + 'R' : 'N/A'}</span>
+              <span style="font-size:0.65rem; font-weight:900; margin-left:6px; padding:1px 6px; border-radius:3px; background:${condEma21 ? '#064e3b' : '#7f1d1d'}; color:${condEma21 ? '#10b981' : '#ef4444'};">${condEma21 ? 'OK' : 'NG'}</span>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; background:#0f172a; border-radius:6px; border:1px solid ${condSma50 ? '#10b981' : '#7f1d1d'};">
+            <div>
+              <span style="font-size:0.6rem; color:var(--text-sub); font-weight:700;">ATR 50 SMA距離　</span>
+              <span style="font-size:0.58rem; color:#475569;">目標: 0R ～ +3.0R</span>
+            </div>
+            <div style="text-align:right;">
+              <span style="font-size:0.85rem; font-weight:900; color:${condSma50 ? '#10b981' : '#ef4444'};">${distSma50R !== null ? (distSma50R >= 0 ? '+' : '') + distSma50R.toFixed(2) + 'R' : 'N/A'}</span>
+              <span style="font-size:0.65rem; font-weight:900; margin-left:6px; padding:1px 6px; border-radius:3px; background:${condSma50 ? '#064e3b' : '#7f1d1d'}; color:${condSma50 ? '#10b981' : '#ef4444'};">${condSma50 ? 'OK' : 'NG'}</span>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; background:#0f172a; border-radius:6px; border:1px solid ${condEmaLow ? '#10b981' : '#7f1d1d'};">
+            <div>
+              <span style="font-size:0.6rem; color:var(--text-sub); font-weight:700;">EMA21 Low 距離　</span>
+              <span style="font-size:0.58rem; color:#475569;">目標: 8%以内</span>
+            </div>
+            <div style="text-align:right;">
+              <span style="font-size:0.85rem; font-weight:900; color:${condEmaLow ? '#10b981' : '#ef4444'};">+${ema21LowDistPct.toFixed(2)}%</span>
+              <span style="font-size:0.65rem; font-weight:900; margin-left:6px; padding:1px 6px; border-radius:3px; background:${condEmaLow ? '#064e3b' : '#7f1d1d'}; color:${condEmaLow ? '#10b981' : '#ef4444'};">${condEmaLow ? 'OK' : 'NG'}</span>
+            </div>
+          </div>
+
+        </div>
+        <div style="margin-top:8px; padding-top:6px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:0.6rem; color:var(--text-sub);">総合判定</span>
+          <span style="font-size:0.78rem; font-weight:900; padding:2px 12px; border-radius:4px;
+            background:${condEma21 && condSma50 && condEmaLow ? '#064e3b' : '#7f1d1d'};
+            color:${condEma21 && condSma50 && condEmaLow ? '#10b981' : '#ef4444'};
+            border:1px solid ${condEma21 && condSma50 && condEmaLow ? '#10b981' : '#ef4444'};">
+            ${condEma21 && condSma50 && condEmaLow ? '✓ ENTRY OK' : '✗ 条件未達'}
+          </span>
+        </div>
+      </div>`;
+
+    condArea.style.display = 'block';
+    condArea.innerHTML = condHtml + condArea.innerHTML;
 
     stratCalcRR();
 
