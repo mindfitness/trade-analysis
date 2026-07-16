@@ -1506,15 +1506,19 @@ function isMobile() {
     return ua || narrow;
 }
 
-if (!['admin','user'].includes(sessionStorage.getItem('auth'))) {
-    if (isMobile()) {
-        sessionStorage.setItem('auth', 'admin');
-    } else {
-        window.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('auth-screen').style.display = 'flex';
-        });
+window.addEventListener('DOMContentLoaded', () => {
+    if (['admin','user'].includes(sessionStorage.getItem('auth'))) return;
+
+    const ua = /iPhone|Android|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const narrow = window.innerWidth < 768;
+
+    if (ua || narrow) {
+        sessionStorage.setItem('auth', 'user');
+        return;
     }
-}
+
+    document.getElementById('auth-screen').style.display = 'flex';
+});
 
 // ======== 共通設定 ========
 // ======== Twelve Data APIキー 共有プール ========
