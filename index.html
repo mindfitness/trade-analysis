@@ -1500,10 +1500,20 @@ function checkAuth() {
         document.getElementById('auth-input').value = '';
     }
 }
+function isMobile() {
+    const ua = /iPhone|Android|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const narrow = window.innerWidth < 768;
+    return ua || narrow;
+}
+
 if (!['admin','user'].includes(sessionStorage.getItem('auth'))) {
-    window.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('auth-screen').style.display = 'flex';
-    });
+    if (isMobile()) {
+        sessionStorage.setItem('auth', 'admin');
+    } else {
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('auth-screen').style.display = 'flex';
+        });
+    }
 }
 
 // ======== 共通設定 ========
