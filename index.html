@@ -3537,12 +3537,15 @@ function reversalAppendCardMA(r) {
     const body = document.getElementById('reversal-body');
     const div = document.createElement('div');
     div.innerHTML = `
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;border-left:3px solid #06b6d4;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-        <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${r.symbol}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
-          <span style="font-size:0.88rem;font-weight:900;color:#22d3ee;text-decoration:underline;">${r.symbol}</span>
-        </a>
-        <span style="font-size:0.72rem;color:var(--text-sub);">$${r.price.toFixed(2)}</span>
-        <span style="font-size:0.7rem;font-weight:700;color:#06b6d4;">${r.reversalLabel}</span>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;border-left:3px solid #06b6d4;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+          <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${r.symbol}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
+            <span style="font-size:0.88rem;font-weight:900;color:#22d3ee;text-decoration:underline;">${r.symbol}</span>
+          </a>
+          <span style="font-size:0.72rem;color:var(--text-sub);">$${r.price.toFixed(2)}</span>
+          <span style="font-size:0.7rem;font-weight:700;color:#06b6d4;">${r.reversalLabel}</span>
+        </div>
+        ${buildAdrTpBlock(r.price, r.adrPct)}
       </div>`;
     body.appendChild(div.firstElementChild);
 }
@@ -4206,12 +4209,61 @@ return { symbol, price: sClose, rs10, rs21, rs63, rs126, rs252, hasVolSpike, ppC
     match: (rsCondition || vcsCondition || maCondition) && mms >= 5 };
 }
 
+function buildAdrTpBlock(price, adrPct) {
+  if (!adrPct || isNaN(adrPct)) return '';
+  const sl06 = (price * (1 - adrPct * 0.006)).toFixed(2);
+  const sl10 = (price * (1 - adrPct * 0.010)).toFixed(2);
+  const sl13 = (price * (1 - adrPct * 0.013)).toFixed(2);
+  const tp06 = (price * (1 + adrPct * 0.006)).toFixed(2);
+  const tp10 = (price * (1 + adrPct * 0.010)).toFixed(2);
+  const tp13 = (price * (1 + adrPct * 0.013)).toFixed(2);
+  const adrColor = adrPct >= 3.5 && adrPct <= 8.0 ? '#10b981' : '#ef4444';
+  return `
+    <div style="margin-top:6px;padding:6px 8px;background:#0f172a;border-radius:6px;border:1px solid #1e2d45;">
+      <div style="font-size:0.58rem;font-weight:900;color:${adrColor};margin-bottom:4px;">📐 ADR% ${adrPct.toFixed(2)}%</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:3px;">
+        <div style="text-align:center;background:#1a2234;border-radius:4px;padding:3px 4px;border:1px solid #334155;">
+          <div style="font-size:0.48rem;color:#ef4444;font-weight:700;">SL ×0.6</div>
+          <div style="font-size:0.72rem;font-weight:900;color:#f59e0b;">$${sl06}</div>
+          <div style="font-size:0.48rem;color:#64748b;">-${(adrPct*0.6).toFixed(2)}%</div>
+        </div>
+        <div style="text-align:center;background:#1a2234;border-radius:4px;padding:3px 4px;border:1px solid #3b82f6;">
+          <div style="font-size:0.48rem;color:#ef4444;font-weight:700;">SL ×1.0 ★</div>
+          <div style="font-size:0.75rem;font-weight:900;color:#3b82f6;">$${sl10}</div>
+          <div style="font-size:0.48rem;color:#64748b;">-${(adrPct*1.0).toFixed(2)}%</div>
+        </div>
+        <div style="text-align:center;background:#1a2234;border-radius:4px;padding:3px 4px;border:1px solid #334155;">
+          <div style="font-size:0.48rem;color:#ef4444;font-weight:700;">SL ×1.3</div>
+          <div style="font-size:0.72rem;font-weight:900;color:#818cf8;">$${sl13}</div>
+          <div style="font-size:0.48rem;color:#64748b;">-${(adrPct*1.3).toFixed(2)}%</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;">
+        <div style="text-align:center;background:#1a2234;border-radius:4px;padding:3px 4px;border:1px solid #334155;">
+          <div style="font-size:0.48rem;color:#10b981;font-weight:700;">TP ×0.6</div>
+          <div style="font-size:0.72rem;font-weight:900;color:#f59e0b;">$${tp06}</div>
+          <div style="font-size:0.48rem;color:#64748b;">+${(adrPct*0.6).toFixed(2)}%</div>
+        </div>
+        <div style="text-align:center;background:#1a2234;border-radius:4px;padding:3px 4px;border:1px solid #10b981;">
+          <div style="font-size:0.48rem;color:#10b981;font-weight:700;">TP ×1.0 ★</div>
+          <div style="font-size:0.75rem;font-weight:900;color:#10b981;">$${tp10}</div>
+          <div style="font-size:0.48rem;color:#64748b;">+${(adrPct*1.0).toFixed(2)}%</div>
+        </div>
+        <div style="text-align:center;background:#1a2234;border-radius:4px;padding:3px 4px;border:1px solid #334155;">
+          <div style="font-size:0.48rem;color:#10b981;font-weight:700;">TP ×1.3</div>
+          <div style="font-size:0.75rem;font-weight:900;color:#34d399;">$${tp13}</div>
+          <div style="font-size:0.48rem;color:#64748b;">+${(adrPct*1.3).toFixed(2)}%</div>
+        </div>
+      </div>
+    </div>`;
+}
+
 function screenAppendCard(r) {
   const body = document.getElementById('screen-results-body');
   const div = document.createElement('div');
-div.dataset.matchType = r.matchType || '';
-div.dataset.pp = r.ppCount || 0;
-const isMaOnly = r.matchType === 'ma';
+  div.dataset.matchType = r.matchType || '';
+  div.dataset.pp = r.ppCount || 0;
+  const isMaOnly = r.matchType === 'ma';
   const isVcsOnly = r.matchType === 'vcs';
   const accentColor = isVcsOnly ? '#8b5cf6' : isMaOnly ? '#f59e0b' : 'var(--win-deep)';
   const badge = isVcsOnly
@@ -4221,35 +4273,38 @@ const isMaOnly = r.matchType === 'ma';
     : `<span style="font-size:0.6rem;font-weight:900;background:#064e3b;color:#6ee7b7;padding:1px 6px;border-radius:3px;">RS</span>`;
   const vcsColor = isNaN(r.vcs) ? 'var(--text-sub)' : r.vcs >= 70 ? '#8b5cf6' : 'var(--text-sub)';
   div.innerHTML = `
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;border-left:3px solid ${accentColor};display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-      <div style="display:flex;align-items:center;gap:5px;min-width:55px;">
-        <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${r.symbol}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
-          <span style="font-size:0.88rem;font-weight:900;color:#22d3ee;text-decoration:underline;">${r.symbol}</span>
-        </a>
-        ${badge}
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;border-left:3px solid ${accentColor};">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:5px;min-width:55px;">
+          <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${r.symbol}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
+            <span style="font-size:0.88rem;font-weight:900;color:#22d3ee;text-decoration:underline;">${r.symbol}</span>
+          </a>
+          ${badge}
+        </div>
+        <span style="font-size:0.72rem;color:var(--text-sub);">$${r.price.toFixed(2)}</span>
+        <span style="font-size:0.72rem;font-weight:700;${screenRsClass(r.rs10)}">R10:${isNaN(r.rs10)?'N/A':r.rs10.toFixed(0)}%</span>
+        <span style="font-size:0.72rem;font-weight:700;${screenRsClass(r.rs21)}">R21:${isNaN(r.rs21)?'N/A':r.rs21.toFixed(0)}%</span>
+        <span style="font-size:0.72rem;font-weight:700;${screenRsClass(Math.max(isNaN(r.rs126)?0:r.rs126, isNaN(r.rs252)?0:r.rs252))}">R長:${isNaN(r.rs126)&&isNaN(r.rs252)?'N/A':Math.max(isNaN(r.rs126)?0:r.rs126, isNaN(r.rs252)?0:r.rs252).toFixed(0)}%</span>
+        <span style="font-size:0.72rem;font-weight:700;color:${r.hasVolSpike?'var(--win-deep)':'var(--text-sub)'};">${r.hasVolSpike?'VOL✓':'VOL✗'}</span>
+        <span style="font-size:0.72rem;font-weight:700;color:${r.ppCount>=1?'var(--win-deep)':'var(--text-sub)'};">PP:${r.ppCount}</span>
+        <span style="font-size:0.72rem;font-weight:700;color:${vcsColor};">VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}</span>
+        ${isMaOnly ? `<span style="font-size:0.72rem;font-weight:700;color:#f59e0b;">${r.maTouchLabel}</span>` : ''}
+        ${r.tlConv ? `<span style="font-size:0.6rem;font-weight:900;background:#1e1b4b;color:#a78bfa;border:1px solid #4f46e5;border-radius:3px;padding:1px 6px;">TL×${r.tlConvPairs.length}</span>` : ''}
+        <span style="font-size:0.6rem;font-weight:900;background:${(r.mms??0)>=5?'#451a03':'#1a2234'};color:${(r.mms??0)>=5?'#f59e0b':'#4a6080'};border:1px solid ${(r.mms??0)>=5?'#f59e0b':'#2a3f5f'};border-radius:3px;padding:1px 6px;">MMS ${r.mms??'--'}/8</span>
       </div>
-      <span style="font-size:0.72rem;color:var(--text-sub);">$${r.price.toFixed(2)}</span>
-      <span style="font-size:0.72rem;font-weight:700;${screenRsClass(r.rs10)}">R10:${isNaN(r.rs10)?'N/A':r.rs10.toFixed(0)}%</span>
-　　　<span style="font-size:0.72rem;font-weight:700;${screenRsClass(r.rs21)}">R21:${isNaN(r.rs21)?'N/A':r.rs21.toFixed(0)}%</span>
-      <span style="font-size:0.72rem;font-weight:700;${screenRsClass(Math.max(isNaN(r.rs126)?0:r.rs126, isNaN(r.rs252)?0:r.rs252))}">R長:${isNaN(r.rs126)&&isNaN(r.rs252)?'N/A':Math.max(isNaN(r.rs126)?0:r.rs126, isNaN(r.rs252)?0:r.rs252).toFixed(0)}%</span>
-      <span style="font-size:0.72rem;font-weight:700;color:${r.hasVolSpike?'var(--win-deep)':'var(--text-sub)'};">${r.hasVolSpike?'VOL✓':'VOL✗'}</span>
-      <span style="font-size:0.72rem;font-weight:700;color:${r.ppCount>=1?'var(--win-deep)':'var(--text-sub)'};">PP:${r.ppCount}</span>
-      <span style="font-size:0.72rem;font-weight:700;color:${vcsColor};">VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}</span>
-      ${isMaOnly ? `<span style="font-size:0.72rem;font-weight:700;color:#f59e0b;">${r.maTouchLabel}</span>` : ''}
-      ${r.tlConv ? `<span style="font-size:0.6rem;font-weight:900;background:#1e1b4b;color:#a78bfa;border:1px solid #4f46e5;border-radius:3px;padding:1px 6px;">TL×${r.tlConvPairs.length}</span>` : ''}
-      <span style="font-size:0.6rem;font-weight:900;background:${(r.mms??0)>=5?'#451a03':'#1a2234'};color:${(r.mms??0)>=5?'#f59e0b':'#4a6080'};border:1px solid ${(r.mms??0)>=5?'#f59e0b':'#2a3f5f'};border-radius:3px;padding:1px 6px;">MMS ${r.mms??'--'}/8</span>
+      ${buildAdrTpBlock(r.price, r.adrPct)}
     </div>`;
   const card = div.firstElementChild;
-card.dataset.matchType = r.matchType || '';
-card.dataset.pp = r.ppCount || 0;
-card.dataset.tl = r.tlConv ? '1' : '0';
-body.appendChild(card);
+  card.dataset.matchType = r.matchType || '';
+  card.dataset.pp = r.ppCount || 0;
+  card.dataset.tl = r.tlConv ? '1' : '0';
+  body.appendChild(card);
   document.getElementById('copy-screen-results-btn').style.display = 'inline-block';
   if (r.matchType === 'vcs') document.getElementById('copy-screen-vcs-btn').style.display = 'inline-block';
   else if (r.matchType === 'ma') {
     document.getElementById('copy-screen-ma-btn').style.display = 'inline-block';
     document.getElementById('copy-screen-ma-tl-btn').style.display = 'inline-block';
-}
+  }
   else document.getElementById('copy-screen-rs-btn').style.display = 'inline-block';
 }
 
@@ -4678,12 +4733,15 @@ function reversalAppendCardLong(r) {
   const body = document.getElementById('reversal-results-body');
   const div = document.createElement('div');
   div.innerHTML = `
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;border-left:3px solid #06b6d4;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-      <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${r.symbol}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
-        <span style="font-size:0.88rem;font-weight:900;color:#22d3ee;text-decoration:underline;">${r.symbol}</span>
-      </a>
-      <span style="font-size:0.72rem;color:var(--text-sub);">$${r.price.toFixed(2)}</span>
-      <span style="font-size:0.7rem;font-weight:700;color:#06b6d4;">${r.hitLabel}</span>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;border-left:3px solid #06b6d4;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${r.symbol}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
+          <span style="font-size:0.88rem;font-weight:900;color:#22d3ee;text-decoration:underline;">${r.symbol}</span>
+        </a>
+        <span style="font-size:0.72rem;color:var(--text-sub);">$${r.price.toFixed(2)}</span>
+        <span style="font-size:0.7rem;font-weight:700;color:#06b6d4;">${r.hitLabel}</span>
+      </div>
+      ${buildAdrTpBlock(r.price, r.adrPct)}
     </div>`;
   body.appendChild(div.firstElementChild);
 }
