@@ -2841,7 +2841,7 @@ function renderCard(t) {
         <div class="trade-card" style="${isOld ? 'border-color:#b45309; background:linear-gradient(135deg,#1e293b 0%,#1c1408 100%);' : ''}">
             <div class="card-top">
                 <div class="stock-info">
-                    <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${t.name}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
+                    <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${/^\d/.test(t.name) ? 'TSE:' + t.name : t.name}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
                         <span class="stock-name" style="color:var(--primary);text-decoration:underline;">${t.name}</span>
                     </a>
                     <span class="stock-price-label">$${Number(t.price).toLocaleString()}</span>
@@ -3001,7 +3001,7 @@ function addThemeStock(themeId) {
     const symbols = input
         .split(/[\s,\n]+/)
         .map(s => s.trim().replace(/^\$/, '').toUpperCase())
-        .filter(s => /^[A-Z]{1,5}$/.test(s));
+        .filter(s => /^[A-Z0-9]{2,6}$/.test(s));
     const added = symbols.filter(s => !theme.stocks.includes(s));
     if (added.length === 0) { alert("追加できる銘柄がありませんでした（重複または無効）"); return; }
     theme.stocks.push(...added);
@@ -3145,7 +3145,7 @@ function renderThemes() {
             <div class="stock-list">
                 ${theme.stocks.map((s, i) => `
                 <div class="stock-badge">
-                    <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${s}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:var(--primary);">${s}</a>
+                    <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${/^\d/.test(s) ? 'TSE:' + s : s}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:var(--primary);">${s}</a>
                     <span onclick="removeThemeStock(${theme.id},${i})" style="cursor:pointer;color:#64748b;margin-left:2px;font-size:0.65rem;">✕</span>
                 </div>`).join('')}
                 <button onclick="addThemeStock(${theme.id})" style="border:1px dashed #475569;background:none;border-radius:14px;padding:2px 10px;color:#94a3b8;font-size:0.68rem;font-weight:bold;cursor:pointer;">+ 追加</button>
@@ -4510,10 +4510,10 @@ async function startScreening(mode = 'rs') {
   const tickers = [...new Set(
   input.split(/[\s,\n]+/)
     .map(t => t.trim().replace(/^\$/, '').toUpperCase())
-    .filter(t => /^[A-Z]{1,5}$/.test(t))
+    .filter(t => /^[A-Z0-9]{2,6}$/.test(t))
 )];
 if (tickers.length === 0) return;
-const dedupedCount = input.split(/[\s,\n]+/).map(t => t.trim().replace(/^\$/, '').toUpperCase()).filter(t => /^[A-Z]{1,5}$/.test(t)).length;
+const dedupedCount = input.split(/[\s,\n]+/).map(t => t.trim().replace(/^\$/, '').toUpperCase()).filter(t => /^[A-Z0-9]{2,6}$/.test(t)).length;
 const duplicatesRemoved = dedupedCount - tickers.length;
 if (duplicatesRemoved > 0) {
   document.getElementById('screen-ticker-input').value = tickers.join(', ');
@@ -4769,7 +4769,7 @@ async function startReversalScreening() {
   const tickers = [...new Set(
     input.split(/[\s,\n]+/)
       .map(t => t.trim().replace(/^\$/, '').toUpperCase())
-      .filter(t => /^[A-Z]{1,5}$/.test(t))
+      .filter(t => /^[A-Z0-9]{2,6}$/.test(t))
   )];
   if (tickers.length === 0) { alert('銘柄を入力してください'); return; }
 
