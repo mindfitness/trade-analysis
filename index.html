@@ -971,6 +971,10 @@
   style="flex:1; min-width:0; padding:10px; background:#f59e0b; color:#0f172a; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
   ▶ DAY
 </button>
+<button id="screen-day2-btn" onclick="startScreening('day2')"
+  style="flex:1; min-width:0; padding:10px; background:#0ea5e9; color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
+  ▶ DAY2
+</button>
 </div>
 
   <div id="screen-progress" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:12px;">
@@ -4205,10 +4209,30 @@ if (revD200 !== null && Math.abs(revD200) <= 2) revHits.push(`MA200(${revD200 >=
 const reversalHit   = revHits.length > 0 && (adrOk ?? false);  // ★同一関数内で既に計算済みのadrOkを流用
 const reversalLabel = revHits.join(' / ');
 
+// DAY2用: SMA150/200から終値が -1.5×ADR% 以内にあるか
+const sma150_day2 = closes.length >= 150 ? closes.slice(0, 150).reduce((a, b) => a + b, 0) / 150 : null;
+const sma200_day2 = closes.length >= 200 ? closes.slice(0, 200).reduce((a, b) => a + b, 0) / 200 : null;
+const day2AdrThresh = (adrPct ?? 0) * 1.5;
+const day2LineHit = (sma150_day2 !== null && Math.abs((sClose - sma150_day2) / sma150_day2 * 100) <= day2AdrThresh)
+                 || (sma200_day2 !== null && Math.abs((sClose - sma200_day2) / sma200_day2 * 100) <= day2AdrThresh);
+const day2LineLabel = (() => {
+  const hits = [];
+  if (sma150_day2 !== null) {
+    const d = (sClose - sma150_day2) / sma150_day2 * 100;
+    if (Math.abs(d) <= day2AdrThresh) hits.push(`SMA150(${d >= 0 ? '+' : ''}${d.toFixed(2)}%)`);
+  }
+  if (sma200_day2 !== null) {
+    const d = (sClose - sma200_day2) / sma200_day2 * 100;
+    if (Math.abs(d) <= day2AdrThresh) hits.push(`SMA200(${d >= 0 ? '+' : ''}${d.toFixed(2)}%)`);
+  }
+  return hits.join(' / ');
+})();
+
 return { symbol, price: sClose, rs10, rs21, rs63, rs126, rs252, hasVolSpike, ppCount, vcs, maTouchLabel,
     tlConvPairs, tlConv, mms, adrPct, isAdrTouchAnyLine, adrOk, vol60Avg,
     hlStructureFound, pivotHitLabel, oneilCond,
     reversalHit, reversalLabel,
+    day2LineHit, day2LineLabel,
     matchType: rsCondition ? 'rs' : vcsCondition ? 'vcs' : maCondition ? 'ma' : null,
     match: (rsCondition || vcsCondition || maCondition) && mms >= 5 };
 }
@@ -4267,16 +4291,19 @@ function screenAppendCard(r) {
   const div = document.createElement('div');
   div.dataset.matchType = r.matchType || '';
   div.dataset.pp = r.ppCount || 0;
-  const isMaOnly  = r.matchType === 'ma';
-  const isVcsOnly = r.matchType === 'vcs';
-  const isDayOnly = r.matchType === 'day';
-  const accentColor = isVcsOnly ? '#8b5cf6' : isMaOnly ? '#f59e0b' : isDayOnly ? '#f97316' : 'var(--win-deep)';
+  const isMaOnly   = r.matchType === 'ma';
+  const isVcsOnly  = r.matchType === 'vcs';
+  const isDayOnly  = r.matchType === 'day';
+  const isDay2Only = r.matchType === 'day2';
+  const accentColor = isVcsOnly ? '#8b5cf6' : isMaOnly ? '#f59e0b' : isDayOnly ? '#f97316' : isDay2Only ? '#0ea5e9' : 'var(--win-deep)';
   const badge = isVcsOnly
     ? `<span style="font-size:0.6rem;font-weight:900;background:#4c1d95;color:#c4b5fd;padding:1px 6px;border-radius:3px;">VCS</span>`
     : isMaOnly
     ? `<span style="font-size:0.6rem;font-weight:900;background:#451a03;color:#fcd34d;padding:1px 6px;border-radius:3px;">MA</span>`
     : isDayOnly
     ? `<span style="font-size:0.6rem;font-weight:900;background:#431407;color:#fb923c;padding:1px 6px;border-radius:3px;">DAY</span>`
+    : isDay2Only
+    ? `<span style="font-size:0.6rem;font-weight:900;background:#0c4a6e;color:#7dd3fc;padding:1px 6px;border-radius:3px;">DAY2</span>`
     : `<span style="font-size:0.6rem;font-weight:900;background:#064e3b;color:#6ee7b7;padding:1px 6px;border-radius:3px;">RS</span>`;
   const vcsColor = isNaN(r.vcs) ? 'var(--text-sub)' : r.vcs >= 70 ? '#8b5cf6' : 'var(--text-sub)';
   div.innerHTML = `
@@ -4295,7 +4322,8 @@ function screenAppendCard(r) {
         <span style="font-size:0.72rem;font-weight:700;color:${r.hasVolSpike?'var(--win-deep)':'var(--text-sub)'};">${r.hasVolSpike?'VOL✓':'VOL✗'}</span>
         <span style="font-size:0.72rem;font-weight:700;color:${r.ppCount>=1?'var(--win-deep)':'var(--text-sub)'};">PP:${r.ppCount}</span>
         <span style="font-size:0.72rem;font-weight:700;color:${vcsColor};">VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}</span>
-        ${isMaOnly ? `<span style="font-size:0.72rem;font-weight:700;color:#f59e0b;">${r.maTouchLabel}</span>` : ''}
+        ${isMaOnly   ? `<span style="font-size:0.72rem;font-weight:700;color:#f59e0b;">${r.maTouchLabel}</span>` : ''}
+        ${isDay2Only ? `<span style="font-size:0.72rem;font-weight:700;color:#0ea5e9;">${r.day2LineLabel}</span>` : ''}
         ${r.tlConv ? `<span style="font-size:0.6rem;font-weight:900;background:#1e1b4b;color:#a78bfa;border:1px solid #4f46e5;border-radius:3px;padding:1px 6px;">TL×${r.tlConvPairs.length}</span>` : ''}
         <span style="font-size:0.6rem;font-weight:900;background:${(r.mms??0)>=5?'#451a03':'#1a2234'};color:${(r.mms??0)>=5?'#f59e0b':'#4a6080'};border:1px solid ${(r.mms??0)>=5?'#f59e0b':'#2a3f5f'};border-radius:3px;padding:1px 6px;">MMS ${r.mms??'--'}/8</span>
       </div>
@@ -4521,15 +4549,19 @@ if (duplicatesRemoved > 0) {
 }
   if (tickers.length === 0) return;
 
-  const btn    = document.getElementById('screen-run-btn');
-  const vcsBtn = document.getElementById('screen-vcs-btn');
-  const maBtn  = document.getElementById('screen-ma-only-btn');
-  const dayBtn = document.getElementById('screen-day-btn');
-  btn.disabled = true; vcsBtn.disabled = true; maBtn.disabled = true; if(dayBtn) dayBtn.disabled = true;
-  btn.innerText    = mode === 'rs'  ? '... 実行中' : '▶ RS(ALL)';
-  vcsBtn.innerText = mode === 'vcs' ? '... 実行中' : '▶ VCS';
-  maBtn.innerText  = mode === 'ma'  ? '... 実行中' : '▶ MA';
-  if(dayBtn) dayBtn.innerText = mode === 'day' ? '... 実行中' : '▶ DAY';
+  const btn     = document.getElementById('screen-run-btn');
+  const vcsBtn  = document.getElementById('screen-vcs-btn');
+  const maBtn   = document.getElementById('screen-ma-only-btn');
+  const dayBtn  = document.getElementById('screen-day-btn');
+  const day2Btn = document.getElementById('screen-day2-btn');
+  btn.disabled = true; vcsBtn.disabled = true; maBtn.disabled = true;
+  if(dayBtn)  dayBtn.disabled  = true;
+  if(day2Btn) day2Btn.disabled = true;
+  btn.innerText    = mode === 'rs'   ? '... 実行中' : '▶ RS(ALL)';
+  vcsBtn.innerText = mode === 'vcs'  ? '... 実行中' : '▶ VCS';
+  maBtn.innerText  = mode === 'ma'   ? '... 実行中' : '▶ MA';
+  if(dayBtn)  dayBtn.innerText  = mode === 'day'  ? '... 実行中' : '▶ DAY';
+  if(day2Btn) day2Btn.innerText = mode === 'day2' ? '... 実行中' : '▶ DAY2';
   document.getElementById('screen-log').innerHTML = '';
   document.getElementById('screen-results-body').innerHTML = '';
   document.getElementById('screen-skip-body').innerHTML = '';
@@ -4604,12 +4636,19 @@ if (duplicatesRemoved > 0) {
         (result.adrOk ?? false) &&
         (result.vol60Avg ?? 0) >= 1000000;
 
+      const day2ConditionCheck =
+        (result.adrOk ?? false) &&
+        (result.vol60Avg ?? 0) >= 1000000 &&
+        (result.day2LineHit ?? false);
+
       const isMatch = mode === 'vcs'
   ? rs21_63_ok_chk && result.hlStructureFound && (result.pivotInRange ?? false) && (!isNaN(result.vcs) && result.vcs >= 70) && (result.mms ?? 0) >= 5 && (result.adrOk ?? false)
   : mode === 'ma'
   ? maConditionCheck
   : mode === 'day'
   ? dayConditionCheck
+  : mode === 'day2'
+  ? day2ConditionCheck
   : result.match && (result.mms ?? 0) >= 5;
 
       if (isMatch) {
@@ -4676,11 +4715,14 @@ if (duplicatesRemoved > 0) {
     const togBtn = document.getElementById('screen-results-toggle-btn');
     if (togBtn) togBtn.style.borderRadius = '8px 8px 0 0';
   }
-  btn.disabled = false; vcsBtn.disabled = false; maBtn.disabled = false; if(dayBtn) dayBtn.disabled = false;
+  btn.disabled = false; vcsBtn.disabled = false; maBtn.disabled = false;
+  if(dayBtn)  dayBtn.disabled  = false;
+  if(day2Btn) day2Btn.disabled = false;
   btn.innerText    = '▶ RS(ALL)';
   vcsBtn.innerText = '▶ VCS';
   maBtn.innerText  = '▶ MA';
-  if(dayBtn) dayBtn.innerText = '▶ DAY';
+  if(dayBtn)  dayBtn.innerText  = '▶ DAY';
+  if(day2Btn) day2Btn.innerText = '▶ DAY2';
 }
 
 // ======== 反転スクリーナー（完全独立・MA50/150/200 ±2%のみ） ========
