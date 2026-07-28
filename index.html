@@ -4632,9 +4632,9 @@ if (duplicatesRemoved > 0) {
     (result.oneilCond ?? false);  // ← 追加
 
       const dayConditionCheck =
-        (result.rs10 >= 80 || (result.rs21 >= 70 && result.rs10 >= 70)) &&
-        (result.adrOk ?? false) &&
-        (result.vol60Avg ?? 0) >= 1000000;
+  (result.rs10 >= 70 || (result.rs21 >= 60 && result.rs10 >= 60)) &&
+  (result.adrOk ?? false) &&
+  (result.vol60Avg ?? 0) >= 1000000;
 
       const day2ConditionCheck =
         (result.adrOk ?? false) &&
