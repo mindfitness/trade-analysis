@@ -4212,18 +4212,20 @@ const reversalLabel = revHits.join(' / ');
 // DAY2用: SMA150/200から終値が -1.5×ADR% 以内にあるか
 const sma150_day2 = closes.length >= 150 ? closes.slice(0, 150).reduce((a, b) => a + b, 0) / 150 : null;
 const sma200_day2 = closes.length >= 200 ? closes.slice(0, 200).reduce((a, b) => a + b, 0) / 200 : null;
-const day2AdrThresh = (adrPct ?? 0) * 1.5;
-const day2LineHit = (sma150_day2 !== null && Math.abs((sClose - sma150_day2) / sma150_day2 * 100) <= day2AdrThresh)
-                 || (sma200_day2 !== null && Math.abs((sClose - sma200_day2) / sma200_day2 * 100) <= day2AdrThresh);
+const day2AdrMin = (adrPct ?? 0) * 1.0;   // 下限: ADR×1.0
+const day2AdrMax = (adrPct ?? 0) * 1.5;   // 上限: ADR×1.5
+const day2InRange = d => Math.abs(d) >= day2AdrMin && Math.abs(d) <= day2AdrMax;
+const day2LineHit = (sma150_day2 !== null && day2InRange((sClose - sma150_day2) / sma150_day2 * 100))
+                 || (sma200_day2 !== null && day2InRange((sClose - sma200_day2) / sma200_day2 * 100));
 const day2LineLabel = (() => {
   const hits = [];
   if (sma150_day2 !== null) {
     const d = (sClose - sma150_day2) / sma150_day2 * 100;
-    if (Math.abs(d) <= day2AdrThresh) hits.push(`SMA150(${d >= 0 ? '+' : ''}${d.toFixed(2)}%)`);
+    if (day2InRange(d)) hits.push(`SMA150(${d >= 0 ? '+' : ''}${d.toFixed(2)}%)`);
   }
   if (sma200_day2 !== null) {
     const d = (sClose - sma200_day2) / sma200_day2 * 100;
-    if (Math.abs(d) <= day2AdrThresh) hits.push(`SMA200(${d >= 0 ? '+' : ''}${d.toFixed(2)}%)`);
+    if (day2InRange(d)) hits.push(`SMA200(${d >= 0 ? '+' : ''}${d.toFixed(2)}%)`);
   }
   return hits.join(' / ');
 })();
