@@ -962,6 +962,13 @@
   ▶ MA
 </button>
 </div>
+<!-- DAYボタンの上に追加 -->
+<div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
+  <span style="font-size:0.62rem; color:var(--text-sub); font-weight:700;">DAY RS閾値</span>
+  <input type="number" id="day-rs-threshold" value="60" min="0" max="100"
+    style="width:60px; padding:4px 8px; font-size:0.82rem; font-weight:800; text-align:center;">
+  <span style="font-size:0.62rem; color:var(--text-sub);">RS10 or RS21 ≥ この値</span>
+</div>
 <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
   <button id="screen-revtrend-btn" onclick="startReversalScreening()"
   style="flex:1; min-width:0; padding:10px; background:#06b6d4; color:#0f172a; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
@@ -4633,8 +4640,9 @@ if (duplicatesRemoved > 0) {
     (result.adrOk ?? false) &&
     (result.oneilCond ?? false);  // ← 追加
 
-      const dayConditionCheck =
-  (result.rs10 >= 60 || result.rs21 >= 60) &&
+      const dayRsThresh = parseFloat(document.getElementById('day-rs-threshold')?.value ?? 60);
+const dayConditionCheck =
+  (result.rs10 >= dayRsThresh || result.rs21 >= dayRsThresh) &&
   (result.adrOk ?? false) &&
   (result.vol60Avg ?? 0) >= 1000000;
 
