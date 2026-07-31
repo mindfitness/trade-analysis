@@ -4230,7 +4230,7 @@ const reversalLabel = revHits.join(' / ');
 const sma150_day2 = closes.length >= 150 ? closes.slice(0, 150).reduce((a, b) => a + b, 0) / 150 : null;
 const sma200_day2 = closes.length >= 200 ? closes.slice(0, 200).reduce((a, b) => a + b, 0) / 200 : null;
 const day2AdrMin = (adrPct ?? 0) * 1.0;   // 下限: ADR×1.0
-const day2AdrMax = (adrPct ?? 0) * 1.5;   // 上限: ADR×1.5
+const day2AdrMax = (adrPct ?? 0) * 1.7;   // 上限: ADR×1.7
 const day2InRange = d => Math.abs(d) >= day2AdrMin && Math.abs(d) <= day2AdrMax;
 const day2LineHit = (sma150_day2 !== null && day2InRange((sClose - sma150_day2) / sma150_day2 * 100))
                  || (sma200_day2 !== null && day2InRange((sClose - sma200_day2) / sma200_day2 * 100));
