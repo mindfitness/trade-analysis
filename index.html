@@ -2517,7 +2517,15 @@ let currentHistoryFilter = 'win';
 let currentPage = 'active';
 
 // ======== ページ切替 ========
+const _pageScrollPos = {};
+
 function switchPage(pageId) {
+    // 現在のページのスクロール位置を保存
+    const currentPageEl = document.getElementById(`page-${currentPage}`);
+    if (currentPageEl) {
+        _pageScrollPos[currentPage] = window.scrollY;
+    }
+
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.getElementById(`page-${pageId}`).classList.add('active');
@@ -2528,9 +2536,14 @@ function switchPage(pageId) {
     btn.textContent = '+ 新規';
     btn.style.color = 'var(--primary)';
     if (pageId === 'cross') renderCrossAnalysis();
-if (pageId === 'strategy') stratLoadList();
+    if (pageId === 'strategy') stratLoadList();
     if (pageId === 'rank' && rankMarketData.length > 0) renderRankTable();
     if(window.lucide) lucide.createIcons();
+
+    // 保存済みのスクロール位置を復元
+    requestAnimationFrame(() => {
+        window.scrollTo(0, _pageScrollPos[pageId] || 0);
+    });
 }
 
 function switchPFSubtab(tab) {
