@@ -1350,9 +1350,14 @@
           <input type="number" id="strat-stop" placeholder="自動計算" oninput="stratCalcRR()" style="font-size:0.85rem;">
         </div>
         <div>
-          <div style="font-size:0.58rem; color:var(--win-deep); font-weight:700; margin-bottom:3px;">1st Target ($) <span style="color:#475569; font-weight:400;">RR=3</span></div>
-          <input type="number" id="strat-target" placeholder="自動計算" oninput="stratCalcRR()" style="font-size:0.85rem;">
-        </div>
+  <div style="font-size:0.58rem; color:var(--win-deep); font-weight:700; margin-bottom:3px;">1st Target ($)
+    <span onclick="stratUnlockTarget()" id="strat-target-lock-icon"
+      style="cursor:pointer; margin-left:4px; font-size:0.65rem;
+      background:#1e3a8a; color:#93c5fd; border-radius:3px; padding:1px 5px;">🔒 自動</span>
+  </div>
+  <input type="number" id="strat-target" placeholder="自動計算"
+    oninput="stratCalcRR()" style="font-size:0.85rem;" readonly>
+</div>
       </div>
 
       <!-- RR結果 -->
@@ -5084,7 +5089,9 @@ async function stratAutoFetch() {
     // RR=3 target
     const risk   = curPrice - ema21Low;
     const target = curPrice + risk * 3;
-    document.getElementById('strat-target').value = target.toFixed(2);
+    if (_stratTargetLocked) {
+  document.getElementById('strat-target').value = target.toFixed(2);
+}
 
     statusEl.innerText = '✓';
     statusEl.style.color = 'var(--win-deep)';
@@ -5167,20 +5174,50 @@ async function stratAutoFetch() {
   }
 }
 
+let _stratTargetLocked = true;
+
+function stratUnlockTarget() {
+  const targetEl = document.getElementById('strat-target');
+  const iconEl   = document.getElementById('strat-target-lock-icon');
+  _stratTargetLocked = !_stratTargetLocked;
+  if (_stratTargetLocked) {
+    targetEl.readOnly = true;
+    targetEl.style.background  = '';
+    targetEl.style.borderColor = '';
+    iconEl.innerText           = '🔒 自動';
+    iconEl.style.background    = '#1e3a8a';
+    iconEl.style.color         = '#93c5fd';
+    stratCalcRR();
+  } else {
+    targetEl.readOnly          = false;
+    targetEl.style.background  = '#0f2a1e';
+    targetEl.style.borderColor = '#10b981';
+    iconEl.innerText           = '✏️ 手動';
+    iconEl.style.background    = '#064e3b';
+    iconEl.style.color         = '#10b981';
+    targetEl.focus();
+  }
+}
+
 function stratCalcRR() {
   const entry  = parseFloat(document.getElementById('strat-entry').value);
   const stop   = parseFloat(document.getElementById('strat-stop').value);
-  let target   = parseFloat(document.getElementById('strat-target').value);
+  const targetEl = document.getElementById('strat-target');
   const box    = document.getElementById('strat-rr-box');
 
   if (isNaN(entry) || isNaN(stop) || entry === stop) {
     box.style.display = 'none';
     return;
   }
-  // ★ Entry/Stop変更時にTargetをRR=3で自動再計算
   const risk = Math.abs(entry - stop);
-  target = entry + risk * 3;
-  document.getElementById('strat-target').value = target.toFixed(2);
+  let target;
+  if (targetEl.readOnly) {
+    target = entry + risk * 3;
+    targetEl.value = target.toFixed(2);
+  } else {
+    target = parseFloat(targetEl.value);
+    if (isNaN(target)) return;
+  }
 
   const reward = Math.abs(target - entry);
   const rr     = (reward / risk).toFixed(2);
@@ -5303,9 +5340,16 @@ async function stratSave() {
     hour:'2-digit', minute:'2-digit', timeZone:'Asia/Tokyo'
   }).format(now);
 
-  const risk   = Math.abs(entry - stop);
-  const reward = Math.abs(target - entry);
-  const rr     = (reward / risk).toFixed(2);
+  const risk = Math.abs(entry - stop);
+const targetEl = document.getElementById('strat-target');
+if (targetEl.readOnly) {
+  const autoTarget = entry + risk * 3;
+  targetEl.value = autoTarget.toFixed(2);
+  target = autoTarget;
+} else {
+  target = parseFloat(targetEl.value);
+  if (isNaN(target)) return;
+}
 
   const payload = { ticker, entry, stop, target, rr, memo, date: jst };
 
