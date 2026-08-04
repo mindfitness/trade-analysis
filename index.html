@@ -5326,13 +5326,26 @@ async function stratSave() {
   const ticker = document.getElementById('strat-ticker').value.trim().toUpperCase();
   const entry  = parseFloat(document.getElementById('strat-entry').value);
   const stop   = parseFloat(document.getElementById('strat-stop').value);
-  const target = parseFloat(document.getElementById('strat-target').value);
   const memo   = document.getElementById('strat-memo').value.trim();
 
-  if (!ticker || isNaN(entry) || isNaN(stop) || isNaN(target)) {
-    alert('Ticker・Entry・Stop・Targetを入力してください');
+  if (!ticker || isNaN(entry) || isNaN(stop)) {
+    alert('Ticker・Entry・Stopを入力してください');
     return;
   }
+
+  const targetEl = document.getElementById('strat-target');
+  const risk = Math.abs(entry - stop);
+  let finalTarget;
+  if (targetEl.readOnly) {
+    finalTarget = entry + risk * 3;
+    targetEl.value = finalTarget.toFixed(2);
+  } else {
+    finalTarget = parseFloat(targetEl.value);
+    if (isNaN(finalTarget)) { alert('Targetを入力してください'); return; }
+  }
+
+  const reward = Math.abs(finalTarget - entry);
+  const rr = risk > 0 ? (reward / risk).toFixed(2) : '0';
 
   const now = new Date();
   const jst = new Intl.DateTimeFormat('ja-JP', {
@@ -5340,18 +5353,7 @@ async function stratSave() {
     hour:'2-digit', minute:'2-digit', timeZone:'Asia/Tokyo'
   }).format(now);
 
-  const risk = Math.abs(entry - stop);
-const targetEl = document.getElementById('strat-target');
-if (targetEl.readOnly) {
-  const autoTarget = entry + risk * 3;
-  targetEl.value = autoTarget.toFixed(2);
-  target = autoTarget;
-} else {
-  target = parseFloat(targetEl.value);
-  if (isNaN(target)) return;
-}
-
-  const payload = { ticker, entry, stop, target, rr, memo, date: jst };
+  const payload = { ticker, entry, stop, target: finalTarget, rr, memo, date: jst };
 
   try {
     const res = await fetch(`${STRAT_DB_URL}.json`, {
@@ -5402,33 +5404,185 @@ function stratRenderCard(e) {
             <span class="stock-name" style="color:#06b6d4; text-decoration:underline;">${e.ticker}</span>
           </a>
           <span class="stock-price-label">Entry $${Number(e.entry).toFixed(2)}</span>
-          <span style="font-size:0.65rem; font-weight:900; color:${rrColor}; background:${rrBg}; border:1px solid ${rrColor}; border-radius:4px; padding:1px 6px;">RR ${rrNum.toFixed(2)}</span>
+          <span style="font-size:0.65rem; font-weight:900; color:${rrColor}; background:${rrBg}; border:1px solid ${rrColor}; border-radius:4px; padding:1px 6px;" id="strat-rr-badge-${e.key}">RR ${rrNum.toFixed(2)}</span>
           <div id="strat-live-${e.key}" style="display:inline-flex; align-items:center; gap:3px;"></div>
         </div>
         <div class="card-actions">
           <button class="edit-btn" id="strat-refresh-btn-${e.key}" onclick="stratRefreshOne('${e.key}','${e.ticker}',${e.entry},${e.stop})" title="現在価格取得">
             <i data-lucide="refresh-cw" style="width:10px;"></i>
           </button>
+          <button class="edit-btn" onclick="stratToggleRecalc('${e.key}')" title="再計算">⚙</button>
           <button class="del-btn" onclick="stratDelete('${e.key}')"><i data-lucide="x" style="width:12px;"></i></button>
         </div>
       </div>
       <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; margin-top:6px;">
         <div style="background:var(--input-bg); border-radius:5px; padding:4px 6px; border:1px solid var(--border);">
           <div style="font-size:0.52rem; color:var(--text-sub);">Entry</div>
-          <div style="font-size:0.78rem; font-weight:900;">$${Number(e.entry).toFixed(2)}</div>
+          <div style="font-size:0.78rem; font-weight:900;" id="strat-entry-disp-${e.key}">$${Number(e.entry).toFixed(2)}</div>
         </div>
         <div style="background:var(--input-bg); border-radius:5px; padding:4px 6px; border:1px solid #7f1d1d;">
           <div style="font-size:0.52rem; color:var(--lose-deep);">Stop (EMA21L)</div>
-          <div style="font-size:0.78rem; font-weight:900; color:var(--lose-deep);">$${Number(e.stop).toFixed(2)}</div>
+          <div style="font-size:0.78rem; font-weight:900; color:var(--lose-deep);" id="strat-stop-disp-${e.key}">$${Number(e.stop).toFixed(2)}</div>
         </div>
         <div style="background:var(--input-bg); border-radius:5px; padding:4px 6px; border:1px solid #064e3b;">
           <div style="font-size:0.52rem; color:var(--win-deep);">1st Target</div>
-          <div style="font-size:0.78rem; font-weight:900; color:var(--win-deep);">$${Number(e.target).toFixed(2)}</div>
+          <div style="font-size:0.78rem; font-weight:900; color:var(--win-deep);" id="strat-target-disp-${e.key}">$${Number(e.target).toFixed(2)}</div>
         </div>
       </div>
+
+      <!-- 再計算パネル（初期非表示） -->
+      <div id="strat-recalc-${e.key}" style="display:none; margin-top:8px; background:var(--input-bg); border:1px solid #06b6d4; border-radius:8px; padding:10px 12px;">
+        <div style="font-size:0.62rem; font-weight:800; color:#06b6d4; margin-bottom:8px;">⚙ 価格を変更して再計算</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:8px;">
+          <div>
+            <div style="font-size:0.55rem; color:var(--text-sub); font-weight:700; margin-bottom:3px;">Entry ($)</div>
+            <input type="number" id="strat-re-entry-${e.key}" value="${Number(e.entry).toFixed(2)}"
+              oninput="stratRecalc('${e.key}')" style="font-size:0.82rem;">
+          </div>
+          <div>
+            <div style="font-size:0.55rem; color:var(--lose-deep); font-weight:700; margin-bottom:3px;">Stop ($)</div>
+            <input type="number" id="strat-re-stop-${e.key}" value="${Number(e.stop).toFixed(2)}"
+              oninput="stratRecalc('${e.key}')" style="font-size:0.82rem;">
+          </div>
+          <div>
+            <div style="font-size:0.55rem; color:var(--win-deep); font-weight:700; margin-bottom:3px;">Target ($)</div>
+            <input type="number" id="strat-re-target-${e.key}" value="${Number(e.target).toFixed(2)}"
+              oninput="stratRecalc('${e.key}')" style="font-size:0.82rem;">
+          </div>
+        </div>
+        <div id="strat-recalc-result-${e.key}" style="background:#0f172a; border-radius:6px; padding:8px 10px; display:grid; grid-template-columns:repeat(4,1fr); gap:6px; text-align:center;">
+          <div><div style="font-size:0.5rem; color:var(--text-sub);">Risk(1R)</div><div id="strat-re-risk-${e.key}" style="font-size:0.82rem; font-weight:900;">--</div></div>
+          <div><div style="font-size:0.5rem; color:var(--text-sub);">Reward</div><div id="strat-re-reward-${e.key}" style="font-size:0.82rem; font-weight:900;">--</div></div>
+          <div><div style="font-size:0.5rem; color:var(--text-sub);">RR</div><div id="strat-re-rr-${e.key}" style="font-size:1rem; font-weight:900; color:#06b6d4;">--</div></div>
+          <div><div style="font-size:0.5rem; color:var(--text-sub);">必要勝率</div><div id="strat-re-wr-${e.key}" style="font-size:0.82rem; font-weight:900; color:#94a3b8;">--</div></div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:6px;">
+          <div style="background:#064e3b; border:1px solid #10b981; border-radius:6px; padding:6px 8px;">
+            <div style="font-size:0.52rem; color:#6ee7b7; font-weight:700; margin-bottom:2px;">① BE移動 (+1R)</div>
+            <div id="strat-re-be-${e.key}" style="font-size:0.82rem; font-weight:900; color:#10b981;">--</div>
+          </div>
+          <div style="background:#1e1b4b; border:1px solid #6366f1; border-radius:6px; padding:6px 8px;">
+            <div style="font-size:0.52rem; color:#a5b4fc; font-weight:700; margin-bottom:2px;">② 一部利確 (1:3)</div>
+            <div id="strat-re-tp-${e.key}" style="font-size:0.82rem; font-weight:900; color:#818cf8;">--</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;">
+          <button onclick="stratSaveRecalc('${e.key}','${e.ticker}')"
+            style="width:100%; padding:7px; background:#06b6d4; color:#0f172a; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.78rem;">
+            💾 この内容で上書き保存
+          </button>
+        </div>
+      </div>
+
       ${e.memo ? `<div class="memo-area" style="margin-top:5px;">${e.memo}</div>` : ''}
       <div style="font-size:0.58rem; color:#475569; margin-top:4px;">${e.date}</div>
     </div>`;
+}
+
+function stratToggleRecalc(key) {
+  const panel = document.getElementById(`strat-recalc-${key}`);
+  if (!panel) return;
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) stratRecalc(key);
+}
+
+function stratRecalc(key) {
+  const entry  = parseFloat(document.getElementById(`strat-re-entry-${key}`)?.value);
+  const stop   = parseFloat(document.getElementById(`strat-re-stop-${key}`)?.value);
+  const target = parseFloat(document.getElementById(`strat-re-target-${key}`)?.value);
+  if (isNaN(entry) || isNaN(stop) || isNaN(target) || entry === stop) return;
+
+  const risk   = Math.abs(entry - stop);
+  const reward = Math.abs(target - entry);
+  const rr     = (reward / risk).toFixed(2);
+  const wr     = ((1 / (1 + parseFloat(rr))) * 100).toFixed(1);
+  const beTrigger = entry + risk;
+  const partialTP = entry + risk * 3;
+  const rrNum = parseFloat(rr);
+  const rrColor = rrNum >= 3 ? 'var(--win-deep)' : rrNum >= 2 ? '#f59e0b' : 'var(--lose-deep)';
+
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+  set(`strat-re-risk-${key}`,   risk.toFixed(2));
+  set(`strat-re-reward-${key}`, reward.toFixed(2));
+  set(`strat-re-rr-${key}`,     `1 : ${rr}`);
+  set(`strat-re-wr-${key}`,     `${wr}%`);
+  set(`strat-re-be-${key}`,     `$${beTrigger.toFixed(2)}`);
+  set(`strat-re-tp-${key}`,     `$${partialTP.toFixed(2)}`);
+
+  const rrEl = document.getElementById(`strat-re-rr-${key}`);
+  if (rrEl) rrEl.style.color = rrColor;
+
+  // サマリー表示も更新
+  const badge = document.getElementById(`strat-rr-badge-${key}`);
+  if (badge) {
+    const bg = rrNum >= 3 ? '#064e3b' : rrNum >= 2 ? '#451a03' : '#7f1d1d';
+    badge.innerText = `RR ${rrNum.toFixed(2)}`;
+    badge.style.color = rrColor; badge.style.background = bg; badge.style.borderColor = rrColor;
+  }
+  const setDisp = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+  setDisp(`strat-entry-disp-${key}`,  `$${entry.toFixed(2)}`);
+  setDisp(`strat-stop-disp-${key}`,   `$${stop.toFixed(2)}`);
+  setDisp(`strat-target-disp-${key}`, `$${target.toFixed(2)}`);
+}
+
+async function stratSaveRecalc(key, ticker) {
+  const entry  = parseFloat(document.getElementById(`strat-re-entry-${key}`)?.value);
+  const stop   = parseFloat(document.getElementById(`strat-re-stop-${key}`)?.value);
+  const target = parseFloat(document.getElementById(`strat-re-target-${key}`)?.value);
+
+  if (isNaN(entry) || isNaN(stop) || isNaN(target)) {
+    alert('Entry・Stop・Targetを入力してください'); return;
+  }
+  if (!confirm(`${ticker} を上書き保存しますか？`)) return;
+
+  const risk   = Math.abs(entry - stop);
+  const reward = Math.abs(target - entry);
+  const rr     = risk > 0 ? (reward / risk).toFixed(2) : '0';
+
+  const now = new Date();
+  const jst = new Intl.DateTimeFormat('ja-JP', {
+    year:'numeric', month:'2-digit', day:'2-digit',
+    hour:'2-digit', minute:'2-digit', timeZone:'Asia/Tokyo'
+  }).format(now);
+
+  try {
+    // Firebase PATCH で該当keyのみ部分更新
+    const res = await fetch(`${STRAT_DB_URL}/${key}.json`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entry, stop, target, rr, date: jst })
+    });
+    if (!res.ok) throw new Error('保存失敗');
+
+    // 表示をその場で更新（リロード不要）
+    const setDisp = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+    setDisp(`strat-entry-disp-${key}`,  `$${entry.toFixed(2)}`);
+    setDisp(`strat-stop-disp-${key}`,   `$${stop.toFixed(2)}`);
+    setDisp(`strat-target-disp-${key}`, `$${target.toFixed(2)}`);
+
+    const rrNum = parseFloat(rr);
+    const rrColor = rrNum >= 3 ? 'var(--win-deep)' : rrNum >= 2 ? '#f59e0b' : 'var(--lose-deep)';
+    const rrBg    = rrNum >= 3 ? '#064e3b'         : rrNum >= 2 ? '#451a03' : '#7f1d1d';
+    const badge = document.getElementById(`strat-rr-badge-${key}`);
+    if (badge) {
+      badge.innerText = `RR ${rrNum.toFixed(2)}`;
+      badge.style.color = rrColor;
+      badge.style.background = rrBg;
+      badge.style.borderColor = rrColor;
+    }
+
+    // 保存完了フィードバック
+    const btn = document.querySelector(`#strat-recalc-${key} button[onclick*="stratSaveRecalc"]`);
+    if (btn) {
+      const orig = btn.innerText;
+      btn.innerText = '✅ 保存完了';
+      btn.style.background = '#064e3b';
+      setTimeout(() => { btn.innerText = orig; btn.style.background = '#06b6d4'; }, 2000);
+    }
+  } catch(e) {
+    alert('保存に失敗しました: ' + e.message);
+  }
 }
 
 async function stratRefreshOne(key, ticker, entry, stop) {
