@@ -1526,14 +1526,6 @@ function isMobile() {
 window.addEventListener('DOMContentLoaded', () => {
     if (['admin','user'].includes(sessionStorage.getItem('auth'))) return;
 
-    const ua = /iPhone|Android|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const narrow = window.innerWidth < 768;
-
-    if (ua || narrow) {
-        sessionStorage.setItem('auth', 'user');
-        return;
-    }
-
     document.getElementById('auth-screen').style.display = 'flex';
 });
 
