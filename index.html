@@ -4659,6 +4659,8 @@ if (duplicatesRemoved > 0) {
 const dayConditionCheck =
   (result.rs10 >= dayRsThresh || result.rs21 >= dayRsThresh) &&
   (result.adrOk ?? false) &&
+  (result.adrPct ?? 0) <= 15 &&
+  (result.price ?? 0) >= 2 &&
   (result.vol60Avg ?? 0) >= 1000000;
 
       const day2ConditionCheck =
