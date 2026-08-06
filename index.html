@@ -3602,8 +3602,10 @@ function copyReversalResultsLong() {
 
 // ======== Ticker Intersect ========
 function parseTickers(raw) {
+    // 数字・小数点・カンマの連続を除去してからトークン分割
+    const cleaned = raw.replace(/[\d.]+/g, ' ');
     return [...new Set(
-        raw.split(/[\s,\n\r\t\/|;]+/)
+        cleaned.split(/[\s,\n\r\t\/|;]+/)
             .map(t => t.trim().replace(/^\$/, '').toUpperCase())
             .filter(t => /^[A-Z]{1,6}$/.test(t))
     )];
