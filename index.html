@@ -969,6 +969,18 @@
     style="width:60px; padding:4px 8px; font-size:0.82rem; font-weight:800; text-align:center;">
   <span style="font-size:0.62rem; color:var(--text-sub);">RS10 or RS21 ≥ この値</span>
 </div>
+<div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
+  <label style="display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none;">
+    <div id="day-hl-toggle" onclick="toggleDayHL()"
+      style="width:36px; height:20px; border-radius:10px; background:#334155; border:1px solid var(--border);
+             position:relative; transition:background 0.2s; cursor:pointer; flex-shrink:0;">
+      <div id="day-hl-knob"
+        style="width:14px; height:14px; border-radius:50%; background:#94a3b8;
+               position:absolute; top:2px; left:2px; transition:all 0.2s;"></div>
+    </div>
+    <span id="day-hl-label" style="font-size:0.68rem; color:var(--text-sub); font-weight:700;">LL-HL構造チェックなし</span>
+  </label>
+</div>
 <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
   <button id="screen-revtrend-btn" onclick="startReversalScreening()"
   style="flex:1; min-width:0; padding:10px; background:#06b6d4; color:#0f172a; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
@@ -3710,6 +3722,28 @@ function toggleSaveToWatch() {
         label.textContent      = 'Watchに保存しない';
     }
 }
+
+let dayHLCheck = false;
+
+function toggleDayHL() {
+  dayHLCheck = !dayHLCheck;
+  const track = document.getElementById('day-hl-toggle');
+  const knob  = document.getElementById('day-hl-knob');
+  const label = document.getElementById('day-hl-label');
+  if (dayHLCheck) {
+    track.style.background = '#06b6d4';
+    knob.style.background  = 'white';
+    knob.style.left        = '18px';
+    label.style.color      = '#06b6d4';
+    label.textContent      = 'LL-HL構造チェックあり';
+  } else {
+    track.style.background = '#334155';
+    knob.style.background  = '#94a3b8';
+    knob.style.left        = '2px';
+    label.style.color      = 'var(--text-sub)';
+    label.textContent      = 'LL-HL構造チェックなし';
+  }
+}
     
 function screenAddLog(msg, type = '') {
   const area = document.getElementById('screen-log');
@@ -4655,7 +4689,8 @@ const dayConditionCheck =
   (result.adrOk ?? false) &&
   (result.adrPct ?? 0) <= 15 &&
   (result.price ?? 0) >= 2 &&
-  (result.vol60Avg ?? 0) >= 1000000;
+  (result.vol60Avg ?? 0) >= 1000000 &&
+  (!dayHLCheck || result.hlStructureFound);
 
       const day2ConditionCheck =
         (result.adrOk ?? false) &&
