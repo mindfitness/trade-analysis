@@ -2485,13 +2485,8 @@ function renderBreakoutLists() {
 }
 
 function showRankInfo(symbol) {
-  const info = TICKER_INFO[symbol] || { desc: '説明データがありません。', stocks: '-' };
-  document.getElementById('rank-modal-title').innerText  = symbol;
-  document.getElementById('rank-modal-desc').innerText   = info.desc;
-  document.getElementById('rank-modal-stocks').innerText = info.stocks;
   const tvLink = `https://jp.tradingview.com/chart/2heIjlhI/?symbol=${symbol}`;
-  document.getElementById('rank-modal-tv-link').href = tvLink;
-  document.getElementById('rank-modal').style.display    = 'block';
+  window.open(tvLink, '_blank', 'noopener,noreferrer');
 }
 function closeRankModal() { document.getElementById('rank-modal').style.display = 'none'; }
 function jumpToRankSymbol() {
