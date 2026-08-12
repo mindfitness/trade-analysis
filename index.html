@@ -965,7 +965,7 @@
 <!-- DAYボタンの上に追加 -->
 <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
   <span style="font-size:0.62rem; color:var(--text-sub); font-weight:700;">DAY RS閾値</span>
-  <input type="number" id="day-rs-threshold" value="60" min="0" max="100"
+  <input type="number" id="day-rs-threshold" value="70" min="0" max="100"
     style="width:60px; padding:4px 8px; font-size:0.82rem; font-weight:800; text-align:center;">
   <span style="font-size:0.62rem; color:var(--text-sub);">RS10 or RS21 ≥ この値</span>
 </div>
@@ -3609,8 +3609,7 @@ function copyReversalResultsLong() {
 
 // ======== Ticker Intersect ========
 function parseTickers(raw) {
-    // 数字・小数点・カンマの連続を除去してからトークン分割
-    const cleaned = raw.replace(/[\d.]+/g, ' ');
+    const cleaned = raw.replace(/[\d.]+/g, ' ').replace(/["']/g, '');
     return [...new Set(
         cleaned.split(/[\s,\n\r\t\/|;]+/)
             .map(t => t.trim().replace(/^\$/, '').toUpperCase())
@@ -3718,7 +3717,7 @@ function toggleSaveToWatch() {
     }
 }
 
-let dayHLCheck = false;
+let dayHLCheck = true;
 
 function toggleDayHL() {
   dayHLCheck = !dayHLCheck;
@@ -4586,7 +4585,7 @@ async function startScreening(mode = 'rs') {
   document.getElementById('screen-error-section').style.display = 'none';
   const input = document.getElementById('screen-ticker-input').value;
   const tickers = [...new Set(
-  input.split(/[\s,\n]+/)
+  input.replace(/["']/g, '').split(/[\s,\n]+/)
     .map(t => t.trim().replace(/^\$/, '').toUpperCase())
     .filter(t => /^[A-Z0-9]{2,6}$/.test(t))
 )];
@@ -4864,10 +4863,10 @@ function reversalAppendCardLong(r) {
 async function startReversalScreening() {
   const input = document.getElementById('screen-ticker-input').value;
   const tickers = [...new Set(
-    input.split(/[\s,\n]+/)
-      .map(t => t.trim().replace(/^\$/, '').toUpperCase())
-      .filter(t => /^[A-Z0-9]{2,6}$/.test(t))
-  )];
+  input.replace(/["']/g, '').split(/[\s,\n]+/)
+    .map(t => t.trim().replace(/^\$/, '').toUpperCase())
+    .filter(t => /^[A-Z0-9]{2,6}$/.test(t))
+)];
   if (tickers.length === 0) { alert('銘柄を入力してください'); return; }
 
   const btn = document.getElementById('screen-revtrend-btn');
@@ -6290,6 +6289,17 @@ function applyUserRestrictions() {
 }
 
 window.onload = async () => {
+    // DAY HL toggle 初期状態をONに
+const dayHLTrack = document.getElementById('day-hl-toggle');
+const dayHLKnob  = document.getElementById('day-hl-knob');
+const dayHLLabel = document.getElementById('day-hl-label');
+if (dayHLTrack) {
+  dayHLTrack.style.background = '#06b6d4';
+  dayHLKnob.style.background  = 'white';
+  dayHLKnob.style.left        = '18px';
+  dayHLLabel.style.color      = '#06b6d4';
+  dayHLLabel.textContent      = 'LL-HL構造チェックあり';
+}
     switchPage('rank');
     renderEntryChecks();
     loadTrades();
