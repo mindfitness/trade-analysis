@@ -4275,11 +4275,14 @@ const day2LineLabel = (() => {
   return hits.join(' / ');
 })();
 
+const candleStreakState = rankDetectCandleStreakState(values);
+
 return { symbol, price: sClose, rs10, rs21, rs63, rs126, rs252, hasVolSpike, ppCount, vcs, maTouchLabel,
     tlConvPairs, tlConv, mms, adrPct, isAdrTouchAnyLine, adrOk, vol60Avg,
     hlStructureFound, pivotHitLabel, oneilCond,
     reversalHit, reversalLabel,
     day2LineHit, day2LineLabel,
+    candle_streak: candleStreakState,
     matchType: rsCondition ? 'rs' : vcsCondition ? 'vcs' : maCondition ? 'ma' : null,
     match: (rsCondition || vcsCondition || maCondition) && mms >= 5 };
 }
@@ -4685,7 +4688,8 @@ const dayConditionCheck =
   (result.adrPct ?? 0) <= 15 &&
   (result.price ?? 0) >= 2 &&
   (result.vol60Avg ?? 0) >= 1000000 &&
-  (!dayHLCheck || result.hlStructureFound);
+  (!dayHLCheck || result.hlStructureFound) &&
+  result.candle_streak === 'bull';
 
       const day2ConditionCheck =
         (result.adrOk ?? false) &&
