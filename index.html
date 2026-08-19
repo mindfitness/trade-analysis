@@ -1299,17 +1299,47 @@
                 <p style="font-size:0.68rem;color:var(--text-sub);margin:0 0 8px;">テキストを貼り付けて「抽出」を押してください（1行1銘柄コードの行のみ抽出）</p>
                 <textarea id="ticker-extract-input" rows="8" placeholder="ここにコピーしたデータを貼り付け"
                     style="font-family:monospace; font-size:0.82rem; resize:vertical;"></textarea>
-                <div style="display:flex; gap:8px; align-items:center; margin:8px 0;">
-                    <button id="ticker-extract-run-btn" onclick="runTickerExtract()"
-                        style="padding:6px 14px; background:var(--sector-accent); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.75rem;">
-                        <i data-lucide="filter" style="width:12px; vertical-align:-2px; margin-right:4px;"></i>抽出
-                    </button>
-                    <button id="ticker-extract-copy-btn" onclick="copyTickerExtract()"
-                        style="padding:6px 14px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:8px; font-weight:800; cursor:pointer; font-size:0.75rem;">
-                        <i data-lucide="copy" style="width:12px; vertical-align:-2px; margin-right:4px;"></i>コピー
-                    </button>
-                    <span id="ticker-extract-count" style="font-size:0.68rem; color:var(--text-sub);"></span>
-                </div>
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:8px 0;">
+    <!-- 価格フィルタートグル -->
+    <label style="display:flex; align-items:center; gap:5px; cursor:pointer; user-select:none;">
+        <div id="ticker-extract-price-toggle" data-on="0"
+            onclick="
+                const on = this.dataset.on === '1';
+                this.dataset.on = on ? '0' : '1';
+                this.style.background = on ? '#334155' : '#06b6d4';
+                this.querySelector('div').style.left = on ? '2px' : '18px';
+                this.querySelector('div').style.background = on ? '#94a3b8' : 'white';
+                document.getElementById('ticker-price-filter-wrap').style.display = on ? 'none' : 'flex';
+            "
+            style="width:36px;height:20px;border-radius:10px;background:#334155;border:1px solid var(--border);
+                   position:relative;transition:background 0.2s;cursor:pointer;flex-shrink:0;">
+            <div style="width:14px;height:14px;border-radius:50%;background:#94a3b8;
+                        position:absolute;top:2px;left:2px;transition:all 0.2s;"></div>
+        </div>
+        <span style="font-size:0.65rem; color:var(--text-sub); font-weight:700; white-space:nowrap;">価格フィルター</span>
+    </label>
+    <!-- 閾値入力（トグルON時のみ表示） -->
+    <div id="ticker-price-filter-wrap" style="display:none; align-items:center; gap:4px;">
+        <span style="font-size:0.65rem; color:var(--text-sub);">$以上</span>
+        <input type="number" id="ticker-extract-min-price" value="10" min="0" step="1"
+            style="width:60px; padding:3px 6px; font-size:0.82rem; font-weight:800; text-align:center;">
+    </div>
+</div>
+<div style="display:flex; gap:8px; align-items:center; margin:4px 0 8px;">
+    <button id="ticker-extract-run-btn" onclick="runTickerExtract()"
+        style="padding:6px 14px; background:var(--sector-accent); color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.75rem;">
+        <i data-lucide="filter" style="width:12px; vertical-align:-2px; margin-right:4px;"></i>抽出
+    </button>
+    <button id="ticker-extract-copy-btn" onclick="copyTickerExtract()"
+        style="padding:6px 14px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:8px; font-weight:800; cursor:pointer; font-size:0.75rem;">
+        <i data-lucide="copy" style="width:12px; vertical-align:-2px; margin-right:4px;"></i>コピー
+    </button>
+    <span id="ticker-extract-count" style="font-size:0.68rem; color:var(--text-sub);"></span>
+</div>
+<!-- 除外銘柄ログ -->
+<div id="ticker-extract-skip-log"
+    style="display:none; font-size:0.62rem; color:#f87171; background:#450a0a; border:1px solid #991b1b;
+           border-radius:6px; padding:5px 8px; margin-bottom:6px; line-height:1.7; word-break:break-all;"></div>
                 <textarea id="ticker-extract-output" rows="3" readonly
                     style="font-family:monospace; font-size:0.82rem; background:var(--input-bg); resize:vertical;"></textarea>
             </section>
@@ -3225,6 +3255,25 @@ function toggleTickerExtract(btn) {
     if (window.lucide) lucide.createIcons();
 }
 
+// 価格フィルター用キャッシュ
+const tickerPriceCache = {};
+
+async function fetchTickerPrice(symbol) {
+    if (tickerPriceCache[symbol] !== undefined) return tickerPriceCache[symbol];
+    try {
+        const res = await fetch(
+            `https://api.twelvedata.com/price?symbol=${encodeURIComponent(symbol)}&apikey=${TD_API_KEY_POOL[0]}`
+        );
+        const json = await res.json();
+        const price = parseFloat(json.price);
+        tickerPriceCache[symbol] = isNaN(price) ? null : price;
+        return tickerPriceCache[symbol];
+    } catch {
+        tickerPriceCache[symbol] = null;
+        return null;
+    }
+}
+
 function extractTickersFromText(text) {
     const lines = text.split(/\r?\n/);
     const tickers = [];
@@ -3235,6 +3284,76 @@ function extractTickersFromText(text) {
         }
     }
     return tickers;
+}
+
+async function runTickerExtract() {
+    const text = document.getElementById('ticker-extract-input').value;
+    const rawTickers = extractTickersFromText(text);
+
+    const minPriceToggle = document.getElementById('ticker-extract-price-toggle');
+    const filterEnabled = minPriceToggle && minPriceToggle.dataset.on === '1';
+    const minPrice = filterEnabled
+        ? (parseFloat(document.getElementById('ticker-extract-min-price').value) || 10)
+        : 0;
+
+    if (!filterEnabled || minPrice <= 0) {
+        // フィルターなし：従来通り
+        const out = rawTickers.map(t => '"' + t + '"').join(',');
+        document.getElementById('ticker-extract-output').value = out;
+        document.getElementById('ticker-extract-count').textContent = rawTickers.length + ' 件抽出';
+        return;
+    }
+
+    // 価格フィルターあり
+    const countEl = document.getElementById('ticker-extract-count');
+    countEl.textContent = '価格取得中...';
+    const output = document.getElementById('ticker-extract-output');
+    output.value = '';
+
+    const passed = [];
+    const skipped = [];
+
+    // TD_API_KEY_POOL全キーで並列バッチ処理
+    for (let i = 0; i < rawTickers.length; i += TD_API_KEY_POOL.length) {
+        const batch = rawTickers.slice(i, i + TD_API_KEY_POOL.length);
+        countEl.textContent = `価格取得中 ${i + 1} / ${rawTickers.length}...`;
+        await Promise.all(batch.map(async (sym, idx) => {
+            const apiKey = TD_API_KEY_POOL[idx];
+            let price = tickerPriceCache[sym];
+            if (price === undefined) {
+                try {
+                    const res = await fetch(
+                        `https://api.twelvedata.com/price?symbol=${encodeURIComponent(sym)}&apikey=${apiKey}`
+                    );
+                    const json = await res.json();
+                    price = parseFloat(json.price);
+                    tickerPriceCache[sym] = isNaN(price) ? null : price;
+                } catch {
+                    tickerPriceCache[sym] = null;
+                    price = null;
+                }
+            }
+            if (price !== null && price >= minPrice) {
+                passed.push(sym);
+            } else {
+                skipped.push(`${sym}(${price !== null ? '$' + price.toFixed(2) : 'N/A'})`);
+            }
+        }));
+        if (i + TD_API_KEY_POOL.length < rawTickers.length) {
+            await new Promise(r => setTimeout(r, 8500));
+        }
+    }
+
+    const out = passed.map(t => '"' + t + '"').join(',');
+    output.value = out;
+    countEl.textContent = `${passed.length} 件（除外: ${skipped.length} 件）`;
+
+    // 除外銘柄をログ表示
+    const logEl = document.getElementById('ticker-extract-skip-log');
+    if (logEl) {
+        logEl.style.display = skipped.length ? 'block' : 'none';
+        logEl.textContent = '除外: ' + skipped.join(', ');
+    }
 }
 
 function runTickerExtract() {
@@ -5694,7 +5813,7 @@ const TT_RAW_DATA = [
   {n:14,name:"天然ガス：生産",change:0.0,tickers:["AR","CTRA","EQT","EXE","RRC"]},
   {n:15,name:"PEJオール",change:0.0,tickers:["NIPG","ZNB","AMC","ANGX","ANGH","CNVS","PLAY","SIRI","SLMT","WMG","IMAX","KWM","AMCX","LLYVA","LLYVK","HUYA","CNK","FOX","MCS","SPHR","NWS","FOXA","RDI","NWSA","DIS","GAIA","TOON","VSNT","MANU","MSGE","FWONA","FWONK","TKO","LYV","AENT","RSVR","BATRK","STRZ","IQ","ROKU","NFLX","MSGS","BATRA","LFS","PARAP","RDIB","LION","CPOP","WBD","PSKY","MPU","LVO","FTRK","KUST","ATAT","HTHT","CHH","MAR","WH","H","IHG","HLT","CVEO","GHG","INTG","NOMA","TRON","JAKK","FNKO","XPOF","KMRK","HWH","KBSX","AS","NWTG","OSW","LTH","HERE","MAT","PTON","LUCK","JOUT","HAS","PUSA","ESCA","PLBY","MSGE","PLNT","FUN","YETI","TRUG","CALY","PRKS","CLAR","GOLF","DOGZ","AOUT","MMA","GDHG"]},
   {n:16,name:"銅オール",change:0.0,tickers:["ERO","FCX","HBM","IE","SCCO","TECK","TGB","TMQ"]},
-  {n:17,name:"IHIオール",change:0.0,tickers:["INSP","BDMD","CLPT","NPCE","ELUT","AORT","SENS","LIVN","RCEL","VMD","CVRX","SNWV","BSX","TMDX","IRTC","SI","NVNO","INFU","XTNT","INGN","SIBN","MOBI","DXCM","VVOS","TLSI","GMED","BMRA","STE","TMCI","SYK","CNMD","AHCO","CV","SNN","QSI","COCH","HAE","ABT","INMD","MDT","LMRI","PODD","TCMD","RPID","PROF","LFWD","GEHC","BBNX","NSPR","ITGR","ZBH","HYPR","IRMD","BIO","VREX","EW","AVR","TNDM","PEN","PMI","MDAI","SERA","AVNS","QTRX","CTSO","PACB","ADGM","MASS","IRIX","ESTA","SRTS","OWLT","LUCD","NEOG","BRKR","APYX","GKOS","CTKB","NNOX","IART","BWAY","INBS","QTI","ECOR","DCTH","CODX","NUWE","TNON","CATX","PLSM","NVCR","AEMD","IVF","LNSR","PHG","AMIX","VBIO","MXCT","ARAY","ALMR","TELA","ITOC","FEED","ICCM","WOK","LAB","NMTC","MODD","NXL","AIDX","VNRX","PFSA","SSII","SINT","VTAK","PAVM","MYO","RXST","TRIB","QTEX","BFLY","CBLL","OM","BJDX","POAS","PRCT","HSCS","OFIX","BVS","NSYS","KIDS","ATEC","QDEL","UFPT","CERS","STIM","ENOV","SGHT","LUNG","AXGN","XAIR","ELMD"]},
+  {n:17,name:"IHIオール",change:0.0,tickers:["PFSA","MODD","RCEL","HAE","TRIB","TNON","BBNX","SENS","QTI","MYO","PROF","TNDM","SI","PODD","IRIX","ENOV","SRTS","ITOC","KIDS","BVS","ELMD","TMDX","ALMR","BMRA","POAS","TLSI","SIBN","AXGN","ABT","AORT","OFIX","SNN","AVR","MDT","APYX","GMED","LMRI","SNWV","LUNG","NPCE","LNSR","LUCD","STE","PRCT","PHG","ZBH","DXCM","GCTK","ATEC","VMD","RPID","INFU","COCH","GEHC","XAIR","INSP","LFWD","NSPR","ECOR","EW","AHCO","CNMD","ITGR","CVRX","NMTC","AVNS","VREX","XTNT","HYPR","MOBI","SYK","INMD","BFLY","SGHT","CATX","IRMD","IART","PLSM","BIO","PEN","CBLL","GKOS","ADGM","SERA","TELA","MASS","TMCI","DCTH","SINT","NSYS","SSII","BRKR","IRTC","CTKB","AEMD","NVCR","RXST","MDAI","ESTA","BSX","INGN","NXL","LIVN","CLPT","QSI","VTAK","UFPT","VVOS","NEOG","MBOT","TCMD","LAB","ARAY","AMIX","HSCS","STIM","MXCT","OWLT","BDMD","INBS","CTSO","CV","BJDX","PAVM","NNOX","VNRX","BWAY","NUWE","WOK","PACB","CODX","AIDX","NVNO","IVF","ELUT","CERS","OM","FEED","ICCM","QDEL","PMI","QTRX"]},
   {n:18,name:"食品小売・量販店",change:0.0,tickers:["COST","KR","TGT","WMT"]},
   {n:19,name:"電気工事・施工",change:0.0,tickers:["EME","FIX","MTZ","PWR","STRL"]},
   {n:20,name:"電力：規制事業者",change:0.0,tickers:["AEP","D","DUK","ETR","EXC","NRG","SO","XEL"]},
@@ -5702,7 +5821,7 @@ const TT_RAW_DATA = [
   {n:22,name:"電源インフラ",change:0.0,tickers:["AME","AMSC","APH","ETN","HUBB","POWL"]},
   {n:23,name:"多角化資源",change:0.0,tickers:["BHP","RIO","VALE"]},
   {n:24,name:"石油",change:0.0,tickers:["COP","OXY"]},
-  {n:25,name:"タバコ",change:0.0,tickers:["BTI","MO","PM"]},
+  {n:25,name:"XBIオール",change:0.0,tickers:["AMLX","XNCR","KURA","REPL","LEGN","PBLS","LBRX","ODTX","SRRK","ZBIO","JANX","MAZE","ORIC","BBIO","VRDN","ARQT","FRNM","AVBP","OCUL","SYRE","BVS","ZYME","MANE","INBX","IMCR","ETON","ALMR","GENB","AGIO","DMRA","PHVS","MLYS","VERA","DFTX","TGTX","TRVI","RVMD","ALNY","AVLN","ANRO","VCEL","EXEL","IMVT","NKTR","CMPS","NAMS","RAPP","CGEM","VOR","PRCT","MIRM","ELVN","INDV","MGTX","CELC","CORT","SNDX","SLS","TNGX","DNTH","TARS","IMNM","TVTX","JBIO","KMTS","KNSA","ORKA","SMMT","CYTK","IRON","EWTX","ELAN","HROW","INSM","STOK","KYMR","MLTX","BCAX","MDGL","DNLI","RYTM","NBIX","RCUS","AXSM","STVN","RLAY","CLDX","PTCT","BLTE","URGN","CRVS","DYN","TYRA","PCVX","ABCL","VKTX","KOD","KRYS","MMED","SRPT","SEPN","OMER","ERAS","CGON","ANAB","AVTX","QURE","COGT","AMRX","LGND","PRAX","SPTX","BEAM","PVLA","COAG","GLUE","MRNA","ALMS","RARE","MBX","KLRA","NTLA","LQDA","BHVN"]},
   {n:27,name:"電力：IPP",change:0.0,tickers:["AES","BEP","CEG","CWEN","NEE","TLN","VST"]},
   {n:28,name:"スーパーメジャー：米国外",change:0.0,tickers:["BP","PBR","SHEL","TTE"]},
   {n:29,name:"アルコール飲料",change:0.0,tickers:["ABEV","BUD","DEO","STZ","TAP"]},
