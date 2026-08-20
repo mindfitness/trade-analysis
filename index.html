@@ -5300,9 +5300,9 @@ async function stratAutoFetch() {
     document.getElementById('strat-entry').value  = curPrice.toFixed(2);
     document.getElementById('strat-stop').value   = ema21Low.toFixed(2);
 
-    // RR=3 target
+        // RR=1.2 target
     const risk   = curPrice - ema21Low;
-    const target = curPrice + risk * 3;
+    const target = curPrice + risk * 1.2;
     if (_stratTargetLocked) {
   document.getElementById('strat-target').value = target.toFixed(2);
 }
@@ -5426,7 +5426,7 @@ function stratCalcRR() {
   const risk = Math.abs(entry - stop);
   let target;
   if (targetEl.readOnly) {
-    target = entry + risk * 3;
+    target = entry + risk * 1.2;
     targetEl.value = target.toFixed(2);
   } else {
     target = parseFloat(targetEl.value);
@@ -5551,7 +5551,7 @@ async function stratSave() {
   const risk = Math.abs(entry - stop);
   let finalTarget;
   if (targetEl.readOnly) {
-    finalTarget = entry + risk * 3;
+    finalTarget = entry + risk * 1.2;
     targetEl.value = finalTarget.toFixed(2);
   } else {
     finalTarget = parseFloat(targetEl.value);
