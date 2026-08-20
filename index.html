@@ -4872,8 +4872,8 @@ if (duplicatesRemoved > 0) {
             const dayRsThresh    = parseFloat(document.getElementById('day-rs-threshold')?.value ?? 80);
       const dayRsAndThresh = parseFloat(document.getElementById('day-rs-and-threshold')?.value ?? 70);
       const dayRsCondition =
-        (result.rs10 >= dayRsThresh || result.rs21 >= dayRsThresh) ||
-        (result.rs10 >= dayRsAndThresh && result.rs21 >= dayRsAndThresh);
+  (result.rs10 >= dayRsThresh || result.rs21 >= dayRsThresh) &&     // ①
+  (result.rs10 >= dayRsAndThresh && result.rs21 >= dayRsAndThresh); // ②
 const dayConditionCheck =
   dayRsCondition &&
   (result.adrOk ?? false) &&
