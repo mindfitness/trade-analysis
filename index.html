@@ -1497,7 +1497,6 @@
         <h3 id="theme-modal-title" style="margin-top:0; color:var(--text-main); font-size:0.95rem;">新規テーマ作成</h3>
         <input type="hidden" id="edit-theme-id">
         <div style="margin-bottom:10px;"><input type="text" id="theme-name-input" placeholder="テーマ名 (例: AI半導体)"></div>
-        <div style="font-size:0.68rem; font-weight:800; color:var(--text-sub); margin-bottom:4px;">テーマの属性項目</div>
         <div id="theme-check-grid" class="check-grid"></div>
         <div style="display:flex; gap:8px; margin-top:14px;">
             <button onclick="closeThemeModal()" style="flex:1; padding:8px; border-radius:8px; background:#334155; color:var(--text-sub); font-weight:bold; border:none; cursor:pointer;">戻る</button>
@@ -2548,7 +2547,7 @@ const positiveItems = [
     "RS=100%","RS21>63緑","RS10>21緑","RS=all緑","Break-Out","雲上抜け",
     "21>50>200","出来高","PP","GC","MMS=8","O'Neil","MAup","BUY","テーマ=緑","CHART","2重反発"];
 const negativeItems = ["RS","3α","抵抗","HH-LH","ATR%50","CH"];
-const themeItems = ["1M>30","10D>1M","1M>2M","2M>3M","1M>2M>3M","ALL緑","1D=赤","5D=赤","成長"];
+const themeItems = [];
 
 let trades = [];
 let themes = [];
