@@ -3193,9 +3193,12 @@ function renderThemes() {
                         ${theme.tags.map(tag => `<span class="theme-tag"># ${tag}</span>`).join('')}
                     </div>
                 </div>
-                <div style="display:flex;gap:2px;flex-shrink:0;align-items:center;">
+                                <div style="display:flex;gap:2px;flex-shrink:0;align-items:center;">
                     <button onclick="fetchThemePerf(${theme.id})" title="この箱を更新"
                         style="padding:3px 8px;background:#334155;border:1px solid var(--border);color:#22d3ee;border-radius:6px;font-weight:800;cursor:pointer;font-size:0.65rem;">↺</button>
+                    <button id="theme-copy-mode-btn" onclick="toggleThemeCopyMode()"
+                        style="padding:3px 8px;background:#334155;border:1px solid var(--border);color:var(--text-main);border-radius:6px;font-weight:800;cursor:pointer;font-size:0.65rem;"
+                        title="横=カンマ区切り / 縦=1行1銘柄">横</button>
                     <button onclick="copyTheme(${theme.id})" style="padding:3px 8px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:6px; font-weight:800; cursor:pointer; font-size:0.65rem;" id="copy-theme-btn-${theme.id}">📋</button>
                     <button class="btn-ghost" onclick="openThemeModal(${theme.id})"><i data-lucide="edit-3" style="width:13px;"></i></button>
                     <button class="btn-ghost" onclick="deleteTheme(${theme.id})"><i data-lucide="trash-2" style="width:13px;"></i></button>
@@ -3678,21 +3681,39 @@ function copyRankTickers() {
     });
 }
 
+let _themeCopyMode = 'csv'; // 'csv' or 'line'
+
 function copyTheme(themeId) {
     const theme = themes.find(t => t.id === themeId);
     if (!theme) return;
-    let lines = [];
-    if (theme.stocks.length > 0) {
-        theme.stocks.forEach(s => lines.push(s));
-    } else {
-        lines.push('（銘柄未登録）');
-    }
-    const text = lines.join(', ');
+    if (theme.stocks.length === 0) return;
+
+    const csvText  = theme.stocks.join(', ');
+    const lineText = theme.stocks.join('\n');
+    const text = _themeCopyMode === 'line' ? lineText : csvText;
+
     navigator.clipboard.writeText(text).then(() => {
         const btn = document.getElementById(`copy-theme-btn-${themeId}`);
         btn.innerText = '✅'; btn.style.background = '#064e3b';
         setTimeout(() => { btn.innerText = '📋'; btn.style.background = '#334155'; }, 2000);
     });
+}
+
+function toggleThemeCopyMode() {
+    _themeCopyMode = _themeCopyMode === 'csv' ? 'line' : 'csv';
+    const btn = document.getElementById('theme-copy-mode-btn');
+    if (!btn) return;
+    if (_themeCopyMode === 'line') {
+        btn.innerText = '縦';
+        btn.style.background = '#1e3a8a';
+        btn.style.color = '#93c5fd';
+        btn.style.borderColor = '#3b82f6';
+    } else {
+        btn.innerText = '横';
+        btn.style.background = '#334155';
+        btn.style.color = 'var(--text-main)';
+        btn.style.borderColor = 'var(--border)';
+    }
 }
 
 // ======== スクリーン結果アコーディオン ========
