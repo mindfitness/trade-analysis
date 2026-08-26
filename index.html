@@ -4085,7 +4085,7 @@ async function screenTicker(symbol) {
   );
   const isHH = parseFloat(values[0].high) > parseFloat(values[1].high);
   const vcs = screenCalcVCS(values);
-  const rsCondition = rs10 > 50 && rs21 > 65 && hasVolSpike && isHH && vol60Avg >= 1000000;
+  const rsCondition = rs10 > 50 && rs21 > 65 && hasVolSpike && isHH && vol60Avg >= 1500000;
   const vcsCondition = hlStructureFound && pivotInRange && !isNaN(vcs) && vcs >= 70;
 
   return { symbol, price: sClose, rs10, rs21, hasVolSpike, ppCount, vcs,
@@ -4274,7 +4274,7 @@ const pivotInRange     = hlResult.pivotInRange ?? false;
 const pivotHitLabel    = hlResult.pivotHitLabel ?? '';
 
 const rs21_63_ok = rs21 > 65 && rs63 > 60;
-const rsCondition  = rs21_63_ok && hlStructureFound && pivotInRange && rs10 > 50 && hasVolSpike && isHH && vol60Avg >= 1000000 && hasPP;
+const rsCondition  = rs21_63_ok && hlStructureFound && pivotInRange && rs10 > 50 && hasVolSpike && isHH && vol60Avg >= 1500000 && hasPP;
 const vcsCondition = rs21_63_ok && hlStructureFound && pivotInRange && !isNaN(vcs) && vcs >= 70;
 
   // MA条件: 21EMA, 21SMA, 50SMAのいずれかに終値が0%~1%以内で接触
@@ -4884,13 +4884,13 @@ const dayConditionCheck =
   (result.adrOk ?? false) &&
   (result.adrPct ?? 0) <= 15 &&
   (result.price ?? 0) >= 2 &&
-  (result.vol60Avg ?? 0) >= 1000000 &&
+  (result.vol60Avg ?? 0) >= 1500000 &&
   (!dayHLCheck || result.hlStructureFound) &&
   result.candle_streak === 'bull';
 
       const day2ConditionCheck =
         (result.adrOk ?? false) &&
-        (result.vol60Avg ?? 0) >= 1000000 &&
+        (result.vol60Avg ?? 0) >= 1500000 &&
         (result.day2LineHit ?? false);
 
       const isMatch = mode === 'vcs'
