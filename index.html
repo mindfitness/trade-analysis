@@ -4470,8 +4470,10 @@ const day2LineLabel = (() => {
 
 const candleStreakState = rankDetectCandleStreakState(values);
 
+const dollarVol = sClose * vol60Avg;
+
 return { symbol, price: sClose, rs10, rs21, rs63, rs126, rs252, hasVolSpike, ppCount, vcs, maTouchLabel,
-    tlConvPairs, tlConv, mms, adrPct, isAdrTouchAnyLine, adrOk, vol60Avg,
+    tlConvPairs, tlConv, mms, adrPct, isAdrTouchAnyLine, adrOk, vol60Avg, dollarVol,
     hlStructureFound, pivotHitLabel, oneilCond,
     reversalHit, reversalLabel,
     day2LineHit, day2LineLabel,
@@ -4563,7 +4565,8 @@ function screenAppendCard(r) {
         <span style="font-size:0.72rem;font-weight:700;${screenRsClass(r.rs21)}">R21:${isNaN(r.rs21)?'N/A':r.rs21.toFixed(0)}%</span>
         <span style="font-size:0.72rem;font-weight:700;${screenRsClass(Math.max(isNaN(r.rs126)?0:r.rs126, isNaN(r.rs252)?0:r.rs252))}">R長:${isNaN(r.rs126)&&isNaN(r.rs252)?'N/A':Math.max(isNaN(r.rs126)?0:r.rs126, isNaN(r.rs252)?0:r.rs252).toFixed(0)}%</span>
         <span style="font-size:0.72rem;font-weight:700;color:${r.hasVolSpike?'var(--win-deep)':'var(--text-sub)'};">${r.hasVolSpike?'VOL✓':'VOL✗'}</span>
-　　　　<span style="font-size:0.72rem;font-weight:700;color:${(r.vol60Avg??0)>=1000000?'var(--win-deep)':'var(--text-sub)'};">Vol:${r.vol60Avg!=null?(r.vol60Avg>=1000000?(r.vol60Avg/1000000).toFixed(1)+'M':(r.vol60Avg/1000).toFixed(0)+'K'):'N/A'}</span>
+　　　　　　　　<span style="font-size:0.72rem;font-weight:700;color:${(r.vol60Avg??0)>=1000000?'var(--win-deep)':'var(--text-sub)'};">Vol:${r.vol60Avg!=null?(r.vol60Avg>=1000000?(r.vol60Avg/1000000).toFixed(1)+'M':(r.vol60Avg/1000).toFixed(0)+'K'):'N/A'}</span>
+        <span style="font-size:0.72rem;font-weight:700;color:${(r.dollarVol??0)>=50_000_000?'var(--win-deep)':'var(--text-sub)'};">$Vol:${r.dollarVol!=null?(r.dollarVol>=1_000_000_000?(r.dollarVol/1_000_000_000).toFixed(1)+'B':(r.dollarVol/1_000_000).toFixed(0)+'M'):'N/A'}</span>
         <span style="font-size:0.72rem;font-weight:700;color:${r.ppCount>=1?'var(--win-deep)':'var(--text-sub)'};">PP:${r.ppCount}</span>
         <span style="font-size:0.72rem;font-weight:700;color:${vcsColor};">VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}</span>
         ${isMaOnly   ? `<span style="font-size:0.72rem;font-weight:700;color:#f59e0b;">${r.maTouchLabel}</span>` : ''}
@@ -4693,6 +4696,7 @@ if (!(r.adrOk ?? false)) {
           <span style="font-size:0.68rem;font-weight:700;${screenRsClass(Math.max(isNaN(r.rs126)?0:r.rs126,isNaN(r.rs252)?0:r.rs252))}">R長:${isNaN(r.rs126)&&isNaN(r.rs252)?'N/A':Math.max(isNaN(r.rs126)?0:r.rs126,isNaN(r.rs252)?0:r.rs252).toFixed(0)}%</span>
           <span style="font-size:0.68rem;font-weight:700;color:${r.hasVolSpike?'var(--win-deep)':'#475569'};">${r.hasVolSpike?'VOL✓':'VOL✗'}</span>
 <span style="font-size:0.68rem;font-weight:700;color:${(r.vol60Avg??0)>=1000000?'var(--win-deep)':'#475569'};">Vol:${r.vol60Avg!=null?(r.vol60Avg>=1000000?(r.vol60Avg/1000000).toFixed(1)+'M':(r.vol60Avg/1000).toFixed(0)+'K'):'N/A'}</span>
+<span style="font-size:0.68rem;font-weight:700;color:${(r.dollarVol??0)>=50_000_000?'var(--win-deep)':'#475569'};">$Vol:${r.dollarVol!=null?(r.dollarVol>=1_000_000_000?(r.dollarVol/1_000_000_000).toFixed(1)+'B':(r.dollarVol/1_000_000).toFixed(0)+'M'):'N/A'}</span>
 <span style="font-size:0.68rem;font-weight:700;color:${r.ppCount>=1?'var(--win-deep)':'#475569'};">PP:${r.ppCount}</span>
           <span style="font-size:0.68rem;font-weight:700;color:${vcsOk?'#8b5cf6':'#475569'};">VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}</span>
         </div>
@@ -4887,6 +4891,7 @@ const dayConditionCheck =
   (result.adrPct ?? 0) <= 15 &&
   (result.price ?? 0) >= 2 &&
   (result.vol60Avg ?? 0) >= 1500000 &&
+  (result.dollarVol ?? 0) >= 100_000_000 &&
   (!dayHLCheck || result.hlStructureFound) &&
   result.candle_streak === 'bull';
 
