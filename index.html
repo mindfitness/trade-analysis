@@ -1237,32 +1237,6 @@
     </div>
 </section>
 
-     <!-- プロンプトストック アコーディオン -->
-    <div style="margin-bottom:10px;">
-        <button onclick="togglePromptStock(this)"
-            style="width:100%; display:flex; justify-content:space-between; align-items:center;
-                   padding:8px 12px; background:#1e1b4b; border:1px solid #4f46e5;
-                   border-radius:8px; cursor:pointer; color:var(--ai-accent);">
-            <div style="display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:800;">
-                <i data-lucide="bot" style="width:14px;"></i> プロンプトストック
-            </div>
-            <span id="prompt-stock-chevron" style="font-size:0.7rem; color:#6366f1;">▼ 開く</span>
-        </button>
-        <div id="prompt-stock-body" style="display:none; margin-top:6px;">
-            <section style="margin-bottom:10px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                    <span style="font-size:0.68rem; font-weight:bold; color:var(--ai-accent);">Final Check</span>
-                    <button class="copy-btn-static" onclick="copyStaticPrompt('prompt-1', this)">コピー</button>
-                </div>
-                <div class="prompt-container-static"><pre id="prompt-1">過去48時間以内の英語ポスト分析。アメリカ株　について、センチメントを分析せよ。テクニカルやfundamentals、ニュースなどの情報から、bullish/bearishを評価せよ。回答は日本語で出力せよ。</pre></div>
-            </section>
-            <section style="margin-bottom:10px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                   
-            </section>
-        </div>
-    </div>
-
     <!-- トレードメモ（コード内に直接記述・表示専用） -->
     <div style="margin-bottom:10px;">
         <button onclick="toggleTradeMemo(this)"
