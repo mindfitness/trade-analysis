@@ -1959,27 +1959,28 @@
 </div>
 
 <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
-
   <label style="display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none;">
-
     <div id="day-hl-toggle" onclick="toggleDayHL()"
-
       style="width:36px; height:20px; border-radius:10px; background:#334155; border:1px solid var(--border);
-
              position:relative; transition:background 0.2s; cursor:pointer; flex-shrink:0;">
-
       <div id="day-hl-knob"
-
         style="width:14px; height:14px; border-radius:50%; background:#94a3b8;
-
                position:absolute; top:2px; left:2px; transition:all 0.2s;"></div>
-
     </div>
-
     <span id="day-hl-label" style="font-size:0.68rem; color:var(--text-sub); font-weight:700;">LL-HL構造チェックなし</span>
-
   </label>
-
+</div>
+<div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
+  <label style="display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none;">
+    <div id="day-candle-toggle" onclick="toggleDayCandle()"
+      style="width:36px; height:20px; border-radius:10px; background:#334155; border:1px solid var(--border);
+             position:relative; transition:background 0.2s; cursor:pointer; flex-shrink:0;">
+      <div id="day-candle-knob"
+        style="width:14px; height:14px; border-radius:50%; background:#94a3b8;
+               position:absolute; top:2px; left:2px; transition:all 0.2s;"></div>
+    </div>
+    <span id="day-candle-label" style="font-size:0.68rem; color:var(--text-sub); font-weight:700;">陽線チェックなし</span>
+  </label>
 </div>
 
 <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
@@ -7780,48 +7781,50 @@ function toggleSaveToWatch() {
 
 
 
+
+
 let dayHLCheck = true;
-
-
+let dayCandleCheck = true;
 
 function toggleDayHL() {
-
   dayHLCheck = !dayHLCheck;
-
   const track = document.getElementById('day-hl-toggle');
-
   const knob  = document.getElementById('day-hl-knob');
-
   const label = document.getElementById('day-hl-label');
-
   if (dayHLCheck) {
-
     track.style.background = '#06b6d4';
-
     knob.style.background  = 'white';
-
     knob.style.left        = '18px';
-
     label.style.color      = '#06b6d4';
-
     label.textContent      = 'LL-HL構造チェックあり';
-
   } else {
-
     track.style.background = '#334155';
-
     knob.style.background  = '#94a3b8';
-
     knob.style.left        = '2px';
-
     label.style.color      = 'var(--text-sub)';
-
     label.textContent      = 'LL-HL構造チェックなし';
-
   }
-
 }
 
+function toggleDayCandle() {
+  dayCandleCheck = !dayCandleCheck;
+  const track = document.getElementById('day-candle-toggle');
+  const knob  = document.getElementById('day-candle-knob');
+  const label = document.getElementById('day-candle-label');
+  if (dayCandleCheck) {
+    track.style.background = '#06b6d4';
+    knob.style.background  = 'white';
+    knob.style.left        = '18px';
+    label.style.color      = '#06b6d4';
+    label.textContent      = '陽線チェックあり';
+  } else {
+    track.style.background = '#334155';
+    knob.style.background  = '#94a3b8';
+    knob.style.left        = '2px';
+    label.style.color      = 'var(--text-sub)';
+    label.textContent      = '陽線チェックなし';
+  }
+}
     
 
 function screenAddLog(msg, type = '') {
@@ -9729,22 +9732,14 @@ if (duplicatesRemoved > 0) {
   (result.rs10 >= dayRsAndThresh && result.rs21 >= dayRsAndThresh); // ②
 
 const dayConditionCheck =
-
   dayRsCondition &&
-
   (result.adrOk ?? false) &&
-
   (result.adrPct ?? 0) <= 15 &&
-
   (result.price ?? 0) >= 1 &&
-
   (result.vol60Avg ?? 0) >= 1500000 &&
-
   (result.dollarVol ?? 0) >= 100_000_000 &&
-
   (!dayHLCheck || result.hlStructureFound) &&
-
-  result.candle_streak === 'bull';
+  (!dayCandleCheck || result.candle_streak === 'bull');
 
 
 
@@ -12625,23 +12620,24 @@ window.onload = async () => {
     // DAY HL toggle 初期状態をONに
 
 const dayHLTrack = document.getElementById('day-hl-toggle');
-
 const dayHLKnob  = document.getElementById('day-hl-knob');
-
 const dayHLLabel = document.getElementById('day-hl-label');
-
 if (dayHLTrack) {
-
   dayHLTrack.style.background = '#06b6d4';
-
   dayHLKnob.style.background  = 'white';
-
   dayHLKnob.style.left        = '18px';
-
   dayHLLabel.style.color      = '#06b6d4';
-
   dayHLLabel.textContent      = 'LL-HL構造チェックあり';
-
+}
+const dayCandleTrack = document.getElementById('day-candle-toggle');
+const dayCandleKnob  = document.getElementById('day-candle-knob');
+const dayCandleLabel = document.getElementById('day-candle-label');
+if (dayCandleTrack) {
+  dayCandleTrack.style.background = '#06b6d4';
+  dayCandleKnob.style.background  = 'white';
+  dayCandleKnob.style.left        = '18px';
+  dayCandleLabel.style.color      = '#06b6d4';
+  dayCandleLabel.textContent      = '陽線チェックあり';
 }
 
     switchPage('rank');
