@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FX計算</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --border: #252a38;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --sell: #f87171;
+    --buy: #34d399;
+    --accent: #818cf8;
+    --win: #34d399;
+    --loss: #f87171;
+    --even: #6b7280;
+  }
+
+  body {
+    font-family: 'Inter', 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 32px 16px 64px;
+  }
+
+  header {
+    max-width: 860px;
+    margin: 0 auto 40px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+
+  header h1 {
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+
+  header span {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* 接続ステータス */
+  #db-status {
+    margin-left: auto;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+  }
+
+  #db-status .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+  }
+
+  #db-status.connected .dot { background: var(--win); }
+  #db-status.error .dot { background: var(--loss); }
+
+  .main {
+    max-width: 860px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* ── 入力フォーム ── */
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    align-items: end;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  label {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+
+  input, select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--accent);
+  }
+
+  .toggle-group {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .toggle-group button {
+    flex: 1;
+    padding: 10px;
+    font-size: 13px;
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    background: var(--bg);
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .toggle-group button.active-sell {
+    background: rgba(248,113,113,0.15);
+    color: var(--sell);
+  }
+
+  .toggle-group button.active-buy {
+    background: rgba(52,211,153,0.15);
+    color: var(--buy);
+  }
+
+  .btn-add {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 20px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+    align-self: flex-end;
+  }
+
+  .btn-add:hover { opacity: 0.85; }
+  .btn-add:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── サマリー ── */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+  }
+
+  .stat-value.pos { color: var(--win); }
+  .stat-value.neg { color: var(--loss); }
+  .stat-value.neu { color: var(--text); }
+
+  /* ── テーブル ── */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead th {
+    padding: 12px 16px;
+    text-align: right;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  thead th:first-child,
+  thead th:nth-child(2) { text-align: left; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+  td {
+    padding: 14px 16px;
+    text-align: right;
+    vertical-align: middle;
+  }
+
+  td:first-child { text-align: left; }
+  td:nth-child(2) { text-align: left; }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .badge-sell {
+    background: rgba(248,113,113,0.15);
+    color: var(--sell);
+  }
+
+  .badge-buy {
+    background: rgba(52,211,153,0.15);
+    color: var(--buy);
+  }
+
+  .pnl-pos { color: var(--win); font-weight: 600; }
+  .pnl-neg { color: var(--loss); font-weight: 600; }
+  .pnl-muted { color: var(--muted); }
+
+  .btn-del {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: color 0.15s;
+    line-height: 1;
+  }
+  .btn-del:hover { color: var(--loss); }
+
+  .empty {
+    padding: 48px 16px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  /* ── ポジション中 ── */
+  .open-badge {
+    font-size: 10px;
+    background: rgba(129,140,248,0.15);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  /* ── ローディング ── */
+  .loading {
+    padding: 48px 16px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>FX計算</h1>
+  <span>円（JPY）中心</span>
+  <div id="db-status">
+    <div class="dot"></div>
+    <span id="db-status-text">接続中…</span>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- 入力フォーム -->
+  <div class="form-card">
+    <div class="form-grid">
+      <div class="field">
+        <label>売買</label>
+        <div class="toggle-group">
+          <button id="btn-sell" class="active-sell" onclick="setDir('sell')">円売り</button>
+          <button id="btn-buy" onclick="setDir('buy')">円買い</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>価格（例：153.637）</label>
+        <input type="number" id="inp-price" placeholder="153.000" step="0.001" min="0">
+      </div>
+      <div class="field">
+        <label>売買代金（円）</label>
+        <input type="number" id="inp-amount" placeholder="1000000" step="1" min="0">
+      </div>
+      <div class="field">
+        <label>通貨ペア</label>
+        <select id="inp-pair">
+          <option value="USD/JPY">USD/JPY</option>
+          <option value="EUR/JPY">EUR/JPY</option>
+          <option value="GBP/JPY">GBP/JPY</option>
+          <option value="AUD/JPY">AUD/JPY</option>
+        </select>
+      </div>
+      <button class="btn-add" id="btn-add-trade" onclick="addTrade()">＋ 追加</button>
+    </div>
+  </div>
+
+  <!-- サマリー -->
+  <div class="summary">
+    <div class="stat">
+      <div class="stat-label">累計損益（pips）</div>
+      <div class="stat-value" id="sum-pips">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">累計損益（円）</div>
+      <div class="stat-value" id="sum-yen">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">成績</div>
+      <div class="stat-value neu" id="sum-record">—</div>
+    </div>
+  </div>
+
+  <!-- テーブル -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>売買</th>
+          <th>価格</th>
+          <th>売買代金</th>
+          <th>損益（pips）</th>
+          <th>損益（円）</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="trade-body">
+        <tr><td colspan="7" class="loading"><span class="spinner"></span>Firebase に接続中…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- Firebase SDK (compat版) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+  // ─── Firebase 設定 ───
+  const firebaseConfig = {
+    databaseURL: "https://mind-2127b-default-rtdb.asia-southeast1.firebasedatabase.app/"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const tradesRef = db.ref('fx_trades');
+
+  // ─── State ───
+  let trades = [];      // { fbKey, dir, price, amount, pair, order }
+  let direction = 'sell';
+  let isConnected = false;
+
+  // ─── 接続ステータス ───
+  db.ref('.info/connected').on('value', snap => {
+    const el = document.getElementById('db-status');
+    const txt = document.getElementById('db-status-text');
+    isConnected = snap.val() === true;
+    if (isConnected) {
+      el.className = 'connected';
+      txt.textContent = 'Firebase 接続済';
+    } else {
+      el.className = 'error';
+      txt.textContent = 'オフライン';
+    }
+    document.getElementById('btn-add-trade').disabled = !isConnected;
+  });
+
+  // ─── リアルタイム同期 ───
+  tradesRef.orderByChild('order').on('value', snap => {
+    trades = [];
+    snap.forEach(child => {
+      trades.push({ fbKey: child.key, ...child.val() });
+    });
+    render();
+  });
+
+  // ─── Direction toggle ───
+  function setDir(d) {
+    direction = d;
+    document.getElementById('btn-sell').className = d === 'sell' ? 'active-sell' : '';
+    document.getElementById('btn-buy').className  = d === 'buy'  ? 'active-buy'  : '';
+  }
+
+  // ─── Add trade（Firebaseへ書き込み）───
+  async function addTrade() {
+    const price  = parseFloat(document.getElementById('inp-price').value);
+    const amount = parseFloat(document.getElementById('inp-amount').value) || 0;
+    const pair   = document.getElementById('inp-pair').value;
+
+    if (!price || price <= 0) {
+      alert('価格を入力してください');
+      return;
+    }
+
+    const btn = document.getElementById('btn-add-trade');
+    btn.disabled = true;
+    btn.textContent = '保存中…';
+
+    try {
+      // order フィールドでソート順を保持
+      const order = Date.now();
+      await tradesRef.push({ dir: direction, price, amount, pair, order });
+      document.getElementById('inp-price').value = '';
+    } catch (e) {
+      alert('保存に失敗しました: ' + e.message);
+    } finally {
+      btn.disabled = !isConnected;
+      btn.textContent = '＋ 追加';
+    }
+  }
+
+  // ─── Delete（Firebaseから削除）───
+  async function deleteTrade(fbKey) {
+    try {
+      await tradesRef.child(fbKey).remove();
+    } catch (e) {
+      alert('削除に失敗しました: ' + e.message);
+    }
+  }
+
+  // ─── P&L calculation ───
+  function calcPnL() {
+    const result = trades.map(t => ({ ...t, pnl_pips: null, pnl_yen: null }));
+
+    for (let i = 1; i < result.length; i++) {
+      const prev = result[i - 1];
+      const cur  = result[i];
+
+      // 隣接する取引が逆方向なら決済成立
+      if (prev.dir !== cur.dir) {
+        let pips;
+
+        if (prev.dir === 'buy') {
+          // 円買い→円売り：売値 - 買値
+          pips = (cur.price - prev.price) * 100;
+        } else {
+          // 円売り→円買い：売値 - 買値
+          pips = (prev.price - cur.price) * 100;
+        }
+
+        const useAmount = cur.amount || prev.amount || 0;
+        const yen = useAmount > 0
+          ? Math.round((useAmount / cur.price) * pips * 0.01)
+          : null;
+
+        result[i].pnl_pips = pips;
+        result[i].pnl_yen  = yen;
+      }
+      // 同方向が続く場合は保有中のまま（pnl_pips: null）
+    }
+
+    return result;
+  }
+
+  // ─── Render ───
+  function render() {
+    const result = calcPnL();
+    const tbody = document.getElementById('trade-body');
+
+    if (result.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">取引を追加してください</td></tr>';
+      updateSummary([]);
+      return;
+    }
+
+    tbody.innerHTML = result.map((t, i) => {
+      const badge = t.dir === 'sell'
+        ? '<span class="badge badge-sell">円売り</span>'
+        : '<span class="badge badge-buy">円買い</span>';
+
+      const openBadge = t.pnl_pips === null
+        ? '<span class="open-badge">保有中</span>'
+        : '';
+
+      const pipsStr = t.pnl_pips !== null
+        ? `<span class="${t.pnl_pips >= 0 ? 'pnl-pos' : 'pnl-neg'}">${t.pnl_pips >= 0 ? '+' : ''}${t.pnl_pips.toFixed(1)}</span>`
+        : '<span class="pnl-muted">—</span>';
+
+      const yenStr = t.pnl_yen !== null
+        ? `<span class="${t.pnl_yen >= 0 ? 'pnl-pos' : 'pnl-neg'}">${t.pnl_yen >= 0 ? '+' : ''}${t.pnl_yen.toLocaleString()}円</span>`
+        : '<span class="pnl-muted">—</span>';
+
+      const amountStr = t.amount > 0 ? `${t.amount.toLocaleString()}円` : '—';
+
+      // deleteTrade に fbKey を渡す（シングルクォート対応）
+      return `<tr>
+        <td style="color:var(--muted)">${i + 1}</td>
+        <td>${badge}${openBadge}</td>
+        <td>${t.price.toFixed(3)}</td>
+        <td>${amountStr}</td>
+        <td>${pipsStr}</td>
+        <td>${yenStr}</td>
+        <td><button class="btn-del" onclick="deleteTrade('${t.fbKey}')">✕</button></td>
+      </tr>`;
+    }).join('');
+
+    updateSummary(result);
+  }
+
+  function updateSummary(result) {
+    const closed = result.filter(t => t.pnl_pips !== null);
+    const totalPips = closed.reduce((s, t) => s + t.pnl_pips, 0);
+    const totalYen  = closed.reduce((s, t) => s + (t.pnl_yen || 0), 0);
+    const wins   = closed.filter(t => t.pnl_pips > 0).length;
+    const losses = closed.filter(t => t.pnl_pips < 0).length;
+    const evens  = closed.filter(t => t.pnl_pips === 0).length;
+
+    const elPips = document.getElementById('sum-pips');
+    const elYen  = document.getElementById('sum-yen');
+    const elRec  = document.getElementById('sum-record');
+
+    if (closed.length === 0) {
+      elPips.textContent = '—'; elPips.className = 'stat-value neu';
+      elYen.textContent  = '—'; elYen.className  = 'stat-value neu';
+      elRec.textContent  = '—';
+    } else {
+      elPips.textContent = `${totalPips >= 0 ? '+' : ''}${totalPips.toFixed(1)}`;
+      elPips.className = `stat-value ${totalPips > 0 ? 'pos' : totalPips < 0 ? 'neg' : 'neu'}`;
+
+      elYen.textContent = `${totalYen >= 0 ? '+' : ''}${totalYen.toLocaleString()}円`;
+      elYen.className = `stat-value ${totalYen > 0 ? 'pos' : totalYen < 0 ? 'neg' : 'neu'}`;
+
+      let rec = `${wins}勝`;
+      if (losses > 0) rec += `${losses}敗`;
+      if (evens > 0)  rec += `${evens}分`;
+      elRec.textContent = rec;
+    }
+  }
+
+  // ─── Enter key ───
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') addTrade();
+  });
+</script>
+
+</body>
+</html>
