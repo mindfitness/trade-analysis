@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FX計算</title>
+<title>FX 損益計算</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500&display=swap');
 
@@ -50,7 +50,6 @@
     color: var(--muted);
   }
 
-  /* 接続ステータス */
   #db-status {
     margin-left: auto;
     font-size: 11px;
@@ -79,7 +78,6 @@
     gap: 24px;
   }
 
-  /* ── 入力フォーム ── */
   .form-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -172,7 +170,6 @@
   .btn-add:hover { opacity: 0.85; }
   .btn-add:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  /* ── サマリー ── */
   .summary {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -202,7 +199,6 @@
   .stat-value.neg { color: var(--loss); }
   .stat-value.neu { color: var(--text); }
 
-  /* ── テーブル ── */
   .table-wrap {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -254,14 +250,15 @@
     font-weight: 600;
   }
 
-  .badge-sell {
-    background: rgba(248,113,113,0.15);
-    color: var(--sell);
-  }
-
-  .badge-buy {
+  /* ドル買い＝買いポジション（緑）、ドル売り＝売りポジション（赤） */
+  .badge-buy-usd {
     background: rgba(52,211,153,0.15);
     color: var(--buy);
+  }
+
+  .badge-sell-usd {
+    background: rgba(248,113,113,0.15);
+    color: var(--sell);
   }
 
   .pnl-pos { color: var(--win); font-weight: 600; }
@@ -288,7 +285,6 @@
     font-size: 13px;
   }
 
-  /* ── ポジション中 ── */
   .open-badge {
     font-size: 10px;
     background: rgba(129,140,248,0.15);
@@ -299,7 +295,6 @@
     vertical-align: middle;
   }
 
-  /* ── ローディング ── */
   .loading {
     padding: 48px 16px;
     text-align: center;
@@ -320,13 +315,27 @@
   }
 
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 凡例 */
+  .legend {
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .legend span { display: flex; align-items: center; gap: 6px; }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>FX計算</h1>
-  <span>円（JPY）中心</span>
+  <h1>FX 損益計算</h1>
+  <span>ドル（USD）基準</span>
   <div id="db-status">
     <div class="dot"></div>
     <span id="db-status-text">接続中…</span>
@@ -335,14 +344,23 @@
 
 <div class="main">
 
+  <!-- 凡例 -->
+  <div class="legend">
+    <span><span class="badge badge-buy-usd">ドル買い</span> 円売り・ロング（USD を買う）</span>
+    <span><span class="badge badge-sell-usd">ドル売り</span> 円買い・ショート（USD を売る）</span>
+    <span style="margin-left:auto">損益はドル視点で計算</span>
+  </div>
+
   <!-- 入力フォーム -->
   <div class="form-card">
     <div class="form-grid">
       <div class="field">
-        <label>売買</label>
+        <label>売買（ドル基準）</label>
         <div class="toggle-group">
-          <button id="btn-sell" class="active-sell" onclick="setDir('sell')">円売り</button>
-          <button id="btn-buy" onclick="setDir('buy')">円買い</button>
+          <!-- 旧「円売り」＝「ドル買い」(buy USD) -->
+          <button id="btn-buy-usd" class="active-buy" onclick="setDir('buy_usd')">ドル買い</button>
+          <!-- 旧「円買い」＝「ドル売り」(sell USD) -->
+          <button id="btn-sell-usd" onclick="setDir('sell_usd')">ドル売り</button>
         </div>
       </div>
       <div class="field">
@@ -419,13 +437,13 @@
   const tradesRef = db.ref('fx_trades');
 
   // ─── State ───
-  let trades = [];      // { fbKey, dir, price, amount, pair, order }
-  let direction = 'sell';
+  let trades = [];
+  let direction = 'buy_usd';  // 'buy_usd'（ドル買い・旧sell）or 'sell_usd'（ドル売り・旧buy）
   let isConnected = false;
 
   // ─── 接続ステータス ───
   db.ref('.info/connected').on('value', snap => {
-    const el = document.getElementById('db-status');
+    const el  = document.getElementById('db-status');
     const txt = document.getElementById('db-status-text');
     isConnected = snap.val() === true;
     if (isConnected) {
@@ -450,11 +468,11 @@
   // ─── Direction toggle ───
   function setDir(d) {
     direction = d;
-    document.getElementById('btn-sell').className = d === 'sell' ? 'active-sell' : '';
-    document.getElementById('btn-buy').className  = d === 'buy'  ? 'active-buy'  : '';
+    document.getElementById('btn-buy-usd').className  = d === 'buy_usd'  ? 'active-buy'  : '';
+    document.getElementById('btn-sell-usd').className = d === 'sell_usd' ? 'active-sell' : '';
   }
 
-  // ─── Add trade（Firebaseへ書き込み）───
+  // ─── Add trade ───
   async function addTrade() {
     const price  = parseFloat(document.getElementById('inp-price').value);
     const amount = parseFloat(document.getElementById('inp-amount').value) || 0;
@@ -470,7 +488,6 @@
     btn.textContent = '保存中…';
 
     try {
-      // order フィールドでソート順を保持
       const order = Date.now();
       await tradesRef.push({ dir: direction, price, amount, pair, order });
       document.getElementById('inp-price').value = '';
@@ -482,7 +499,7 @@
     }
   }
 
-  // ─── Delete（Firebaseから削除）───
+  // ─── Delete ───
   async function deleteTrade(fbKey) {
     try {
       await tradesRef.child(fbKey).remove();
@@ -491,7 +508,22 @@
     }
   }
 
-  // ─── P&L calculation ───
+  // ─── P&L calculation（ドルベース）───
+  //
+  //  ドル買い（buy_usd）→ ドル売り（sell_usd）で決済：
+  //    pips = (決済価格 - エントリー価格) × 100
+  //    例：150.000 buy → 153.000 sell = +300 pips ✅
+  //
+  //  ドル売り（sell_usd）→ ドル買い（buy_usd）で決済（ショート）：
+  //    pips = (エントリー価格 - 決済価格) × 100
+  //    例：153.000 sell → 150.000 buy = +300 pips ✅
+  //
+  //  円換算：
+  //    ドル数量 = 売買代金(円) / エントリー価格
+  //    pnl_yen  = ドル数量 × (決済価格 - エントリー価格)  ← ドル買いロング
+  //             = ドル数量 × (エントリー価格 - 決済価格)  ← ドル売りショート
+  //    ※ どちらも pnl_yen = ドル数量 × pips × 0.01 に統一できる
+  //
   function calcPnL() {
     const result = trades.map(t => ({ ...t, pnl_pips: null, pnl_yen: null }));
 
@@ -503,23 +535,25 @@
       if (prev.dir !== cur.dir) {
         let pips;
 
-        if (prev.dir === 'buy') {
-          // 円買い→円売り：売値 - 買値
+        if (prev.dir === 'buy_usd') {
+          // ドル買いエントリー → ドル売り決済
+          // 高く売れれば利益（買値 → 売値）
           pips = (cur.price - prev.price) * 100;
         } else {
-          // 円売り→円買い：売値 - 買値
+          // ドル売りエントリー（ショート）→ ドル買い決済
+          // 安く買い戻せれば利益
           pips = (prev.price - cur.price) * 100;
         }
 
-        const useAmount = cur.amount || prev.amount || 0;
-        const yen = useAmount > 0
-          ? Math.round((useAmount / cur.price) * pips * 0.01)
+        // 円換算：使用した元本はエントリー時の売買代金を優先
+        const entryAmount = prev.amount > 0 ? prev.amount : cur.amount;
+        const pnl_yen = entryAmount > 0
+          ? Math.round((entryAmount / prev.price) * pips * 0.01)
           : null;
 
         result[i].pnl_pips = pips;
-        result[i].pnl_yen  = yen;
+        result[i].pnl_yen  = pnl_yen;
       }
-      // 同方向が続く場合は保有中のまま（pnl_pips: null）
     }
 
     return result;
@@ -537,9 +571,11 @@
     }
 
     tbody.innerHTML = result.map((t, i) => {
-      const badge = t.dir === 'sell'
-        ? '<span class="badge badge-sell">円売り</span>'
-        : '<span class="badge badge-buy">円買い</span>';
+      // ドル買い＝緑、ドル売り＝赤
+      const isBuyUsd = t.dir === 'buy_usd';
+      const badge = isBuyUsd
+        ? '<span class="badge badge-buy-usd">ドル買い</span>'
+        : '<span class="badge badge-sell-usd">ドル売り</span>';
 
       const openBadge = t.pnl_pips === null
         ? '<span class="open-badge">保有中</span>'
@@ -555,7 +591,6 @@
 
       const amountStr = t.amount > 0 ? `${t.amount.toLocaleString()}円` : '—';
 
-      // deleteTrade に fbKey を渡す（シングルクォート対応）
       return `<tr>
         <td style="color:var(--muted)">${i + 1}</td>
         <td>${badge}${openBadge}</td>
