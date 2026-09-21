@@ -3109,9 +3109,9 @@ const R2_TICKERS_MAIN = [
 
 ];
 
-const R2_SNAPSHOT_TICKERS = ["RSP","QQQ","IWM","QQQE","XLK","XLF","XLE","BTC/USD"];
+const R2_SNAPSHOT_TICKERS = ["RSP","QQQ","IWM","QQQE","XLK","XLF","XLE","BTCUSD"];
 
-const RANK_TICKERS = ["RSP","AIPO","POWR","ITA","BOAT","XOP","MOO","PEJ","TAN","FAN","ICLN","XBI","SOXX","IYT","SLX","LIT","WOOD","ITB","IHI","SIL","XRT","QTUM","KARS","GDX","XLE","URA","REMX","JETS","COPX","KIE","WGMI","CIBR","BOTZ","PAVE","XLF","SKYY","HEAL","UFO","EATZ","IGV","BTC/USD"];
+const RANK_TICKERS = ["RSP","AIPO","POWR","ITA","BOAT","XOP","MOO","PEJ","TAN","FAN","ICLN","XBI","SOXX","IYT","SLX","LIT","WOOD","ITB","IHI","SIL","XRT","QTUM","KARS","GDX","XLE","URA","REMX","JETS","COPX","KIE","WGMI","CIBR","BOTZ","PAVE","XLF","SKYY","HEAL","UFO","EATZ","IGV","BTCUSD"];
 
 
 
@@ -4173,7 +4173,7 @@ async function startRankUpdate() {
 
       try {
 
-        const btcRes = await fetch(`https://api.twelvedata.com/time_series?symbol=BTC/USD&interval=1day&outputsize=5&apikey=${RANK_API_KEYS[1]}`);
+        const btcRes = await fetch(`https://api.twelvedata.com/time_series?symbol=BTCUSD&interval=1day&outputsize=5&apikey=${RANK_API_KEYS[1]}`);
 
         const btcJson = await btcRes.json();
 
@@ -4187,7 +4187,7 @@ async function startRankUpdate() {
 
           mainData.push({
 
-            symbol: 'BTC/USD', cur: btcCur,
+            symbol: 'BTCUSD', cur: btcCur,
 
             d1: btcD1, d5: null, d10: null, d21: null,
 
