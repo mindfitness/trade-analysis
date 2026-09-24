@@ -291,12 +291,9 @@
         .stock-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 
         .stock-badge { 
-
-            background: #334155; padding: 2px 8px; border-radius: 14px; font-weight: 800; font-size: 0.72rem;
-
-            display: flex; align-items: center; gap: 3px; border: 1px solid var(--border); color: #f1f5f9;
-
-        }
+    background: #334155; padding: 4px 12px; border-radius: 14px; font-weight: 800; font-size: 0.88rem;
+    display: flex; align-items: center; gap: 4px; border: 1px solid var(--border); color: #f1f5f9;
+}
 
         .btn-ghost { background: none; border: none; color: var(--text-sub); padding: 3px; cursor: pointer; }
 
@@ -402,11 +399,10 @@
 
 
 
-        /* 変更後 */
-/* 変更後 */
 @media (min-width: 600px) {
-  .page:not(#page-rank) { max-width: 700px; margin: 0 auto; padding: 12px 16px; }
+  .page:not(#page-rank):not(#page-theme) { max-width: 700px; margin: 0 auto; padding: 12px 16px; }
   #page-rank { max-width: 100%; padding: 12px 16px; }
+  #page-theme { max-width: 95vw; margin: 0 auto; padding: 12px 16px; }
   #mc-subtab-mc { max-width: 700px; margin: 0 auto; }
 }
 
@@ -641,6 +637,18 @@
 @keyframes tt-pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
 .tt-lpulse{animation:tt-pulse 1.2s infinite;}
+@media (min-width: 600px) {
+  #theme-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}
+@media (min-width: 1200px) {
+  #theme-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 
     </style>
 
@@ -6281,7 +6289,7 @@ function renderThemes() {
 
                                 <div style="display:flex;gap:2px;flex-shrink:0;align-items:center;">
 
-                    <button onclick="fetchThemePerf(${theme.id})" title="この箱を更新"
+                    <button onclick="fetchThemePerf(${theme.id})" title=""
 
                         style="padding:3px 8px;background:#334155;border:1px solid var(--border);color:#22d3ee;border-radius:6px;font-weight:800;cursor:pointer;font-size:0.65rem;">↺</button>
 
