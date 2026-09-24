@@ -1389,9 +1389,9 @@
 
 <button class="rank2-filter-btn" id="r2-rf-sma50" onclick="r2ToggleFilter('SMA50↑')">SMA50↑</button>
 
-<button class="rank2-filter-btn" id="r2-rf-candlebull" onclick="r2ToggleFilter('陽線3連続')">陽線3連続</button>
+<button class="rank2-filter-btn" id="r2-rf-candlebull" onclick="r2ToggleFilter('陽線3連続')">陽線3</button>
 
-<button class="rank2-filter-btn" id="r2-rf-candlebear" onclick="r2ToggleFilter('陰線3連続')">陰線3連続</button>
+<button class="rank2-filter-btn" id="r2-rf-candlebear" onclick="r2ToggleFilter('陰線3連続')">陰線3</button>
 
 <button class="rank2-filter-btn" id="r2-rf-ppbull" onclick="r2ToggleFilter('PP陽線')">PP陽線</button>
 
@@ -1537,7 +1537,7 @@
 
     <div class="rank2-section">
 
-  <div class="rank2-title">陽線3連続 / 陰線3連続（反転するまで継続）</div>
+  <div class="rank2-title">陽線3 / 陰線3（反転するまで継続）</div>
 
   <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
 
@@ -1563,7 +1563,7 @@
 
     <div>
 
-      <div style="font-size:0.65rem; font-weight:800; color:#10b981; margin-bottom:6px;">陽線3連続 継続中</div>
+      <div style="font-size:0.65rem; font-weight:800; color:#10b981; margin-bottom:6px;">陽線3 継続中</div>
 
       <div id="candle-bull-list" style="display:flex; flex-wrap:wrap; gap:5px;"></div>
 
@@ -1571,7 +1571,7 @@
 
     <div>
 
-      <div style="font-size:0.65rem; font-weight:800; color:#ef4444; margin-bottom:6px;">陰線3連続 継続中</div>
+      <div style="font-size:0.65rem; font-weight:800; color:#ef4444; margin-bottom:6px;">陰線3 継続中</div>
 
       <div id="candle-bear-list" style="display:flex; flex-wrap:wrap; gap:5px;"></div>
 
@@ -4386,9 +4386,9 @@ function r2ToggleFilter(f) {
 
   document.getElementById('r2-rf-sma50').classList.toggle('active', r2ActiveFilters.includes('SMA50↑'));
 
-  document.getElementById('r2-rf-candlebull').classList.toggle('active', r2ActiveFilters.includes('陽線3連続'));
+  document.getElementById('r2-rf-candlebull').classList.toggle('active', r2ActiveFilters.includes('陽線3'));
 
-  document.getElementById('r2-rf-candlebear').classList.toggle('active', r2ActiveFilters.includes('陰線3連続'));
+  document.getElementById('r2-rf-candlebear').classList.toggle('active', r2ActiveFilters.includes('陰線3'));
 
   document.getElementById('r2-rf-ppbull').classList.toggle('active', r2ActiveFilters.includes('PP陽線'));
 
@@ -4644,9 +4644,9 @@ function renderRankTable() {
 
 if (r2ActiveFilters.includes('SMA50↑')) disp = disp.filter(d => d.above_sma50 === true);
 
-if (r2ActiveFilters.includes('陽線3連続')) disp = disp.filter(d => d.candle_streak === 'bull');
+if (r2ActiveFilters.includes('陽線3')) disp = disp.filter(d => d.candle_streak === 'bull');
 
-if (r2ActiveFilters.includes('陰線3連続')) disp = disp.filter(d => d.candle_streak === 'bear');
+if (r2ActiveFilters.includes('陰線3')) disp = disp.filter(d => d.candle_streak === 'bear');
 
 if (r2ActiveFilters.includes('PP陽線')) disp = disp.filter(d => d.pocket_pivot === 'bull');
 
