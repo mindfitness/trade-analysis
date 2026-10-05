@@ -2421,8 +2421,10 @@
 
                 <div style="font-size:0.82rem; line-height:1.8; color:var(--text-main); white-space:pre-wrap;">cd moomoo\moomoo-algo
 
-Entry：EMA21(5m)、高値x2(tick)、高値(5m)、上限(ADR、ボリンジャー、抵抗、日経)、HL(tick)、Vol、日経ブル
-Exit：平均約定価格、日経ベア、高値失敗、エントリー後の急上昇(ex 0.3%)、上限、抵抗
+Entry：tick→5m→Vol
+EMA21(5m)、高値x2(tick)、高値(5m)、上限(ADR、ボリンジャー、抵抗、日経)、HL(tick)、Vol、日経ブル
+                    
+Exit：5m、平均約定価格、日経ベア、高値失敗、エントリー後の急上昇(ex 0.3%)、上限、抵抗
 
 ボリンジャーにタッチして下落→NG
 Volx3以上→10時以降の押し目買い(HL確認して下がったところを拾う)
