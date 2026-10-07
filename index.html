@@ -1918,32 +1918,62 @@
   </label>
 </div>
 
+<!-- Swing 専用フィルターUI（DAYのHLトグル・陽線トグルの後に追加） -->
+<div style="border-top:1px solid var(--border); margin:8px 0 6px; padding-top:8px;">
+  <div style="font-size:0.62rem; font-weight:800; color:#0ea5e9; margin-bottom:6px; letter-spacing:0.05em;">▷ Swing フィルター</div>
+
+  <!-- 週足HLチェック -->
+  <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
+    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none;">
+      <div id="swing-weekly-hl-toggle" onclick="toggleSwingWeeklyHL()"
+        style="width:36px; height:20px; border-radius:10px; background:#0ea5e9; border:1px solid var(--border);
+               position:relative; transition:background 0.2s; cursor:pointer; flex-shrink:0;">
+        <div id="swing-weekly-hl-knob"
+          style="width:14px; height:14px; border-radius:50%; background:white;
+                 position:absolute; top:2px; left:18px; transition:all 0.2s;"></div>
+      </div>
+      <span id="swing-weekly-hl-label" style="font-size:0.68rem; color:#0ea5e9; font-weight:700;">週足HLチェックあり</span>
+    </label>
+  </div>
+
+  <!-- ADR% 閾値 -->
+  <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px; flex-wrap:wrap;">
+    <span style="font-size:0.62rem; color:var(--text-sub); font-weight:700;">ADR% ≥</span>
+    <input type="number" id="swing-adr-threshold" value="3.5" min="0" step="0.5"
+      style="width:65px; padding:4px 8px; font-size:0.82rem; font-weight:800; text-align:center;">
+    <span style="font-size:0.62rem; color:var(--text-sub); font-weight:700; margin-left:8px;">時価総額 ≥ $</span>
+    <input type="number" id="swing-mktcap-threshold" value="1" min="0" step="0.5"
+      style="width:65px; padding:4px 8px; font-size:0.82rem; font-weight:800; text-align:center;">
+    <span style="font-size:0.62rem; color:var(--text-sub);">B USD</span>
+  </div>
+
+  <!-- Vol60 / $Vol閾値 -->
+  <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px; flex-wrap:wrap;">
+    <span style="font-size:0.62rem; color:var(--text-sub); font-weight:700;">Vol(60) ≥</span>
+    <input type="number" id="swing-vol-threshold" value="130" min="0" step="10"
+      style="width:70px; padding:4px 8px; font-size:0.82rem; font-weight:800; text-align:center;">
+    <span style="font-size:0.62rem; color:var(--text-sub);">万株</span>
+    <span style="font-size:0.62rem; color:var(--text-sub); font-weight:700; margin-left:8px;">$Vol(60) ≥</span>
+    <input type="number" id="swing-dvol-threshold" value="100" min="0" step="10"
+      style="width:65px; padding:4px 8px; font-size:0.82rem; font-weight:800; text-align:center;">
+    <span style="font-size:0.62rem; color:var(--text-sub);">M USD</span>
+  </div>
+</div>
+
+<!-- ボタン行 -->
 <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
-
   <button id="screen-revtrend-btn" onclick="startReversalScreening()"
-
-  style="flex:1; min-width:0; padding:10px; background:#06b6d4; color:#0f172a; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
-
-  ▶ LONG
-
-</button>
-
+    style="flex:1; min-width:0; padding:10px; background:#06b6d4; color:#0f172a; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
+    ▶ LONG
+  </button>
   <button id="screen-day-btn" onclick="startScreening('day')"
-
-  style="flex:1; min-width:0; padding:10px; background:#f59e0b; color:#0f172a; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
-
-  ▶ DAY
-
-</button>
-
-<button id="screen-day2-btn" onclick="startScreening('day2')"
-
-  style="flex:1; min-width:0; padding:10px; background:#0ea5e9; color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
-
-  ▶ DAY2
-
-</button>
-
+    style="flex:1; min-width:0; padding:10px; background:#f59e0b; color:#0f172a; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
+    ▶ DAY
+  </button>
+  <button id="screen-swing-btn" onclick="startScreening('swing')"
+    style="flex:1; min-width:0; padding:10px; background:#0ea5e9; color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.82rem;">
+    ▶ Swing
+  </button>
 </div>
 
 
@@ -7695,6 +7725,7 @@ function toggleSaveToWatch() {
 
 let dayHLCheck = true;
 let dayCandleCheck = true;
+let swingWeeklyHLCheck = true;
 
 function toggleDayHL() {
   dayHLCheck = !dayHLCheck;
@@ -7733,6 +7764,26 @@ function toggleDayCandle() {
     knob.style.left        = '2px';
     label.style.color      = 'var(--text-sub)';
     label.textContent      = '陽線チェックなし';
+  }
+}
+
+function toggleSwingWeeklyHL() {
+  swingWeeklyHLCheck = !swingWeeklyHLCheck;
+  const track = document.getElementById('swing-weekly-hl-toggle');
+  const knob  = document.getElementById('swing-weekly-hl-knob');
+  const label = document.getElementById('swing-weekly-hl-label');
+  if (swingWeeklyHLCheck) {
+    track.style.background = '#0ea5e9';
+    knob.style.background  = 'white';
+    knob.style.left        = '18px';
+    label.style.color      = '#0ea5e9';
+    label.textContent      = '週足HLチェックあり';
+  } else {
+    track.style.background = '#334155';
+    knob.style.background  = '#94a3b8';
+    knob.style.left        = '2px';
+    label.style.color      = 'var(--text-sub)';
+    label.textContent      = '週足HLチェックなし';
   }
 }
     
@@ -8815,20 +8866,45 @@ const dollarVol = sClose * vol60Avg;
 
 
 
+// ===== 週足HL構造検出 =====
+// 週足相当の日数（5営業日=1週）でHL構造を再判定
+// closes を5本おきにダウンサンプリングして週足疑似データを生成
+let weeklyHLFound = false;
+try {
+  const weeklyValues = values.filter((_, i) => i % 5 === 0).slice(0, 60).map(d => ({
+    close: d.close, high: d.high, low: d.low, open: d.open, datetime: d.datetime
+  }));
+  if (weeklyValues.length >= 6) {
+    const weeklyHL = detectHLStructureFull(weeklyValues, 1, 4);
+    weeklyHLFound = weeklyHL.found;
+  }
+} catch(e) { weeklyHLFound = false; }
+
+// ===== 時価総額取得（終値 × 出来高60MA で近似。精度は目安） =====
+// 精確な時価総額はAPIで別途取得が必要だが、ここでは
+// dollarVol(60) を指標として代用し、閾値をUIから調整可能にする
+// （真の時価総額はここでは取得しないため、UIの「時価総額」欄は
+//   実際には $Vol(60) とは別に shares_outstanding が必要 →
+//   本実装では Twelve Data の statistics エンドポイントから取得）
+let marketCapB = null;
+try {
+  const mcRes = await fetch(
+    `https://api.twelvedata.com/statistics?symbol=${encodeURIComponent(symbol)}&apikey=${apiKey}`
+  );
+  const mcJson = await mcRes.json();
+  const shares = mcJson?.statistics?.valuations_metrics?.shares_outstanding;
+  if (shares && sClose) {
+    marketCapB = (parseFloat(shares) * sClose) / 1e9; // B USD
+  }
+} catch(e) { marketCapB = null; }
+
 return { symbol, price: sClose, rs10, rs21, rs63, rs126, rs252, hasVolSpike, ppCount, vcs, maTouchLabel,
-
     tlConvPairs, tlConv, mms, adrPct, isAdrTouchAnyLine, adrOk, vol60Avg, dollarVol,
-
     hlStructureFound, pivotHitLabel, oneilCond,
-
     reversalHit, reversalLabel,
-
-    day2LineHit, day2LineLabel,
-
+    weeklyHLFound, marketCapB,
     candle_streak: candleStreakState,
-
     matchType: rsCondition ? 'rs' : vcsCondition ? 'vcs' : maCondition ? 'ma' : null,
-
     match: (rsCondition || vcsCondition || maCondition) && mms >= 5 };
 
 }
@@ -8943,32 +9019,19 @@ function screenAppendCard(r) {
 
   div.dataset.pp = r.ppCount || 0;
 
-  const isMaOnly   = r.matchType === 'ma';
-
-  const isVcsOnly  = r.matchType === 'vcs';
-
-  const isDayOnly  = r.matchType === 'day';
-
-  const isDay2Only = r.matchType === 'day2';
-
-  const accentColor = isVcsOnly ? '#8b5cf6' : isMaOnly ? '#f59e0b' : isDayOnly ? '#f97316' : isDay2Only ? '#0ea5e9' : 'var(--win-deep)';
-
+    const isMaOnly    = r.matchType === 'ma';
+  const isVcsOnly   = r.matchType === 'vcs';
+  const isDayOnly   = r.matchType === 'day';
+  const isSwingOnly = r.matchType === 'swing';
+  const accentColor = isVcsOnly ? '#8b5cf6' : isMaOnly ? '#f59e0b' : isDayOnly ? '#f97316' : isSwingOnly ? '#0ea5e9' : 'var(--win-deep)';
   const badge = isVcsOnly
-
     ? `<span style="font-size:0.6rem;font-weight:900;background:#4c1d95;color:#c4b5fd;padding:1px 6px;border-radius:3px;">VCS</span>`
-
     : isMaOnly
-
     ? `<span style="font-size:0.6rem;font-weight:900;background:#451a03;color:#fcd34d;padding:1px 6px;border-radius:3px;">MA</span>`
-
     : isDayOnly
-
     ? `<span style="font-size:0.6rem;font-weight:900;background:#431407;color:#fb923c;padding:1px 6px;border-radius:3px;">DAY</span>`
-
-    : isDay2Only
-
-    ? `<span style="font-size:0.6rem;font-weight:900;background:#0c4a6e;color:#7dd3fc;padding:1px 6px;border-radius:3px;">DAY2</span>`
-
+    : isSwingOnly
+    ? `<span style="font-size:0.6rem;font-weight:900;background:#0c4a6e;color:#7dd3fc;padding:1px 6px;border-radius:3px;">Swing</span>`
     : `<span style="font-size:0.6rem;font-weight:900;background:#064e3b;color:#6ee7b7;padding:1px 6px;border-radius:3px;">RS</span>`;
 
   const vcsColor = isNaN(r.vcs) ? 'var(--text-sub)' : r.vcs >= 70 ? '#8b5cf6' : 'var(--text-sub)';
@@ -9009,9 +9072,8 @@ function screenAppendCard(r) {
 
         <span style="font-size:0.72rem;font-weight:700;color:${vcsColor};">VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}</span>
 
-        ${isMaOnly   ? `<span style="font-size:0.72rem;font-weight:700;color:#f59e0b;">${r.maTouchLabel}</span>` : ''}
-
-        ${isDay2Only ? `<span style="font-size:0.72rem;font-weight:700;color:#0ea5e9;">${r.day2LineLabel}</span>` : ''}
+                ${isMaOnly    ? `<span style="font-size:0.72rem;font-weight:700;color:#f59e0b;">${r.maTouchLabel}</span>` : ''}
+        ${isSwingOnly ? `<span style="font-size:0.72rem;font-weight:700;color:#0ea5e9;">週足HL:${r.weeklyHLFound?'✓':'✗'} MktCap:${r.marketCapB!==null?r.marketCapB.toFixed(1)+'B':'N/A'}</span>` : ''}
 
         ${r.tlConv ? `<span style="font-size:0.6rem;font-weight:900;background:#1e1b4b;color:#a78bfa;border:1px solid #4f46e5;border-radius:3px;padding:1px 6px;">TL×${r.tlConvPairs.length}</span>` : ''}
 
@@ -9466,31 +9528,19 @@ if (duplicatesRemoved > 0) {
 
 
 
-  const btn     = document.getElementById('screen-run-btn');
-
-  const vcsBtn  = document.getElementById('screen-vcs-btn');
-
-  const maBtn   = document.getElementById('screen-ma-only-btn');
-
-  const dayBtn  = document.getElementById('screen-day-btn');
-
-  const day2Btn = document.getElementById('screen-day2-btn');
-
+    const btn      = document.getElementById('screen-run-btn');
+  const vcsBtn   = document.getElementById('screen-vcs-btn');
+  const maBtn    = document.getElementById('screen-ma-only-btn');
+  const dayBtn   = document.getElementById('screen-day-btn');
+  const swingBtn = document.getElementById('screen-swing-btn');
   btn.disabled = true; vcsBtn.disabled = true; maBtn.disabled = true;
-
-  if(dayBtn)  dayBtn.disabled  = true;
-
-  if(day2Btn) day2Btn.disabled = true;
-
-  btn.innerText    = mode === 'rs'   ? '... 実行中' : '▶ RS(ALL)';
-
-  vcsBtn.innerText = mode === 'vcs'  ? '... 実行中' : '▶ VCS';
-
-  maBtn.innerText  = mode === 'ma'   ? '... 実行中' : '▶ MA';
-
-  if(dayBtn)  dayBtn.innerText  = mode === 'day'  ? '... 実行中' : '▶ DAY';
-
-  if(day2Btn) day2Btn.innerText = mode === 'day2' ? '... 実行中' : '▶ DAY2';
+  if(dayBtn)   dayBtn.disabled   = true;
+  if(swingBtn) swingBtn.disabled = true;
+  btn.innerText    = mode === 'rs'    ? '... 実行中' : '▶ RS(ALL)';
+  vcsBtn.innerText = mode === 'vcs'   ? '... 実行中' : '▶ VCS';
+  maBtn.innerText  = mode === 'ma'    ? '... 実行中' : '▶ MA';
+  if(dayBtn)   dayBtn.innerText   = mode === 'day'   ? '... 実行中' : '▶ DAY';
+  if(swingBtn) swingBtn.innerText = mode === 'swing' ? '... 実行中' : '▶ Swing';
 
   document.getElementById('screen-log').innerHTML = '';
 
@@ -9652,47 +9702,44 @@ const dayConditionCheck =
 
 
 
-      const day2ConditionCheck =
+            const swingAdrThresh  = parseFloat(document.getElementById('swing-adr-threshold')?.value ?? 3.5);
+      const swingMktCapThresh = parseFloat(document.getElementById('swing-mktcap-threshold')?.value ?? 1);
+      const swingVolThresh  = parseFloat(document.getElementById('swing-vol-threshold')?.value ?? 130) * 10000;
+      const swingDVolThresh = parseFloat(document.getElementById('swing-dvol-threshold')?.value ?? 100) * 1_000_000;
 
-        (result.adrOk ?? false) &&
+      const swingConditionCheck =
+        // DAYと共通: RS・HL構造・陽線
+        dayRsCondition &&
+        (!dayHLCheck || result.hlStructureFound) &&
+        (!dayCandleCheck || result.candle_streak === 'bull') &&
+        // Swing 固有
+        (!swingWeeklyHLCheck || (result.weeklyHLFound ?? false)) &&
+        (result.adrPct ?? 0) >= swingAdrThresh &&
+        (result.marketCapB === null || result.marketCapB >= swingMktCapThresh) &&
+        (result.vol60Avg ?? 0) >= swingVolThresh &&
+        (result.dollarVol ?? 0) >= swingDVolThresh;
 
-        (result.vol60Avg ?? 0) >= 1500000 &&
-
-        (result.day2LineHit ?? false);
 
 
-
-      const isMatch = mode === 'vcs'
-
+          const isMatch = mode === 'vcs'
   ? rs21_63_ok_chk && result.hlStructureFound && (result.pivotInRange ?? false) && (!isNaN(result.vcs) && result.vcs >= 70) && (result.mms ?? 0) >= 5 && (result.adrOk ?? false)
-
   : mode === 'ma'
-
   ? maConditionCheck
-
   : mode === 'day'
-
   ? dayConditionCheck
-
-  : mode === 'day2'
-
-  ? day2ConditionCheck
-
+  : mode === 'swing'
+  ? swingConditionCheck
   : result.match && (result.mms ?? 0) >= 5;
 
 
 
       if (isMatch) {
 
-        const matchType = mode === 'vcs' ? 'vcs'
-
-          : mode === 'ma'  ? 'ma'
-
-          : mode === 'day' ? 'day'
-
+               const matchType = mode === 'vcs'   ? 'vcs'
+          : mode === 'ma'    ? 'ma'
+          : mode === 'day'   ? 'day'
+          : mode === 'swing' ? 'swing'
           : result.matchType;
-
-        result.matchType = matchType;
 
 
 
@@ -9810,21 +9857,14 @@ const dayConditionCheck =
 
   }
 
-  btn.disabled = false; vcsBtn.disabled = false; maBtn.disabled = false;
-
-  if(dayBtn)  dayBtn.disabled  = false;
-
-  if(day2Btn) day2Btn.disabled = false;
-
+   btn.disabled = false; vcsBtn.disabled = false; maBtn.disabled = false;
+  if(dayBtn)   dayBtn.disabled   = false;
+  if(swingBtn) swingBtn.disabled = false;
   btn.innerText    = '▶ RS(ALL)';
-
   vcsBtn.innerText = '▶ VCS';
-
   maBtn.innerText  = '▶ MA';
-
-  if(dayBtn)  dayBtn.innerText  = '▶ DAY';
-
-  if(day2Btn) day2Btn.innerText = '▶ DAY2';
+  if(dayBtn)   dayBtn.innerText   = '▶ DAY';
+  if(swingBtn) swingBtn.innerText = '▶ Swing';
 
 }
 
@@ -12548,6 +12588,18 @@ if (dayCandleTrack) {
   dayCandleLabel.style.color      = '#06b6d4';
   dayCandleLabel.textContent      = '陽線チェックあり';
 }
+
+        // Swing 週足HLトグル 初期状態をONに
+    const swingWeeklyHLTrack = document.getElementById('swing-weekly-hl-toggle');
+    const swingWeeklyHLKnob  = document.getElementById('swing-weekly-hl-knob');
+    const swingWeeklyHLLabel = document.getElementById('swing-weekly-hl-label');
+    if (swingWeeklyHLTrack) {
+      swingWeeklyHLTrack.style.background = '#0ea5e9';
+      swingWeeklyHLKnob.style.background  = 'white';
+      swingWeeklyHLKnob.style.left        = '18px';
+      swingWeeklyHLLabel.style.color      = '#0ea5e9';
+      swingWeeklyHLLabel.textContent      = '週足HLチェックあり';
+    }
 
     switchPage('rank');
 
