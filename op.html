@@ -1,8 +1,13 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>OUT価格計算</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+JP:wght@400;500;600&display=swap">
 <style>
-/* Layout: 1カラムの計算パネル。入力 → 結果2枚 → 価格の並び(はしご)の順 */
+/* Layout: 通常モードは1カラム(中央のみ)。テストモードは左・中央・右の3カラム */
 :root {
   --bg: #f3f5f4;
   --surface: #ffffff;
@@ -56,13 +61,45 @@ body {
   font-family: var(--font-sans);
   font-size: 15px;
   line-height: 1.6;
+  margin: 0;
   padding-inline: 16px;
   padding-block: 28px 48px;
 }
 .wrap { max-width: 560px; margin-inline: auto; display: flex; flex-direction: column; gap: 20px; }
+.wrap.test { max-width: 1280px; }
+
+/* タイトルボタン (押すとテストモードに切り替え) */
 h1 { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: 0.02em; text-wrap: balance; }
-.sub { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.title-btn {
+  font: inherit; font-size: 22px; font-weight: 600; letter-spacing: 0.02em; color: var(--fg);
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 4px 14px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--surface); cursor: pointer;
+}
+.title-btn:hover { border-color: var(--accent); }
+.title-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.title-btn[aria-pressed="true"] { border-color: var(--accent); }
+.title-btn .badge {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+  padding: 2px 8px; border-radius: 999px; background: var(--accent); color: var(--accent-fg);
+}
+.title-btn .badge[hidden] { display: none; }
+
+.sub { margin: 0; color: var(--muted); font-size: 13px; }
 .sub b { font-family: var(--font-mono); font-weight: 600; color: var(--fg); }
+
+/* 計算パネルを並べるコンテナ */
+.calcs { display: flex; flex-direction: column; gap: 20px; }
+.wrap.test .calcs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
+@media (max-width: 900px) {
+  .wrap.test .calcs { grid-template-columns: 1fr; }
+}
+
+/* 1つ分の計算 (入力 → 結果2枚 → 価格の並び) */
+.calc { container-type: inline-size; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.calc[hidden] { display: none; }
+.slot { display: none; margin: 0; font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: 0.1em; color: var(--accent); }
+.wrap.test .slot { display: block; }
 
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
 
@@ -120,107 +157,45 @@ details .fields { margin-top: 12px; }
 .panel h2 { margin: 0; font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; }
 
 .warn { margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--loss-bg); color: var(--loss); font-size: 13px; }
+.warn[hidden] { display: none; }
 .note { margin: 0; font-size: 12px; color: var(--muted); }
 
-@media (max-width: 420px) {
+/* 幅が狭いパネル(スマホ・テストモードの各カラム)では結果を縦並びに */
+@container (max-width: 440px) {
   .results { grid-template-columns: 1fr; }
   .res .price { font-size: 24px; }
+  .panel { padding: 16px; }
 }
 </style>
+</head>
+<body>
 
-<main class="wrap">
+<main class="wrap" id="wrap">
   <header>
-    <h1>Out Price</h1>
-    <p class="sub">RR 1:2 / <b id="subLoss">-10,000円</b> /  <b id="subGain">+20,000円</b></p>
+    <h1>
+      <button type="button" class="title-btn" id="modeBtn" aria-pressed="false" title="テストモードの切り替え">
+        <span>Out Price</span><span class="badge" id="modeBadge" hidden>TEST</span>
+      </button>
+    </h1>
   </header>
 
-  <section class="panel" aria-label="入力">
-    <div class="fields">
-      <div class="field wide">
-        <label for="capital">元金</label>
-        <div class="input"><input id="capital" type="text" inputmode="decimal" autocomplete="off" value="8"><span class="unit">百万円</span></div>
-        <span class="note" id="capitalYen"></span>
-      </div>
-      <div class="field">
-        <label for="entry">エントリー価格</label>
-        <div class="input"><input id="entry" type="text" inputmode="decimal" autocomplete="off" value="1500"><span class="unit">円</span></div>
-      </div>
-      <div class="field">
-        <label for="qty">枚数 </label>
-        <div class="input"><input id="qty" type="text" inputmode="decimal" autocomplete="off" value="600"><span class="unit">枚</span></div>
-      </div>
-    </div>
-    <p class="note" id="qtyHint"></p>
-
-    <details>
-      <summary>RR Settings</summary>
-      <div class="fields">
-        <div class="field">
-          <label for="lossAmt">損切り額</label>
-          <div class="input"><input id="lossAmt" type="text" inputmode="decimal" autocomplete="off" value="10000"><span class="unit">円</span></div>
-        </div>
-        <div class="field">
-          <label for="gainAmt">利確額</label>
-          <div class="input"><input id="gainAmt" type="text" inputmode="decimal" autocomplete="off" value="20000"><span class="unit">円</span></div>
-        </div>
-      </div>
-      <p class="rr" id="rrText"></p>
-    </details>
-
-    <p class="warn" id="warn" hidden></p>
-  </section>
-
-  <section class="results" aria-label="計算結果" id="results">
-    <div class="res loss">
-  <span class="tag">SL</span>
-  <span class="price" id="slPrice">-</span>
-  <input class="edit" id="slEdit" type="text" inputmode="decimal" autocomplete="off" aria-label="SL価格" hidden>
-  <span class="meta" id="slMeta"></span>
-  <div class="actions">
-    <button type="button" class="copy" data-target="slPrice">コピー</button>
-    <button type="button" class="lockbtn" data-lock="sl" aria-pressed="false">🔒 解除</button>
-  </div>
-</div>
-<div class="res gain">
-  <span class="tag">TP</span>
-  <span class="price" id="tpPrice">-</span>
-  <input class="edit" id="tpEdit" type="text" inputmode="decimal" autocomplete="off" aria-label="TP価格" hidden>
-  <span class="meta" id="tpMeta"></span>
-  <div class="actions">
-    <button type="button" class="copy" data-target="tpPrice">コピー</button>
-    <button type="button" class="lockbtn" data-lock="tp" aria-pressed="false">🔒 解除</button>
-  </div>
-</div>
-  </section>
-
-  <section class="panel" aria-label="価格の並び">
-    <h2>価格の並び</h2>
-    <ol class="ladder" id="ladder"></ol>
-      </section>
+  <div class="calcs" id="calcs"></div>
 </main>
 
 <script>
 (function () {
-  var $ = function (id) { return document.getElementById(id); };
-  var raw = { sl: "", tp: "" };
   var nf = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 4 });
+  var nf1 = new Intl.NumberFormat("ja-JP", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   var yen = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 0 });
 
   function parse(str) {
-  var v = str.replace(/[,\s円枚]/g, "").replace(/[０-９．]/g, function (c) {
-    return c === "．" ? "." : String.fromCharCode(c.charCodeAt(0) - 0xFEE0);
-  });
-  if (v === "") return NaN;
-  return Number(v);
-}
-function num(id) { return parse($(id).value); }
-
-  function clean(n) { return parseFloat(n.toFixed(6)); }
-
-  // 元金欄は100万円単位 (1.5 → 1,500,000円)
-  function capitalYen() {
-    return Math.round(num("capital") * 1000000);
+    var v = str.replace(/[,\s円枚]/g, "").replace(/[０-９．]/g, function (c) {
+      return c === "．" ? "." : String.fromCharCode(c.charCodeAt(0) - 0xFEE0);
+    });
+    if (v === "") return NaN;
+    return Number(v);
   }
+  function clean(n) { return parseFloat(n.toFixed(6)); }
 
   // 元金とエントリー価格から、100株単位で買える最大枚数を求める
   function maxQty(capital, entry) {
@@ -228,138 +203,259 @@ function num(id) { return parse($(id).value); }
     return Math.floor(Math.floor(capital / entry) / 100) * 100;
   }
 
-  // 元金・エントリー価格が変わったら枚数を最大枚数に自動入力
-  function autoQty() {
-    $("qty").value = String(maxQty(capitalYen(), num("entry")));
-    render();
+  // 1つ分の計算パネルのHTML (n: パネル番号。label の for 用に id を一意にする)
+  function template(n, label) {
+    return '' +
+      '<p class="slot">' + label + '</p>' +
+      '<p class="sub">RR <b data-el="subRR">1:2</b> / <b data-el="subLoss">-10,000円</b> / <b data-el="subGain">+20,000円</b></p>' +
+
+      '<section class="panel" aria-label="入力">' +
+        '<div class="fields">' +
+          '<div class="field wide">' +
+            '<label for="capital-' + n + '">元金</label>' +
+            '<div class="input"><input id="capital-' + n + '" data-el="capital" type="text" inputmode="decimal" autocomplete="off" value="8"><span class="unit">百万円</span></div>' +
+            '<span class="note" data-el="capitalYen"></span>' +
+          '</div>' +
+          '<div class="field">' +
+            '<label for="entry-' + n + '">エントリー価格</label>' +
+            '<div class="input"><input id="entry-' + n + '" data-el="entry" type="text" inputmode="decimal" autocomplete="off" value=""><span class="unit">円</span></div>' +
+          '</div>' +
+          '<div class="field">' +
+            '<label for="qty-' + n + '">枚数</label>' +
+            '<div class="input"><input id="qty-' + n + '" data-el="qty" type="text" inputmode="decimal" autocomplete="off" value=""><span class="unit">枚</span></div>' +
+          '</div>' +
+        '</div>' +
+        '<p class="note" data-el="qtyHint"></p>' +
+
+        '<details>' +
+          '<summary>RR Settings</summary>' +
+          '<div class="fields">' +
+            '<div class="field">' +
+              '<label for="lossAmt-' + n + '">損切り額</label>' +
+              '<div class="input"><input id="lossAmt-' + n + '" data-el="lossAmt" type="text" inputmode="decimal" autocomplete="off" value="10000"><span class="unit">円</span></div>' +
+            '</div>' +
+            '<div class="field">' +
+              '<label for="gainAmt-' + n + '">利確額</label>' +
+              '<div class="input"><input id="gainAmt-' + n + '" data-el="gainAmt" type="text" inputmode="decimal" autocomplete="off" value="20000"><span class="unit">円</span></div>' +
+            '</div>' +
+          '</div>' +
+          '<p class="rr" data-el="rrText"></p>' +
+        '</details>' +
+
+        '<p class="warn" data-el="warn" hidden></p>' +
+      '</section>' +
+
+      '<section class="results" aria-label="計算結果">' +
+        '<div class="res loss">' +
+          '<span class="tag">SL</span>' +
+          '<span class="price" data-el="slPrice">-</span>' +
+          '<input class="edit" data-el="slEdit" type="text" inputmode="decimal" autocomplete="off" aria-label="SL価格" hidden>' +
+          '<span class="meta" data-el="slMeta"></span>' +
+          '<div class="actions">' +
+            '<button type="button" class="copy" data-copy="sl">コピー</button>' +
+            '<button type="button" class="lockbtn" data-lock="sl" aria-pressed="false">🔒 解除</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="res gain">' +
+          '<span class="tag">TP</span>' +
+          '<span class="price" data-el="tpPrice">-</span>' +
+          '<input class="edit" data-el="tpEdit" type="text" inputmode="decimal" autocomplete="off" aria-label="TP価格" hidden>' +
+          '<span class="meta" data-el="tpMeta"></span>' +
+          '<div class="actions">' +
+            '<button type="button" class="copy" data-copy="tp">コピー</button>' +
+            '<button type="button" class="lockbtn" data-lock="tp" aria-pressed="false">🔒 解除</button>' +
+          '</div>' +
+        '</div>' +
+      '</section>' +
+
+      '<section class="panel" aria-label="価格の並び">' +
+        '<h2>価格の並び</h2>' +
+        '<ol class="ladder" data-el="ladder"></ol>' +
+      '</section>';
   }
 
-  function updateHint(capital, entry, qty) {
-    var hint = $("qtyHint");
-    if (!(capital > 0 && entry > 0)) {
-      hint.textContent = "元金とエントリー価格を入力すると、100株単位の最大枚数を自動入力します。";
-      return;
-    }
-    var max = maxQty(capital, entry);
-    if (max === 0) {
-      hint.textContent = "元金が足りません。100株の購入に " + yen.format(Math.ceil(entry * 100)) + "円必要です。";
-      return;
-    }
-    var text = "元金内の最大 " + yen.format(max) + "枚 (必要資金 " + yen.format(Math.round(max * entry)) +
-      "円 / 残り " + yen.format(Math.round(capital - max * entry)) + "円)";
-    if (qty > 0 && qty * entry > capital) text += " 入力中の枚数は元金を超えています。";
-    hint.textContent = text;
-  }
+  // 1つ分の計算ロジック。root の中だけを操作するので、複数並べても互いに干渉しない
+  function createCalc(root) {
+    var el = function (name) { return root.querySelector('[data-el="' + name + '"]'); };
+    var num = function (name) { return parse(el(name).value); };
+    var raw = { sl: "", tp: "" };
 
-  function render() {
-    var capital = capitalYen(), entry = num("entry"), qty = num("qty"), lossAmt = num("lossAmt"), gainAmt = num("gainAmt");
-    var warn = $("warn");
-    $("capitalYen").textContent = capital > 0 ? "= " + yen.format(capital) + "円" : "";
-    updateHint(capital, entry, qty);
-    var ok = entry > 0 && qty > 0 && lossAmt > 0 && gainAmt > 0;
+    // 元金欄は100万円単位 (1.5 → 1,500,000円)
+    function capitalYen() { return Math.round(num("capital") * 1000000); }
 
-    $("subLoss").textContent = lossAmt > 0 ? "-" + yen.format(lossAmt) + "円" : "-";
-    $("subGain").textContent = gainAmt > 0 ? "+" + yen.format(gainAmt) + "円" : "-";
-    $("rrText").textContent = lossAmt > 0 && gainAmt > 0 ? "リスクリワード 1 : " + nf.format(clean(gainAmt / lossAmt)) : "";
-
-    if (!ok) {
-      $("slPrice").textContent = "-"; $("tpPrice").textContent = "-";
-      $("slMeta").textContent = ""; $("tpMeta").textContent = "";
-      $("ladder").innerHTML = "";
-      raw.sl = raw.tp = "";
-      warn.hidden = false;
-      warn.textContent = "エントリー価格と枚数に0より大きい数字を入力してください。";
-      return;
+    // 元金・エントリー価格が変わったら枚数を最大枚数に自動入力 (買えない/未入力なら空欄)
+    function autoQty() {
+      var max = maxQty(capitalYen(), num("entry"));
+      el("qty").value = max > 0 ? String(max) : "";
+      render();
     }
 
-    var slW = lossAmt / qty, tpW = gainAmt / qty;
-    var sl = Math.floor(clean(entry - slW)), tp = Math.floor(clean(entry + tpW));
-
-    if (sl <= 0 || tp <= 0) {
-      warn.hidden = false;
-      warn.textContent = "計算上の価格が0以下になります。枚数か損益額を見直してください。";
-    } else {
-      warn.hidden = true;
+    function updateHint(capital, entry, qty) {
+      var hint = el("qtyHint");
+      if (!(capital > 0 && entry > 0)) {
+        hint.textContent = "元金とエントリー価格を入力すると、100株単位の最大枚数を自動入力します。";
+        return;
+      }
+      var max = maxQty(capital, entry);
+      if (max === 0) {
+        hint.textContent = "元金が足りません。100株の購入に " + yen.format(Math.ceil(entry * 100)) + "円必要です。";
+        return;
+      }
+      var text = "元金内の最大 " + yen.format(max) + "枚 (必要資金 " + yen.format(Math.round(max * entry)) +
+        "円 / 残り " + yen.format(Math.round(capital - max * entry)) + "円)";
+      if (qty > 0 && qty * entry > capital) text += " 入力中の枚数は元金を超えています。";
+      hint.textContent = text;
     }
 
-    raw.sl = String(sl); raw.tp = String(tp);
-    $("slPrice").textContent = nf.format(sl);
-    $("tpPrice").textContent = nf.format(tp);
-    var nf1 = new Intl.NumberFormat("ja-JP", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-$("slMeta").textContent = "値幅 " + nf1.format(clean(slW)) + " / -" + yen.format(lossAmt) + "円";
-$("tpMeta").textContent = "値幅 " + nf1.format(clean(tpW)) + " / +" + yen.format(gainAmt) + "円";
+    function render() {
+      var capital = capitalYen(), entry = num("entry"), qty = num("qty"), lossAmt = num("lossAmt"), gainAmt = num("gainAmt");
+      var warn = el("warn");
+      el("capitalYen").textContent = capital > 0 ? "= " + yen.format(capital) + "円" : "";
+      updateHint(capital, entry, qty);
+      var ok = entry > 0 && qty > 0 && lossAmt > 0 && gainAmt > 0;
 
-    var rows = [
-      { cls: "tp", name: "利確", p: tp, d: gainAmt, sign: "+" },
-      { cls: "en", name: "エントリー", p: entry, d: 0, sign: "" },
-      { cls: "sl", name: "損切", p: sl, d: lossAmt, sign: "-" }
-    ];
-    rows.sort(function (a, b) { return b.p - a.p; });
-    $("ladder").innerHTML = rows.map(function (r) {
-      var diff = r.d ? r.sign + yen.format(r.d) + "円" : "";
-      return '<li class="' + r.cls + '"><span class="name">' + r.name + '</span><span class="val">' +
-        nf.format(r.p) + '</span><span class="diff">' + diff + '</span></li>';
-    }).join("");
-  }
+      el("subLoss").textContent = lossAmt > 0 ? "-" + yen.format(lossAmt) + "円" : "-";
+      el("subGain").textContent = gainAmt > 0 ? "+" + yen.format(gainAmt) + "円" : "-";
+      var rr = lossAmt > 0 && gainAmt > 0 ? nf.format(clean(gainAmt / lossAmt)) : "";
+      el("subRR").textContent = rr ? "1:" + rr : "-";
+      el("rrText").textContent = rr ? "リスクリワード 1 : " + rr : "";
 
-  ["qty", "lossAmt", "gainAmt"].forEach(function (id) { $(id).addEventListener("input", render); });
-  ["capital", "entry"].forEach(function (id) { $(id).addEventListener("input", autoQty); });
+      if (!ok) {
+        el("slPrice").textContent = "-"; el("tpPrice").textContent = "-";
+        el("slMeta").textContent = ""; el("tpMeta").textContent = "";
+        el("ladder").innerHTML = "";
+        raw.sl = raw.tp = "";
+        // エントリー価格も枚数も未入力のうちは警告を出さない
+        if (isNaN(entry) && isNaN(qty)) {
+          warn.hidden = true;
+        } else {
+          warn.hidden = false;
+          warn.textContent = "エントリー価格と枚数に0より大きい数字を入力してください。";
+        }
+        return;
+      }
 
-  document.querySelectorAll(".copy").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      var key = btn.dataset.target === "slPrice" ? raw.sl : raw.tp;
-      if (!key) return;
-      var done = function (t) {
-        btn.textContent = t;
-        setTimeout(function () { btn.textContent = "コピー"; }, 1200);
-      };
-      try {
-        navigator.clipboard.writeText(key).then(function () { done("コピーしました"); }, function () { done("コピー不可"); });
-      } catch (e) { done("コピー不可"); }
+      var slW = lossAmt / qty, tpW = gainAmt / qty;
+      var sl = Math.floor(clean(entry - slW)), tp = Math.floor(clean(entry + tpW));
+
+      if (sl <= 0 || tp <= 0) {
+        warn.hidden = false;
+        warn.textContent = "計算上の価格が0以下になります。枚数か損益額を見直してください。";
+      } else {
+        warn.hidden = true;
+      }
+
+      raw.sl = String(sl); raw.tp = String(tp);
+      el("slPrice").textContent = nf.format(sl);
+      el("tpPrice").textContent = nf.format(tp);
+      el("slMeta").textContent = "値幅 " + nf1.format(clean(slW)) + " / -" + yen.format(lossAmt) + "円";
+      el("tpMeta").textContent = "値幅 " + nf1.format(clean(tpW)) + " / +" + yen.format(gainAmt) + "円";
+
+      var rows = [
+        { cls: "tp", name: "利確", p: tp, d: gainAmt, sign: "+" },
+        { cls: "en", name: "エントリー", p: entry, d: 0, sign: "" },
+        { cls: "sl", name: "損切", p: sl, d: lossAmt, sign: "-" }
+      ];
+      rows.sort(function (a, b) { return b.p - a.p; });
+      el("ladder").innerHTML = rows.map(function (r) {
+        var diff = r.d ? r.sign + yen.format(r.d) + "円" : "";
+        return '<li class="' + r.cls + '"><span class="name">' + r.name + '</span><span class="val">' +
+          nf.format(r.p) + '</span><span class="diff">' + diff + '</span></li>';
+      }).join("");
+    }
+
+    ["qty", "lossAmt", "gainAmt"].forEach(function (name) { el(name).addEventListener("input", render); });
+    ["capital", "entry"].forEach(function (name) { el(name).addEventListener("input", autoQty); });
+
+    // コピー
+    root.querySelectorAll("[data-copy]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var text = raw[btn.dataset.copy];
+        if (!text) return;
+        var done = function (t) {
+          btn.textContent = t;
+          setTimeout(function () { btn.textContent = "コピー"; }, 1200);
+        };
+        try {
+          navigator.clipboard.writeText(text).then(function () { done("コピーしました"); }, function () { done("コピー不可"); });
+        } catch (e) { done("コピー不可"); }
+      });
     });
-  });
 
     // ---- TP/SL ロック・逆算 ----
-  // 既定はロック。「解除」1クリックで入力欄に切り替わり、「確定」(またはEnter)で
-  // エントリー価格と残りの1つを逆算して再ロックする。Escで取り消し。
-  function setEdit(key, on) {
-    var input = $(key + "Edit"), btn = document.querySelector('[data-lock="' + key + '"]');
-    $(key + "Price").hidden = on;
-    input.hidden = !on;
-    btn.setAttribute("aria-pressed", on ? "true" : "false");
-    btn.innerHTML = on ? "<span>✔ 確定</span>" : "🔒 解除";
-    if (on) { input.value = raw[key]; input.focus(); input.select(); }
-  }
+    // 既定はロック。「解除」1クリックで入力欄に切り替わり、「確定」(またはEnter)で
+    // エントリー価格と残りの1つを逆算して再ロックする。Escで取り消し。
+    function lockBtn(key) { return root.querySelector('[data-lock="' + key + '"]'); }
 
-  function commit(key) {
-    var v = Math.round(parse($(key + "Edit").value));  // 価格は円単位の整数
-    var qty = num("qty"), lossAmt = num("lossAmt"), gainAmt = num("gainAmt");
-    if (v > 0 && qty > 0 && lossAmt > 0 && gainAmt > 0) {
-      // TP = entry + gain/qty,  SL = entry - loss/qty より逆算
-      var entry = key === "tp" ? v - gainAmt / qty : v + lossAmt / qty;
-      // 端数による床関数のズレを防ぐため精度を高めて保持(枚数は変更しない)
-            // エントリー価格は小数点以下切り捨て(toFixedは浮動小数点の誤差対策)
-      $("entry").value = String(Math.floor(parseFloat(entry.toFixed(8))));
+    function setEdit(key, on) {
+      var input = el(key + "Edit"), btn = lockBtn(key);
+      el(key + "Price").hidden = on;
+      input.hidden = !on;
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+      btn.innerHTML = on ? "<span>✔ 確定</span>" : "🔒 解除";
+      if (on) { input.value = raw[key]; input.focus(); input.select(); }
     }
-    setEdit(key, false);
-    render();
+
+    function commit(key) {
+      var v = Math.round(parse(el(key + "Edit").value));  // 価格は円単位の整数
+      var qty = num("qty"), lossAmt = num("lossAmt"), gainAmt = num("gainAmt");
+      if (v > 0 && qty > 0 && lossAmt > 0 && gainAmt > 0) {
+        // TP = entry + gain/qty,  SL = entry - loss/qty より逆算
+        var entry = key === "tp" ? v - gainAmt / qty : v + lossAmt / qty;
+        // エントリー価格は小数点以下切り捨て(toFixedは浮動小数点の誤差対策)
+        el("entry").value = String(Math.floor(parseFloat(entry.toFixed(8))));
+      }
+      setEdit(key, false);
+      render();
+    }
+
+    ["sl", "tp"].forEach(function (key) {
+      var other = key === "sl" ? "tp" : "sl";
+      var btn = lockBtn(key), input = el(key + "Edit");
+      btn.addEventListener("click", function () {
+        if (!input.hidden) { commit(key); return; }
+        if (!raw[key]) return;          // 未計算のときは解除しない
+        setEdit(other, false);          // もう片方が編集中なら取り消してロック
+        setEdit(key, true);
+      });
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") commit(key);
+        else if (e.key === "Escape") setEdit(key, false);
+      });
+    });
+
+    autoQty();
   }
 
-  ["sl", "tp"].forEach(function (key) {
-    var other = key === "sl" ? "tp" : "sl";
-    var btn = document.querySelector('[data-lock="' + key + '"]'), input = $(key + "Edit");
-    btn.addEventListener("click", function () {
-      if (!input.hidden) { commit(key); return; }
-      if (!raw[key]) return;          // 未計算のときは解除しない
-      setEdit(other, false);          // もう片方が編集中なら取り消してロック
-      setEdit(key, true);
-    });
-    input.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") commit(key);
-      else if (e.key === "Escape") setEdit(key, false);
-    });
+  // ---- パネルを3つ作成 (左 / 中央 / 右)。中央が通常モードで見えるメイン ----
+  var container = document.getElementById("calcs");
+  var slots = [
+    { label: "ENTRY 1", side: true },
+    { label: "ENTRY 2", side: false },
+    { label: "ENTRY 3", side: true }
+  ];
+  var sideCalcs = [];
+  slots.forEach(function (s, i) {
+    var div = document.createElement("div");
+    div.className = "calc";
+    div.innerHTML = template(i + 1, s.label);
+    if (s.side) { div.hidden = true; sideCalcs.push(div); }
+    container.appendChild(div);
+    createCalc(div);
   });
 
-  autoQty();
+  // ---- タイトルボタンでテストモード切替 ----
+  var wrap = document.getElementById("wrap");
+  var modeBtn = document.getElementById("modeBtn");
+  var modeBadge = document.getElementById("modeBadge");
+  modeBtn.addEventListener("click", function () {
+    var on = modeBtn.getAttribute("aria-pressed") !== "true";
+    modeBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    modeBadge.hidden = !on;
+    wrap.classList.toggle("test", on);
+    sideCalcs.forEach(function (c) { c.hidden = !on; });
+  });
 })();
 </script>
+</body>
+</html>
