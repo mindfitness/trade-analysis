@@ -93,10 +93,20 @@ details .fields { margin-top: 12px; }
 .res .tag { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; }
 .res .price { font-family: var(--font-mono); font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; overflow-wrap: anywhere; }
 .res .meta { font-size: 12px; color: var(--fg); opacity: 0.8; font-variant-numeric: tabular-nums; }
-.copy {
-  align-self: flex-start; margin-top: 8px; font: inherit; font-size: 12px; font-weight: 500; padding: 4px 12px;
+.copy, .lockbtn {
+  font: inherit; font-size: 12px; font-weight: 500; padding: 4px 12px;
   border: 1px solid currentColor; border-radius: 6px; background: transparent; color: inherit; cursor: pointer;
 }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.lockbtn[aria-pressed="true"] { background: currentColor; }
+.lockbtn[aria-pressed="true"] span { color: var(--surface); }
+.res .edit {
+  width: 100%; min-width: 0; font-family: var(--font-mono); font-size: 26px; font-weight: 600;
+  font-variant-numeric: tabular-nums; line-height: 1.2; padding: 2px 8px;
+  border: 2px solid currentColor; border-radius: 6px; background: var(--surface); color: var(--fg);
+}
+.res .edit:focus-visible, .lockbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.res .edit[hidden], .res .price[hidden] { display: none; }
 
 .ladder { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .ladder li { display: grid; grid-template-columns: 4.5em 1fr auto; gap: 12px; align-items: baseline; padding-block: 10px; border-top: 1px dashed var(--line); }
@@ -162,17 +172,25 @@ details .fields { margin-top: 12px; }
 
   <section class="results" aria-label="計算結果" id="results">
     <div class="res loss">
-      <span class="tag">SL</span>
-      <span class="price" id="slPrice">-</span>
-      <span class="meta" id="slMeta"></span>
-      <button type="button" class="copy" data-target="slPrice">コピー</button>
-    </div>
-    <div class="res gain">
-      <span class="tag">TP</span>
-      <span class="price" id="tpPrice">-</span>
-      <span class="meta" id="tpMeta"></span>
-      <button type="button" class="copy" data-target="tpPrice">コピー</button>
-    </div>
+  <span class="tag">SL</span>
+  <span class="price" id="slPrice">-</span>
+  <input class="edit" id="slEdit" type="text" inputmode="decimal" autocomplete="off" aria-label="SL価格" hidden>
+  <span class="meta" id="slMeta"></span>
+  <div class="actions">
+    <button type="button" class="copy" data-target="slPrice">コピー</button>
+    <button type="button" class="lockbtn" data-lock="sl" aria-pressed="false">🔒 解除</button>
+  </div>
+</div>
+<div class="res gain">
+  <span class="tag">TP</span>
+  <span class="price" id="tpPrice">-</span>
+  <input class="edit" id="tpEdit" type="text" inputmode="decimal" autocomplete="off" aria-label="TP価格" hidden>
+  <span class="meta" id="tpMeta"></span>
+  <div class="actions">
+    <button type="button" class="copy" data-target="tpPrice">コピー</button>
+    <button type="button" class="lockbtn" data-lock="tp" aria-pressed="false">🔒 解除</button>
+  </div>
+</div>
   </section>
 
   <section class="panel" aria-label="価格の並び">
@@ -188,13 +206,14 @@ details .fields { margin-top: 12px; }
   var nf = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 4 });
   var yen = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 0 });
 
-  function num(id) {
-    var v = $(id).value.replace(/[,\s円枚]/g, "").replace(/[０-９．]/g, function (c) {
-      return c === "．" ? "." : String.fromCharCode(c.charCodeAt(0) - 0xFEE0);
-    });
-    if (v === "") return NaN;
-    return Number(v);
-  }
+  function parse(str) {
+  var v = str.replace(/[,\s円枚]/g, "").replace(/[０-９．]/g, function (c) {
+    return c === "．" ? "." : String.fromCharCode(c.charCodeAt(0) - 0xFEE0);
+  });
+  if (v === "") return NaN;
+  return Number(v);
+}
+function num(id) { return parse($(id).value); }
 
   function clean(n) { return parseFloat(n.toFixed(6)); }
 
@@ -297,6 +316,47 @@ $("tpMeta").textContent = "値幅 " + nf1.format(clean(tpW)) + " / +" + yen.form
       try {
         navigator.clipboard.writeText(key).then(function () { done("コピーしました"); }, function () { done("コピー不可"); });
       } catch (e) { done("コピー不可"); }
+    });
+  });
+
+    // ---- TP/SL ロック・逆算 ----
+  // 既定はロック。「解除」1クリックで入力欄に切り替わり、「確定」(またはEnter)で
+  // エントリー価格と残りの1つを逆算して再ロックする。Escで取り消し。
+  function setEdit(key, on) {
+    var input = $(key + "Edit"), btn = document.querySelector('[data-lock="' + key + '"]');
+    $(key + "Price").hidden = on;
+    input.hidden = !on;
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.innerHTML = on ? "<span>✔ 確定</span>" : "🔒 解除";
+    if (on) { input.value = raw[key]; input.focus(); input.select(); }
+  }
+
+  function commit(key) {
+    var v = Math.round(parse($(key + "Edit").value));  // 価格は円単位の整数
+    var qty = num("qty"), lossAmt = num("lossAmt"), gainAmt = num("gainAmt");
+    if (v > 0 && qty > 0 && lossAmt > 0 && gainAmt > 0) {
+      // TP = entry + gain/qty,  SL = entry - loss/qty より逆算
+      var entry = key === "tp" ? v - gainAmt / qty : v + lossAmt / qty;
+      // 端数による床関数のズレを防ぐため精度を高めて保持(枚数は変更しない)
+            // エントリー価格は小数点以下切り捨て(toFixedは浮動小数点の誤差対策)
+      $("entry").value = String(Math.floor(parseFloat(entry.toFixed(8))));
+    }
+    setEdit(key, false);
+    render();
+  }
+
+  ["sl", "tp"].forEach(function (key) {
+    var other = key === "sl" ? "tp" : "sl";
+    var btn = document.querySelector('[data-lock="' + key + '"]'), input = $(key + "Edit");
+    btn.addEventListener("click", function () {
+      if (!input.hidden) { commit(key); return; }
+      if (!raw[key]) return;          // 未計算のときは解除しない
+      setEdit(other, false);          // もう片方が編集中なら取り消してロック
+      setEdit(key, true);
+    });
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") commit(key);
+      else if (e.key === "Escape") setEdit(key, false);
     });
   });
 
