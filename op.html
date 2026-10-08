@@ -266,8 +266,9 @@ details .fields { margin-top: 12px; }
     raw.sl = String(sl); raw.tp = String(tp);
     $("slPrice").textContent = nf.format(sl);
     $("tpPrice").textContent = nf.format(tp);
-    $("slMeta").textContent = "値幅 " + nf.format(clean(slW)) + " / -" + yen.format(lossAmt) + "円";
-    $("tpMeta").textContent = "値幅 " + nf.format(clean(tpW)) + " / +" + yen.format(gainAmt) + "円";
+    var nf1 = new Intl.NumberFormat("ja-JP", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+$("slMeta").textContent = "値幅 " + nf1.format(clean(slW)) + " / -" + yen.format(lossAmt) + "円";
+$("tpMeta").textContent = "値幅 " + nf1.format(clean(tpW)) + " / +" + yen.format(gainAmt) + "円";
 
     var rows = [
       { cls: "tp", name: "利確", p: tp, d: gainAmt, sign: "+" },
