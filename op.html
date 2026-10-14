@@ -207,7 +207,7 @@ details .fields { margin-top: 12px; }
   function template(n, label) {
     return '' +
       '<p class="slot">' + label + '</p>' +
-      '<p class="sub">RR <b data-el="subRR">1:2</b> / <b data-el="subLoss">-10,000円</b> / <b data-el="subGain">+20,000円</b></p>' +
+      '<p class="sub">RR <b data-el="subRR">1:1.6667</b> / <b data-el="subLoss">-15,000円</b> / <b data-el="subGain">+25,000円</b></p>' +
 
       '<section class="panel" aria-label="入力">' +
         '<div class="fields">' +
@@ -232,11 +232,11 @@ details .fields { margin-top: 12px; }
           '<div class="fields">' +
             '<div class="field">' +
               '<label for="lossAmt-' + n + '">損切り額</label>' +
-              '<div class="input"><input id="lossAmt-' + n + '" data-el="lossAmt" type="text" inputmode="decimal" autocomplete="off" value="10000"><span class="unit">円</span></div>' +
+              '<div class="input"><input id="lossAmt-' + n + '" data-el="lossAmt" type="text" inputmode="decimal" autocomplete="off" value="15000"><span class="unit">円</span></div>' +
             '</div>' +
             '<div class="field">' +
               '<label for="gainAmt-' + n + '">利確額</label>' +
-              '<div class="input"><input id="gainAmt-' + n + '" data-el="gainAmt" type="text" inputmode="decimal" autocomplete="off" value="20000"><span class="unit">円</span></div>' +
+              '<div class="input"><input id="gainAmt-' + n + '" data-el="gainAmt" type="text" inputmode="decimal" autocomplete="off" value="25000"><span class="unit">円</span></div>' +
             '</div>' +
           '</div>' +
           '<p class="rr" data-el="rrText"></p>' +
