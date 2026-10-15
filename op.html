@@ -117,6 +117,7 @@ h1 { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: 0.02em; text-
   font-variant-numeric: tabular-nums;
 }
 .input .unit { color: var(--muted); font-size: 13px; padding-left: 6px; white-space: nowrap; }
+.input .prefix { color: var(--muted); font-family: var(--font-mono); font-size: 15px; padding-right: 6px; white-space: nowrap; }
 
 details { border-top: 1px solid var(--line); padding-top: 12px; }
 summary { cursor: pointer; font-size: 13px; color: var(--muted); }
@@ -188,12 +189,22 @@ details .fields { margin-top: 12px; }
   var nf1 = new Intl.NumberFormat("ja-JP", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   var yen = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 0 });
 
+  // デフォルト: RR 1:2 (損切り -10,000円 / 利確 +20,000円)
+  var DEFAULT_LOSS = 10000;
+  var DEFAULT_RR = 2;
+
   function parse(str) {
     var v = str.replace(/[,\s円枚]/g, "").replace(/[０-９．]/g, function (c) {
       return c === "．" ? "." : String.fromCharCode(c.charCodeAt(0) - 0xFEE0);
     });
     if (v === "") return NaN;
     return Number(v);
+  }
+  // RR欄用: "2" / "1.5" / "1:3" / "1：3" のどれでも可 (右側の数字をRRとして扱う)
+  function parseRR(str) {
+    var s = str.replace(/[：]/g, ":");
+    if (s.indexOf(":") >= 0) s = s.split(":")[1];
+    return parse(s);
   }
   function clean(n) { return parseFloat(n.toFixed(6)); }
 
@@ -207,7 +218,7 @@ details .fields { margin-top: 12px; }
   function template(n, label) {
     return '' +
       '<p class="slot">' + label + '</p>' +
-      '<p class="sub">RR <b data-el="subRR">1:1.6667</b> / <b data-el="subLoss">-15,000円</b> / <b data-el="subGain">+25,000円</b></p>' +
+      '<p class="sub">RR <b data-el="subRR">1:' + DEFAULT_RR + '</b> / <b data-el="subLoss">-' + yen.format(DEFAULT_LOSS) + '円</b> / <b data-el="subGain">+' + yen.format(DEFAULT_LOSS * DEFAULT_RR) + '円</b></p>' +
 
       '<section class="panel" aria-label="入力">' +
         '<div class="fields">' +
@@ -230,13 +241,17 @@ details .fields { margin-top: 12px; }
         '<details>' +
           '<summary>RR Settings</summary>' +
           '<div class="fields">' +
+            '<div class="field wide">' +
+              '<label for="rr-' + n + '">RR (リスクリワード)</label>' +
+              '<div class="input"><span class="prefix">1 :</span><input id="rr-' + n + '" data-el="rr" type="text" inputmode="decimal" autocomplete="off" value="' + DEFAULT_RR + '"></div>' +
+            '</div>' +
             '<div class="field">' +
               '<label for="lossAmt-' + n + '">損切り額</label>' +
-              '<div class="input"><input id="lossAmt-' + n + '" data-el="lossAmt" type="text" inputmode="decimal" autocomplete="off" value="15000"><span class="unit">円</span></div>' +
+              '<div class="input"><input id="lossAmt-' + n + '" data-el="lossAmt" type="text" inputmode="decimal" autocomplete="off" value="' + DEFAULT_LOSS + '"><span class="unit">円</span></div>' +
             '</div>' +
             '<div class="field">' +
               '<label for="gainAmt-' + n + '">利確額</label>' +
-              '<div class="input"><input id="gainAmt-' + n + '" data-el="gainAmt" type="text" inputmode="decimal" autocomplete="off" value="25000"><span class="unit">円</span></div>' +
+              '<div class="input"><input id="gainAmt-' + n + '" data-el="gainAmt" type="text" inputmode="decimal" autocomplete="off" value="' + (DEFAULT_LOSS * DEFAULT_RR) + '"><span class="unit">円</span></div>' +
             '</div>' +
           '</div>' +
           '<p class="rr" data-el="rrText"></p>' +
@@ -364,7 +379,24 @@ details .fields { margin-top: 12px; }
       }).join("");
     }
 
-    ["qty", "lossAmt", "gainAmt"].forEach(function (name) { el(name).addEventListener("input", render); });
+    // ---- RR・損切り額・利確額の連動 ----
+    // 損切り額 or RR を変更 → 利確額 = 損切り額 × RR
+    function gainFromRR() {
+      var loss = num("lossAmt"), rr = parseRR(el("rr").value);
+      if (loss > 0 && rr > 0) el("gainAmt").value = String(clean(loss * rr));
+      render();
+    }
+    // 利確額を直接変更 → RR = 利確額 ÷ 損切り額
+    function rrFromGain() {
+      var loss = num("lossAmt"), gain = num("gainAmt");
+      if (loss > 0 && gain > 0) el("rr").value = String(parseFloat((gain / loss).toFixed(4)));
+      render();
+    }
+
+    el("qty").addEventListener("input", render);
+    el("lossAmt").addEventListener("input", gainFromRR);
+    el("rr").addEventListener("input", gainFromRR);
+    el("gainAmt").addEventListener("input", rrFromGain);
     ["capital", "entry"].forEach(function (name) { el(name).addEventListener("input", autoQty); });
 
     // コピー
