@@ -95,7 +95,7 @@ h1 { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: 0.02em; text-
   .wrap.test .calcs { grid-template-columns: 1fr; }
 }
 
-/* 1つ分の計算 (入力 → 結果2枚 → 価格の並び) */
+/* 1つ分の計算 (入力 → 結果2枚 → ターゲット損益) */
 .calc { container-type: inline-size; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 .calc[hidden] { display: none; }
 .slot { display: none; margin: 0; font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: 0.1em; color: var(--accent); }
@@ -146,16 +146,18 @@ details .fields { margin-top: 12px; }
 .res .edit:focus-visible, .lockbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .res .edit[hidden], .res .price[hidden] { display: none; }
 
-.ladder { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.ladder li { display: grid; grid-template-columns: 4.5em 1fr auto; gap: 12px; align-items: baseline; padding-block: 10px; border-top: 1px dashed var(--line); }
-.ladder li:first-child { border-top: 0; }
-.ladder .name { font-size: 13px; font-weight: 600; }
-.ladder .val { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 500; }
-.ladder .diff { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.ladder .tp .name { color: var(--gain); }
-.ladder .sl .name { color: var(--loss); }
-.ladder .en .name { color: var(--muted); }
 .panel h2 { margin: 0; font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; }
+
+/* ターゲット損益 */
+.tgt { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tgt .box { border-radius: 10px; padding: 14px 16px; background: var(--bg); color: var(--fg); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tgt .box .tag { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; color: var(--muted); }
+.tgt .box .val { font-family: var(--font-mono); font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; overflow-wrap: anywhere; }
+.tgt .box .meta { font-size: 12px; opacity: 0.8; font-variant-numeric: tabular-nums; }
+.tgt.pos .box { background: var(--gain-bg); color: var(--gain); }
+.tgt.neg .box { background: var(--loss-bg); color: var(--loss); }
+.tgt.pos .box .tag, .tgt.neg .box .tag { color: inherit; }
+.tgt.pos .box .meta, .tgt.neg .box .meta { color: var(--fg); }
 
 .warn { margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--loss-bg); color: var(--loss); font-size: 13px; }
 .warn[hidden] { display: none; }
@@ -163,7 +165,7 @@ details .fields { margin-top: 12px; }
 
 /* 幅が狭いパネル(スマホ・テストモードの各カラム)では結果を縦並びに */
 @container (max-width: 440px) {
-  .results { grid-template-columns: 1fr; }
+  .results, .tgt { grid-template-columns: 1fr; }
   .res .price { font-size: 24px; }
   .panel { padding: 16px; }
 }
@@ -187,6 +189,7 @@ details .fields { margin-top: 12px; }
 (function () {
   var nf = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 4 });
   var nf1 = new Intl.NumberFormat("ja-JP", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  var nf2 = new Intl.NumberFormat("ja-JP", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   var yen = new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 0 });
 
   // デフォルト: RR 1:2 (損切り -10,000円 / 利確 +20,000円)
@@ -207,6 +210,7 @@ details .fields { margin-top: 12px; }
     return parse(s);
   }
   function clean(n) { return parseFloat(n.toFixed(6)); }
+  function signed(n, fmt) { return (n > 0 ? "+" : n < 0 ? "-" : "") + fmt.format(Math.abs(n)); }
 
   // 元金とエントリー価格から、100株単位で買える最大枚数を求める
   function maxQty(capital, entry) {
@@ -283,9 +287,25 @@ details .fields { margin-top: 12px; }
         '</div>' +
       '</section>' +
 
-      '<section class="panel" aria-label="価格の並び">' +
-        '<h2>価格の並び</h2>' +
-        '<ol class="ladder" data-el="ladder"></ol>' +
+      '<section class="panel" aria-label="ターゲット損益">' +
+        '<h2>ターゲット損益</h2>' +
+        '<div class="field">' +
+          '<label for="target-' + n + '">ターゲット価格</label>' +
+          '<div class="input"><input id="target-' + n + '" data-el="target" type="text" inputmode="decimal" autocomplete="off" value=""><span class="unit">円</span></div>' +
+        '</div>' +
+        '<div class="tgt" data-el="tgtBox">' +
+          '<div class="box">' +
+            '<span class="tag">損益率</span>' +
+            '<span class="val" data-el="tgtPct">-</span>' +
+            '<span class="meta" data-el="tgtDiff"></span>' +
+          '</div>' +
+          '<div class="box">' +
+            '<span class="tag">損益額</span>' +
+            '<span class="val" data-el="tgtAmt">-</span>' +
+            '<span class="meta" data-el="tgtQty"></span>' +
+          '</div>' +
+        '</div>' +
+        '<p class="note" data-el="tgtNote">エントリー価格・枚数は上の入力を使います。</p>' +
       '</section>';
   }
 
@@ -322,11 +342,38 @@ details .fields { margin-top: 12px; }
       hint.textContent = text;
     }
 
+    // エントリー価格 → ターゲット価格 の損益率・損益額 (ロング前提。枚数は上の欄を使用)
+    function renderTarget(entry, qty) {
+      var target = num("target");
+      var box = el("tgtBox");
+      box.classList.remove("pos", "neg");
+      var reset = function (msg) {
+        el("tgtPct").textContent = "-"; el("tgtAmt").textContent = "-";
+        el("tgtDiff").textContent = ""; el("tgtQty").textContent = "";
+        el("tgtNote").textContent = msg;
+      };
+      if (!(target > 0)) { reset("エントリー価格・枚数は上の入力を使います。"); return; }
+      if (!(entry > 0 && qty > 0)) { reset("上のエントリー価格と枚数を入力してください。"); return; }
+
+      var diff = clean(target - entry);
+      var amt = Math.round(diff * qty);
+      var pct = diff / entry * 100;
+      if (diff > 0) box.classList.add("pos");
+      else if (diff < 0) box.classList.add("neg");
+
+      el("tgtPct").textContent = signed(pct, nf2) + "%";
+      el("tgtAmt").textContent = signed(amt, yen) + "円";
+      el("tgtDiff").textContent = "値幅 " + signed(diff, nf1) + "円";
+      el("tgtQty").textContent = yen.format(qty) + "枚 × " + signed(diff, nf1) + "円";
+      el("tgtNote").textContent = yen.format(entry) + "円 → " + yen.format(target) + "円 (手数料・税は含みません)";
+    }
+
     function render() {
       var capital = capitalYen(), entry = num("entry"), qty = num("qty"), lossAmt = num("lossAmt"), gainAmt = num("gainAmt");
       var warn = el("warn");
       el("capitalYen").textContent = capital > 0 ? "= " + yen.format(capital) + "円" : "";
       updateHint(capital, entry, qty);
+      renderTarget(entry, qty);
       var ok = entry > 0 && qty > 0 && lossAmt > 0 && gainAmt > 0;
 
       el("subLoss").textContent = lossAmt > 0 ? "-" + yen.format(lossAmt) + "円" : "-";
@@ -338,7 +385,6 @@ details .fields { margin-top: 12px; }
       if (!ok) {
         el("slPrice").textContent = "-"; el("tpPrice").textContent = "-";
         el("slMeta").textContent = ""; el("tpMeta").textContent = "";
-        el("ladder").innerHTML = "";
         raw.sl = raw.tp = "";
         // エントリー価格も枚数も未入力のうちは警告を出さない
         if (isNaN(entry) && isNaN(qty)) {
@@ -365,18 +411,6 @@ details .fields { margin-top: 12px; }
       el("tpPrice").textContent = nf.format(tp);
       el("slMeta").textContent = "値幅 " + nf1.format(clean(slW)) + " / -" + yen.format(lossAmt) + "円";
       el("tpMeta").textContent = "値幅 " + nf1.format(clean(tpW)) + " / +" + yen.format(gainAmt) + "円";
-
-      var rows = [
-        { cls: "tp", name: "利確", p: tp, d: gainAmt, sign: "+" },
-        { cls: "en", name: "エントリー", p: entry, d: 0, sign: "" },
-        { cls: "sl", name: "損切", p: sl, d: lossAmt, sign: "-" }
-      ];
-      rows.sort(function (a, b) { return b.p - a.p; });
-      el("ladder").innerHTML = rows.map(function (r) {
-        var diff = r.d ? r.sign + yen.format(r.d) + "円" : "";
-        return '<li class="' + r.cls + '"><span class="name">' + r.name + '</span><span class="val">' +
-          nf.format(r.p) + '</span><span class="diff">' + diff + '</span></li>';
-      }).join("");
     }
 
     // ---- RR・損切り額・利確額の連動 ----
@@ -394,6 +428,7 @@ details .fields { margin-top: 12px; }
     }
 
     el("qty").addEventListener("input", render);
+    el("target").addEventListener("input", render);
     el("lossAmt").addEventListener("input", gainFromRR);
     el("rr").addEventListener("input", gainFromRR);
     el("gainAmt").addEventListener("input", rrFromGain);
