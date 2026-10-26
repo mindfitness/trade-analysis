@@ -9156,240 +9156,77 @@ function screenAppendCard(r) {
 
 // 既存のscreenAppendCard関数の直後に追加
 
-function screenAppendSkipCard(r) {
-
+function screenAppendSkipCard(r, mode) {
   const body = document.getElementById('screen-skip-body');
-
   const div = document.createElement('div');
+  const fmtN = (v, d = 0) => (v == null || isNaN(v)) ? 'N/A' : v.toFixed(d);
+  const fmtVol = v => v == null ? 'N/A' : (v >= 1e6 ? (v / 1e6).toFixed(2) + 'M' : (v / 1e3).toFixed(0) + 'K');
+  const fmtDol = v => v == null ? 'N/A' : (v >= 1e9 ? (v / 1e9).toFixed(2) + 'B' : (v / 1e6).toFixed(0) + 'M');
 
+  // [ラベル, 合否, 実測値]
+  const checks = [];
 
-
-  // MA条件の失敗理由を詳細に解析
-
-  const maReasons = [];
-
-
-
-  // 全体必須条件（RS21 / RS63）
-
-  const rs21ok63 = !isNaN(r.rs21) && r.rs21 > 65;
-
-  const rs63ok   = !isNaN(r.rs63) && r.rs63 > 60;
-
-  if (!rs21ok63 || !rs63ok) {
-
-    maReasons.push(`全体条件NG(R21:${isNaN(r.rs21)?'N/A':r.rs21.toFixed(0)}%${rs21ok63?'':'<67'} R63:${isNaN(r.rs63)?'N/A':r.rs63.toFixed(0)}%${rs63ok?'':'<60'})`);
-
-  }
-
-
-
-  // RS長期条件
-
-  const rs126ok = !isNaN(r.rs126) && r.rs126 >= 50;
-
-  const rs252ok = !isNaN(r.rs252) && r.rs252 >= 50;
-
-  const rsLongOk = rs126ok || rs252ok;
-
-  if (!rsLongOk) {
-
-    maReasons.push(`RS長期NG(R126:${isNaN(r.rs126)?'N/A':r.rs126.toFixed(0)}% R252:${isNaN(r.rs252)?'N/A':r.rs252.toFixed(0)}%)`);
-
-  }
-
-
-
-  // HL構造
-
-if (!r.hlStructureFound) {
-
-  maReasons.push('LL-HL構造なし');
-
-}
-
-// MAタッチ / Pivot近接
-
-if (r.hlStructureFound) {
-
-  const hasMaTouch = !!r.maTouchLabel;
-
-  const hasPivotHit = !!r.pivotHitLabel;
-
-  if (!hasMaTouch && !hasPivotHit) {
-
-    maReasons.push('MAタッチなし / Pivot近接なし');
-
+  if (mode === 'rs') {
+    checks.push(['RS10≥70', r.rs10 >= 70, fmtN(r.rs10) + '%']);
+    checks.push(['RS21≥70', r.rs21 >= 70, fmtN(r.rs21) + '%']);
+    checks.push(['ADR≥3.5', !!r.adrOk, fmtN(r.adrPct, 2) + '%']);
+    const hlOk = !!r.hlStructureFound || !!r.weeklyHLFound;
+    checks.push(['LL-HL(日or週)', hlOk, `日${r.hlStructureFound ? '✓' : '✗'} 週${r.weeklyHLFound ? '✓' : '✗'}`]);
+    if (rsVolSpikeCheck) checks.push(['出来高スパイク', !!r.hasVolSpike, r.hasVolSpike ? 'あり' : 'なし']);
+    if (rsHHCheck)       checks.push(['HH', !!r.isHH, r.isHH ? 'あり' : 'なし']);
+    checks.push(['Vol60≥1.3M', (r.vol60Avg ?? 0) >= 1_300_000, fmtVol(r.vol60Avg)]);
+    checks.push(['$Vol60≥70M', (r.dollarVol ?? 0) >= 70_000_000, fmtDol(r.dollarVol)]);
+    checks.push(['PP≥1', (r.ppCount ?? 0) >= 1, 'PP:' + (r.ppCount ?? 0)]);
+  } else if (mode === 'ma') {
+    checks.push(['RS21>65', r.rs21 > 65, fmtN(r.rs21) + '%']);
+    checks.push(['RS63>60', r.rs63 > 60, fmtN(r.rs63) + '%']);
+    checks.push(['RS長期≥50', (r.rs126 >= 50) || (r.rs252 >= 50), `126:${fmtN(r.rs126)} 252:${fmtN(r.rs252)}`]);
+    checks.push(['LL-HL(日足)', !!r.hlStructureFound, r.hlStructureFound ? 'あり' : 'なし']);
+    checks.push(['MAタッチ/Pivot', !!r.maTouchLabel || !!r.pivotHitLabel, r.maTouchLabel || r.pivotHitLabel || 'なし']);
+    checks.push(['MMS≥5', (r.mms ?? 0) >= 5, (r.mms ?? '--') + '/8']);
+    checks.push(['ADR≥3.5', !!r.adrOk, fmtN(r.adrPct, 2) + '%']);
+    checks.push(['ADRタッチ', !!r.isAdrTouchAnyLine, r.isAdrTouchAnyLine ? 'OK' : '未到達']);
+    checks.push(["O'Neil", !!r.oneilCond, r.oneilCond ? 'OK' : 'NG']);
+  } else if (mode === 'vcs') {
+    checks.push(['RS21>65', r.rs21 > 65, fmtN(r.rs21) + '%']);
+    checks.push(['RS63>60', r.rs63 > 60, fmtN(r.rs63) + '%']);
+    checks.push(['LL-HL(日足)', !!r.hlStructureFound, r.hlStructureFound ? 'あり' : 'なし']);
+    checks.push(['Pivot±5%', !!r.pivotInRange, r.pivotInRange ? 'OK' : 'NG']);
+    checks.push(['VCS≥70', !isNaN(r.vcs) && r.vcs >= 70, fmtN(r.vcs, 1)]);
+    checks.push(['MMS≥5', (r.mms ?? 0) >= 5, (r.mms ?? '--') + '/8']);
+    checks.push(['ADR≥3.5', !!r.adrOk, fmtN(r.adrPct, 2) + '%']);
   } else {
-
-    if (hasMaTouch)   maReasons.push(`MAタッチ: ${r.maTouchLabel}`);
-
-    if (hasPivotHit)  maReasons.push(`Pivot近接: ${r.pivotHitLabel}`);
-
+    // day / swing は共通部分のみ表示
+    checks.push(['RS10', r.rs10 >= 70, fmtN(r.rs10) + '%']);
+    checks.push(['RS21', r.rs21 >= 70, fmtN(r.rs21) + '%']);
+    checks.push(['ADR≥3.5', !!r.adrOk, fmtN(r.adrPct, 2) + '%']);
+    checks.push(['LL-HL(日足)', !!r.hlStructureFound, r.hlStructureFound ? 'あり' : 'なし']);
+    if (mode === 'swing') checks.push(['週足HL', !!r.weeklyHLFound, r.weeklyHLFound ? 'あり' : 'なし']);
+    checks.push(['Vol60', (r.vol60Avg ?? 0) >= 1_300_000, fmtVol(r.vol60Avg)]);
+    checks.push(['$Vol60', (r.dollarVol ?? 0) >= 70_000_000, fmtDol(r.dollarVol)]);
   }
 
-}
-
-
-
-  // MMS条件
-
-  const mmsOk = (r.mms ?? 0) >= 5;
-
-  if (!mmsOk) {
-
-    maReasons.push(`MMS不足(${r.mms??'--'}/8)`);
-
-  }
-
-
-
-  // RS条件の個別NG理由
-
-  const rsNgs = [];
-
-  if (isNaN(r.rs10) || r.rs10 <= 50) rsNgs.push(`R10:${isNaN(r.rs10)?'N/A':r.rs10.toFixed(0)}%`);
-
-  if (isNaN(r.rs21) || r.rs21 <= 60) rsNgs.push(`R21:${isNaN(r.rs21)?'N/A':r.rs21.toFixed(0)}%`);
-
-  if (!r.hasVolSpike) rsNgs.push('VOL✗');
-
-  if (r.ppCount < 1) rsNgs.push('PP:0');
-
-
-
-  // VCS条件
-
-  const vcsOk = !isNaN(r.vcs) && r.vcs >= 70;
-
-
-
-  // どの条件でも落ちた理由サマリ
-
-  const failSummary = [];
-
-  if (rsNgs.length > 0) failSummary.push(`RS(${rsNgs.join(' ')})`);
-
-  if (!vcsOk) failSummary.push(`VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}`);
-
-  if (!mmsOk) failSummary.push(`MMS:${r.mms??'--'}/8`);
-
-
-
- 
-
-// ADRタッチ条件
-
-  const adrLow2 = r.price * (1 - (r.adrPct ?? 0) / 100 * 1.5);
-
-const isAdrTouch = r.isAdrTouchAnyLine ?? false;
-
-if (!isAdrTouch) {
-
-  maReasons.push(`ADR×1.5安値($${adrLow2.toFixed(2)})がCloudHighEMA21に未到達`);
-
-}
-
-if (!(r.adrOk ?? false)) {
-
-  maReasons.push(`ADR%不足(${r.adrPct !== null ? r.adrPct.toFixed(2) : 'N/A'}% < 3.5%)`);
-
-}
-
-
-
-  const maDetailHtml = maReasons.map(reason => {
-
-    const isNG = reason.includes('NG') || reason.includes('なし') || reason.includes('不足') || reason.includes('未到達');
-
-    return `<span style="font-size:0.6rem;font-weight:700;
-
-      color:${isNG ? 'var(--lose-deep)' : '#f59e0b'};
-
-      background:${isNG ? '#450a0a' : '#451a03'};
-
-      border:1px solid ${isNG ? '#991b1b' : '#b45309'};
-
-      border-radius:3px;padding:1px 5px;white-space:nowrap;">${reason}</span>`;
-
-  }).join('');
-
-
-
-  const tlHtml = r.tlConv
-
-    ? `<span style="font-size:0.6rem;font-weight:900;background:#1e1b4b;color:#a78bfa;border:1px solid #4f46e5;border-radius:3px;padding:1px 5px;">TL×${r.tlConvPairs?.length??0}</span>`
-
-    : '';
-
-
+  const failCount = checks.filter(c => !c[1]).length;
+  const chipsHtml = checks.map(([label, ok, val]) => `
+    <span style="font-size:0.6rem;font-weight:700;white-space:nowrap;border-radius:3px;padding:1px 5px;
+      color:${ok ? '#6ee7b7' : '#fca5a5'};
+      background:${ok ? '#064e3b' : '#450a0a'};
+      border:1px solid ${ok ? '#10b981' : '#991b1b'};">${ok ? '✓' : '✗'} ${label} <span style="opacity:0.8;">${val}</span></span>`).join('');
 
   div.innerHTML = `
-
-    <div style="background:var(--card);border:1px solid #1e2d45;border-radius:8px;padding:8px 12px;margin-bottom:5px;opacity:0.75;">
-
-      <!-- 1行目: ティッカー + 失敗サマリ -->
-
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:5px;">
-
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-
+    <div style="background:var(--card);border:1px solid #1e2d45;border-radius:8px;padding:8px 12px;margin-bottom:5px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;">
+        <div style="display:flex;align-items:center;gap:6px;">
           <a href="https://jp.tradingview.com/chart/2heIjlhI/?symbol=${r.symbol}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
-
-            <span style="font-size:0.88rem;font-weight:900;color:#64748b;text-decoration:underline;">${r.symbol}</span>
-
+            <span style="font-size:0.88rem;font-weight:900;color:#94a3b8;text-decoration:underline;">${r.symbol}</span>
           </a>
-
-          <span style="font-size:0.62rem;font-weight:700;
-
-            background:#1a2234;color:#4a6080;
-
-            border:1px solid #2a3f5f;border-radius:3px;padding:1px 6px;">
-
-            MMS ${r.mms??'--'}/8
-
-          </span>
-
-          ${tlHtml}
-
+          <span style="font-size:0.68rem;color:var(--text-sub);">$${fmtN(r.price, 2)}</span>
         </div>
-
-        <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
-
-          <span style="font-size:0.68rem;font-weight:700;${screenRsClass(r.rs10)}">R10:${isNaN(r.rs10)?'N/A':r.rs10.toFixed(0)}%</span>
-
-          <span style="font-size:0.68rem;font-weight:700;${screenRsClass(r.rs21)}">R21:${isNaN(r.rs21)?'N/A':r.rs21.toFixed(0)}%</span>
-
-          <span style="font-size:0.68rem;font-weight:700;${screenRsClass(Math.max(isNaN(r.rs126)?0:r.rs126,isNaN(r.rs252)?0:r.rs252))}">R長:${isNaN(r.rs126)&&isNaN(r.rs252)?'N/A':Math.max(isNaN(r.rs126)?0:r.rs126,isNaN(r.rs252)?0:r.rs252).toFixed(0)}%</span>
-
-          <span style="font-size:0.68rem;font-weight:700;color:${r.hasVolSpike?'var(--win-deep)':'#475569'};">${r.hasVolSpike?'VOL✓':'VOL✗'}</span>
-
-<span style="font-size:0.68rem;font-weight:700;color:${(r.vol60Avg??0)>=1000000?'var(--win-deep)':'#475569'};">Vol:${r.vol60Avg!=null?(r.vol60Avg>=1000000?(r.vol60Avg/1000000).toFixed(1)+'M':(r.vol60Avg/1000).toFixed(0)+'K'):'N/A'}</span>
-
-<span style="font-size:0.68rem;font-weight:700;color:${(r.dollarVol??0)>=50_000_000?'var(--win-deep)':'#475569'};">$Vol:${r.dollarVol!=null?(r.dollarVol>=1_000_000_000?(r.dollarVol/1_000_000_000).toFixed(1)+'B':(r.dollarVol/1_000_000).toFixed(0)+'M'):'N/A'}</span>
-
-<span style="font-size:0.68rem;font-weight:700;color:${r.ppCount>=1?'var(--win-deep)':'#475569'};">PP:${r.ppCount}</span>
-
-          <span style="font-size:0.68rem;font-weight:700;color:${vcsOk?'#8b5cf6':'#475569'};">VCS:${isNaN(r.vcs)?'N/A':r.vcs.toFixed(1)}</span>
-
-        </div>
-
+        <span style="font-size:0.62rem;font-weight:800;color:#f87171;">${failCount}項目NG</span>
       </div>
-
-      <!-- 2行目: MA詳細 -->
-
-      <div style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;">
-
-        <span style="font-size:0.58rem;color:#4a6080;font-weight:700;flex-shrink:0;">MA:</span>
-
-        ${maDetailHtml || '<span style="font-size:0.6rem;color:#4a6080;">判定なし</span>'}
-
-      </div>
-
+      <div style="display:flex;gap:3px;flex-wrap:wrap;">${chipsHtml}</div>
     </div>`;
-
   body.appendChild(div.firstElementChild);
-
 }
 
 
@@ -9813,7 +9650,7 @@ if (isMatch) {
 
         document.getElementById('screen-skip-count').innerText = `${skipCount} skipped`;
 
-        screenAppendSkipCard(result);
+        screenAppendSkipCard(result, mode);
 
       }
 
