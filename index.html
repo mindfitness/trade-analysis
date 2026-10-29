@@ -1793,7 +1793,7 @@
 
     <div style="display:flex; flex-wrap:wrap; gap:5px; margin:8px 0;">
 
-      <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">RS10 &amp; RS21 ≥ 70</span>
+      <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">RS10 &amp; RS21 ≥ 60</span>
 
       <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">LL-HL (日週)</span>
 
@@ -1801,9 +1801,7 @@
 
       <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">HH</span>
 
-      <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">Vol60 ≥ 1.3M</span>
-
-      <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">$Vol60 ≥ 70M</span>
+      <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">$Vol60 ≥ 40M</span>
 
       <span style="font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #2a3f5f; color:#22d3ee; background:var(--card);">PP</span> 
 
@@ -1858,6 +1856,14 @@
     </div>
     <span id="rs-hh-label" style="font-size:0.68rem; color:#10b981; font-weight:700;">RS: HHチェックあり</span>
   </label>
+<label style="display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none;">
+    <div id="rs-pp-toggle" onclick="toggleRsPP()"
+      style="width:36px; height:20px; border-radius:10px; background:#10b981; border:1px solid var(--border); position:relative; transition:background 0.2s; cursor:pointer; flex-shrink:0;">
+      <div id="rs-pp-knob" style="width:14px; height:14px; border-radius:50%; background:white; position:absolute; top:2px; left:18px; transition:all 0.2s;"></div>
+    </div>
+    <span id="rs-pp-label" style="font-size:0.68rem; color:#10b981; font-weight:700;">RS: PPチェックあり</span>
+  </label>
+  <!-- ▲ 追加 -->
 </div>
 
 <div style="display:flex; gap:6px; flex-wrap:wrap;">
@@ -7809,6 +7815,7 @@ function toggleSwingWeeklyHL() {
     
 let rsVolSpikeCheck = true;
 let rsHHCheck = true;
+let rsPPCheck = true;
 
 function _applyToggleUI(trackId, knobId, labelId, on, textOn, textOff, color) {
   document.getElementById(trackId).style.background = on ? color : '#334155';
@@ -7828,6 +7835,12 @@ function toggleRsHH() {
   rsHHCheck = !rsHHCheck;
   _applyToggleUI('rs-hh-toggle','rs-hh-knob','rs-hh-label', rsHHCheck,
     'RS: HHチェックあり','RS: HHチェックなし','#10b981');
+}
+// ▼ 追加
+function toggleRsPP() {
+  rsPPCheck = !rsPPCheck;
+  _applyToggleUI('rs-pp-toggle','rs-pp-knob','rs-pp-label', rsPPCheck,
+    'RS: PPチェックあり','RS: PPチェックなし','#10b981');
 }
 
 function screenAddLog(msg, type = '') {
@@ -8471,12 +8484,12 @@ async function screenTickerWithKey(symbol, apiKey) {
   // PP(30) 判定: 陽線 & 出来高>前10日MAX & close>SMA50
 
 const sma50arr = closes.map((_, i) => {
-
   if (i + 50 > closes.length) return null;
-
   return closes.slice(i, i + 50).reduce((a, b) => a + b, 0) / 50;
-
 });
+
+// 現在値 ≧ SMA50 なら true(Price < SMA50 は false=除外)
+const aboveSma50 = sma50arr[0] !== null && sClose >= sma50arr[0];
 
 let ppCount = 0;
 
@@ -8941,7 +8954,8 @@ try {
 } catch(e) { marketCapB = null; }
 
 return { symbol, price: sClose, rs10, rs21, rs63, rs126, rs252, hasVolSpike, isHH, ppCount, vcs, maTouchLabel,
-    tlConvPairs, tlConv, mms, adrPct, isAdrTouchAnyLine, adrOk, vol60Avg, dollarVol,
+        tlConvPairs, tlConv, mms, adrPct, isAdrTouchAnyLine, adrOk, vol60Avg, dollarVol,
+        aboveSma50,
         hlStructureFound, pivotInRange, pivotHitLabel, oneilCond,
     reversalHit, reversalLabel,
     weeklyHLFound, marketCapB,
@@ -9168,15 +9182,15 @@ function screenAppendSkipCard(r, mode) {
 
   if (mode === 'rs') {
     checks.push(['RS10≥70', r.rs10 >= 70, fmtN(r.rs10) + '%']);
-    checks.push(['RS21≥70', r.rs21 >= 70, fmtN(r.rs21) + '%']);
+    checks.push(['RS21≥60', r.rs21 >= 60, fmtN(r.rs21) + '%']);
     checks.push(['ADR≥3.5', !!r.adrOk, fmtN(r.adrPct, 2) + '%']);
     const hlOk = !!r.hlStructureFound || !!r.weeklyHLFound;
     checks.push(['LL-HL(日or週)', hlOk, `日${r.hlStructureFound ? '✓' : '✗'} 週${r.weeklyHLFound ? '✓' : '✗'}`]);
     if (rsVolSpikeCheck) checks.push(['出来高スパイク', !!r.hasVolSpike, r.hasVolSpike ? 'あり' : 'なし']);
     if (rsHHCheck)       checks.push(['HH', !!r.isHH, r.isHH ? 'あり' : 'なし']);
-    checks.push(['Vol60≥1.3M', (r.vol60Avg ?? 0) >= 1_300_000, fmtVol(r.vol60Avg)]);
-    checks.push(['$Vol60≥70M', (r.dollarVol ?? 0) >= 70_000_000, fmtDol(r.dollarVol)]);
-    checks.push(['PP≥1', (r.ppCount ?? 0) >= 1, 'PP:' + (r.ppCount ?? 0)]);
+    checks.push(['$Vol60≥40M', (r.dollarVol ?? 0) >= 40_000_000, fmtDol(r.dollarVol)]);
+    checks.push(['Price≥SMA50', !!r.aboveSma50, r.aboveSma50 ? 'OK' : '下']);
+    if (rsPPCheck) checks.push(['PP≥1', (r.ppCount ?? 0) >= 1, 'PP:' + (r.ppCount ?? 0)]);
   } else if (mode === 'ma') {
     checks.push(['RS21>65', r.rs21 > 65, fmtN(r.rs21) + '%']);
     checks.push(['RS63>60', r.rs63 > 60, fmtN(r.rs63) + '%']);
@@ -9591,14 +9605,14 @@ const dayConditionCheck =
 
 
     const rsConditionCheck =
-  result.rs10 >= 70 && result.rs21 >= 70 &&                           // RS10 & RS21 ともに70以上
+  result.rs10 >= 70 && result.rs21 >= 60 &&                           // RS10≥70 かつ RS21≥60
+  (result.aboveSma50 ?? false) &&
   (result.adrOk ?? false) &&                                          // ADR% >= 3.5
   (result.hlStructureFound || (result.weeklyHLFound ?? false)) &&     // 日足 or 週足のLL-HL
   (!rsVolSpikeCheck || result.hasVolSpike) &&                         // 出来高スパイク(ON/OFF)
   (!rsHHCheck || result.isHH) &&                                      // HH(ON/OFF)
-  (result.vol60Avg ?? 0) >= 1_300_000 &&                              // 60日平均出来高 130万株以上
-  (result.dollarVol ?? 0) >= 70_000_000 &&                            // $Vol(60) 70M以上
-  (result.ppCount ?? 0) >= 1;                                         // PP 直近30日で1回以上
+  (result.dollarVol ?? 0) >= 40_000_000 &&                            // $Vol(60) 40M以上
+  (!rsPPCheck || (result.ppCount ?? 0) >= 1); 
 
 const isMatch = mode === 'vcs'
   ? rs21_63_ok_chk && result.hlStructureFound && (result.pivotInRange ?? false) && (!isNaN(result.vcs) && result.vcs >= 70) && (result.mms ?? 0) >= 5 && (result.adrOk ?? false)
