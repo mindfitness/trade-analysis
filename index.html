@@ -6000,7 +6000,7 @@ function addThemeStock(themeId) {
 
         .map(s => s.trim().replace(/^\$/, '').toUpperCase())
 
-        .filter(s => /^[A-Z0-9]{2,6}$/.test(s));
+        .filter(s => /^[A-Z0-9]{1,6}$/.test(s));
 
     const added = symbols.filter(s => !theme.stocks.includes(s));
 
@@ -9373,18 +9373,13 @@ async function startScreening(mode = 'rs') {
   const input = document.getElementById('screen-ticker-input').value;
 
   const tickers = [...new Set(
-
   input.replace(/["']/g, '').split(/[\s,\n]+/)
-
     .map(t => t.trim().replace(/^\$/, '').toUpperCase())
-
-    .filter(t => /^[A-Z0-9]{2,6}$/.test(t))
-
+    .filter(t => /^[A-Z0-9]{1,6}$/.test(t))
 )];
-
 if (tickers.length === 0) return;
 
-const dedupedCount = input.split(/[\s,\n]+/).map(t => t.trim().replace(/^\$/, '').toUpperCase()).filter(t => /^[A-Z0-9]{2,6}$/.test(t)).length;
+const dedupedCount = input.split(/[\s,\n]+/).map(t => t.trim().replace(/^\$/, '').toUpperCase()).filter(t => /^[A-Z0-9]{1,6}$/.test(t)).length;
 
 const duplicatesRemoved = dedupedCount - tickers.length;
 
@@ -9924,7 +9919,7 @@ async function startReversalScreening() {
 
     .map(t => t.trim().replace(/^\$/, '').toUpperCase())
 
-    .filter(t => /^[A-Z0-9]{2,6}$/.test(t))
+    .filter(t => /^[A-Z0-9]{1,6}$/.test(t))
 
 )];
 
