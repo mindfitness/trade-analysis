@@ -1719,7 +1719,7 @@
 
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
 
-        <button id="watch-refresh-all-btn" onclick="refreshAllThemePerf()" style="padding:6px 14px; background:#334155; border:1px solid var(--border); color:var(--text-main); border-radius:8px; font-weight:800; cursor:pointer; font-size:0.78rem;">📊 一括更新</button>
+        <button id="watch-delete-all-btn" onclick="deleteAllThemes()" style="padding:6px 14px; background:#7f1d1d; border:1px solid #991b1b; color:#fca5a5; border-radius:8px; font-weight:800; cursor:pointer; font-size:0.78rem;">🗑 一括削除</button>
 
         <div style="display:flex; align-items:center; gap:6px;">
 
@@ -6212,21 +6212,17 @@ async function fetchThemePerf(themeId) {
 
 
 
-async function refreshAllThemePerf() {
+function deleteAllThemes() {
 
-    if (!WATCH_PERF_API_KEY) { alert('WATCH_PERF_API_KEY が未設定です'); return; }
+    if (themes.length === 0) { alert('削除するテーマがありません'); return; }
 
-    const btn = document.getElementById('watch-refresh-all-btn');
+    if (!confirm(`すべてのテーマ（${themes.length}件）を削除しますか？\nこの操作は元に戻せません。`)) return;
 
-    if (btn) { btn.disabled = true; btn.innerText = '更新中...'; }
+    if (!confirm('本当に全テーマを削除してよろしいですか？')) return;
 
-    for (const theme of themes) {
+    themes = [];
 
-        if (theme.stocks.length > 0) await fetchThemePerf(theme.id);
-
-    }
-
-    if (btn) { btn.disabled = false; btn.innerText = '📊 一括更新'; }
+    saveThemes();
 
 }
 
@@ -12350,7 +12346,7 @@ function applyUserRestrictions() {
 
         'button[onclick^="clearThemeStocks"]',
 
-        'button[onclick="refreshAllThemePerf()"]',
+        'button[onclick="deleteAllThemes()"]',
 
         'button[onclick^="fetchThemePerf"]',
 
